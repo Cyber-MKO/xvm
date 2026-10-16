@@ -4,7 +4,7 @@
 //! All of this works on a byte buffer and runs on any host. Mapping the
 //! buffer into the address space and running it is in `map`.
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use crate::gap::{Gap, GapKind};
 use crate::pe::{
@@ -245,9 +245,14 @@ impl Image {
         Ok(dlls)
     }
 
-    /// Fill every IAT slot. Unresolved slots get `trap` and are returned as
-    /// gaps, once per DLL and symbol; the caller logs them (CLAUDE.md rule 4).
-    pub fn bind(&mut self, resolver: &mut dyn Resolver, trap: u32) -> Result<Vec<Gap>, PeError> {
+    /// Fill every IAT slot. Each unresolved symbol becomes one gap, and
+    /// `trap` gives the address its slots point at, so a call to it can be
+    /// reported too. The caller logs the gaps (CLAUDE.md rule 4).
+    pub fn bind(
+        &mut self,
+        resolver: &mut dyn Resolver,
+        trap: &mut dyn FnMut(&Gap) -> u32,
+    ) -> Result<Vec<Gap>, PeError> {
         if self.headers.directory(DIR_DELAY_IMPORT).is_present() {
             // The 4.14.2 census found no delay-load imports. Fail loudly if
             // that ever changes rather than leave slots unbound.
@@ -255,22 +260,25 @@ impl Image {
         }
         let mut gaps = Vec::new();
         // MinGW can import the same symbol through several descriptors.
-        let mut seen = HashSet::new();
+        let mut traps = HashMap::new();
         for dll in self.imports()? {
             for import in dll.imports {
                 let address = match resolver.resolve(&dll.dll, &import.symbol) {
                     Some(address) => address,
                     None => {
                         let symbol = import.symbol.to_string();
-                        if seen.insert((dll.dll.to_ascii_lowercase(), symbol.clone())) {
-                            gaps.push(Gap {
+                        let key = (dll.dll.to_ascii_lowercase(), symbol.clone());
+                        *traps.entry(key).or_insert_with(|| {
+                            let gap = Gap {
                                 module: self.module.clone(),
                                 kind: GapKind::Import,
                                 dll: dll.dll.clone(),
                                 symbol,
-                            });
-                        }
-                        trap
+                            };
+                            let address = trap(&gap);
+                            gaps.push(gap);
+                            address
+                        })
                     }
                 };
                 self.write_u32(import.iat_rva, address)?;

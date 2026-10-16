@@ -55,8 +55,10 @@ Loader status:
 | Import binding with gap records | Done |
 | Mapping into a 32-bit process and running code | Done |
 | TEB, `fs` segment, implicit TLS, TLS callbacks | Done (fields in `docs/api/windows.md`) |
-| Process and thread start-up, DLL load order, `DllMain` | Not started |
-| Emulated DLLs (`kernel32`, `msvcrt` and the rest) | Not started. Design decided: Rust functions plus a minimal in-memory PE header per module (brief, Decisions). |
+| Module table: dependency order, bundled DLLs from the agent directory, forwarders | Done (`process.rs`) |
+| Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`) |
+| Emulated functions | 2 of 617: `GetLastError`, `SetLastError`. Table in `docs/api/windows.md` |
+| Process and thread start-up, `DllMain`, `LoadLibrary` and `GetProcAddress` | Not started |
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.

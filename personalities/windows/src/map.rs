@@ -49,6 +49,52 @@ impl Mapped {
     pub fn address(&self, rva: u32) -> *const u8 {
         (self.base as usize + rva as usize) as *const u8
     }
+
+    /// Reserve `len` readable and writable bytes, at `preferred` if that
+    /// range is free. For memory that is not a PE file: emulated module
+    /// images built for the base they land at, and trap stubs.
+    pub fn anonymous(preferred: u32, len: usize) -> Result<Mapped, MapError> {
+        let len = round_up(len, page_size());
+        Ok(Mapped {
+            base: reserve_at(preferred, len)?,
+            len,
+        })
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn set_protection(&self, offset: usize, len: usize, p: Protection) -> Result<(), MapError> {
+        if offset + len > self.len {
+            return Err(PeError::Unsupported("protecting past the end of a mapping").into());
+        }
+        protect(self, offset, len, p)
+    }
+
+    /// Copy `bytes` into the mapping at `offset`.
+    ///
+    /// # Safety
+    ///
+    /// The range must be writable and no code may be running from it.
+    pub unsafe fn write(&self, offset: usize, bytes: &[u8]) {
+        assert!(
+            offset + bytes.len() <= self.len,
+            "write past the end of a mapping"
+        );
+        // SAFETY: in bounds (checked above) and writable (caller).
+        unsafe {
+            ptr::copy_nonoverlapping(
+                bytes.as_ptr(),
+                (self.base as usize + offset) as *mut u8,
+                bytes.len(),
+            )
+        };
+    }
 }
 
 impl Drop for Mapped {
@@ -118,16 +164,21 @@ const READ_ONLY: Protection = Protection {
 fn reserve_at(preferred: u32, len: usize) -> Result<u32, MapError> {
     let prot = libc::PROT_READ | libc::PROT_WRITE;
     let flags = libc::MAP_PRIVATE | libc::MAP_ANONYMOUS;
-    let hint = preferred as usize as *mut libc::c_void;
-    // SAFETY: anonymous mapping; MAP_FIXED_NOREPLACE never clobbers others.
-    let at = unsafe { libc::mmap(hint, len, prot, flags | libc::MAP_FIXED_NOREPLACE, -1, 0) };
-    if at == hint {
-        return Ok(preferred);
-    }
-    if at != libc::MAP_FAILED {
-        // Kernels before 4.17 treat the flag as a hint and may map elsewhere.
-        // SAFETY: `at` is the mapping just created.
-        unsafe { libc::munmap(at, len) };
+    // Base 0 means anywhere. Never map the null page, even where
+    // vm.mmap_min_addr would allow it.
+    if preferred != 0 {
+        let hint = preferred as usize as *mut libc::c_void;
+        // SAFETY: anonymous mapping; MAP_FIXED_NOREPLACE never clobbers others.
+        let at = unsafe { libc::mmap(hint, len, prot, flags | libc::MAP_FIXED_NOREPLACE, -1, 0) };
+        if at == hint {
+            return Ok(preferred);
+        }
+        if at != libc::MAP_FAILED {
+            // Kernels before 4.17 treat the flag as a hint and may map
+            // elsewhere.
+            // SAFETY: `at` is the mapping just created.
+            unsafe { libc::munmap(at, len) };
+        }
     }
     // SAFETY: anonymous mapping at an address the kernel picks.
     let at = unsafe { libc::mmap(ptr::null_mut(), len, prot, flags, -1, 0) };

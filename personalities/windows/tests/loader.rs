@@ -1,49 +1,13 @@
 //! Loader tests against PE32 i386 fixtures built from `tests/fixtures`.
-//!
-//! The fixtures need clang, lld-link and llvm-dlltool. Without them the tests
-//! skip, unless XVM_REQUIRE_FIXTURES is set (CI sets it).
+
+mod common;
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::sync::OnceLock;
 
+use common::load;
 use xvm_windows::gap::{Gap, GapKind};
-use xvm_windows::image::{ExportTarget, Image, Resolver, Symbol};
+use xvm_windows::image::{ExportTarget, Resolver, Symbol};
 use xvm_windows::tls::ProcessTls;
-
-fn fixtures() -> Option<&'static Path> {
-    static DIR: OnceLock<Option<PathBuf>> = OnceLock::new();
-    DIR.get_or_init(|| {
-        let missing: Vec<_> = ["clang", "lld-link", "llvm-dlltool"]
-            .into_iter()
-            .filter(|tool| Command::new(tool).arg("--version").output().is_err())
-            .collect();
-        if !missing.is_empty() {
-            assert!(
-                std::env::var_os("XVM_REQUIRE_FIXTURES").is_none(),
-                "missing fixture tools: {missing:?}"
-            );
-            eprintln!("skipping: missing fixture tools {missing:?}");
-            return None;
-        }
-        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
-        let out = Path::new(env!("CARGO_TARGET_TMPDIR")).join("loader-fixtures");
-        let status = Command::new("sh")
-            .arg(src.join("build.sh"))
-            .arg(&out)
-            .status()
-            .expect("run build.sh");
-        assert!(status.success(), "fixture build failed");
-        Some(out)
-    })
-    .as_deref()
-}
-
-fn load(name: &str) -> Option<Image> {
-    let bytes = std::fs::read(fixtures()?.join(name)).unwrap();
-    Some(Image::layout(name, &bytes).unwrap())
-}
 
 /// Resolves only what a test lists, like a module table would.
 struct Table(HashMap<(String, Symbol), u32>);
@@ -167,7 +131,7 @@ fn binds_imports_and_reports_gaps() {
         (("kernel32.dll".into(), name("GetTickCount")), 0x7000_0010),
     ]));
     let trap = 0xdead_0000;
-    let mut gaps = exe.bind(&mut table, trap).unwrap();
+    let mut gaps = exe.bind(&mut table, &mut |_| trap).unwrap();
     gaps.sort_by(|a, b| a.symbol.cmp(&b.symbol));
 
     let gap = |symbol: &str| Gap {

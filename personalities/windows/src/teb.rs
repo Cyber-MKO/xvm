@@ -13,6 +13,8 @@ pub const STACK_LIMIT: usize = 0x08;
 pub const FIBER_DATA: usize = 0x10;
 pub const SELF: usize = 0x18;
 pub const THREAD_LOCAL_STORAGE_POINTER: usize = 0x2c;
+/// Behind `GetLastError` and `SetLastError`.
+pub const LAST_ERROR_VALUE: usize = 0x34;
 /// `TlsSlots[64]`, behind `TlsAlloc` and `TlsGetValue`.
 pub const TLS_SLOTS: usize = 0xe10;
 

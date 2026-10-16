@@ -14,5 +14,7 @@ $LINK /dll /noentry /out:sample.dll /implib:sample.lib \
     /export:hidden,@7,NONAME /export:Ticks=kernel32.GetTickCount sample.obj
 $CC "$SRC/tls.c" -o tls.obj
 $LINK /dll /noentry /out:tls.dll /base:0x30000000 tls.obj
+$CC "$SRC/calls.c" -o calls.obj
+$LINK /dll /noentry /out:calls.dll calls.obj kernel32.lib
 $CC "$SRC/importer.c" -o importer.obj
 $LINK /entry:start /subsystem:console /out:importer.exe importer.obj kernel32.lib sample.lib

@@ -4,8 +4,10 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `kernel32.dll` | `GetLastError` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `tests/process.rs`, `agent_code_calls_emulated_functions` | Reads `LastErrorValue` from the calling thread's TEB |
+| `kernel32.dll` | `SetLastError` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` and `libwazuhext.dll` | `tests/process.rs`, `agent_code_calls_emulated_functions` | Writes `LastErrorValue` in the calling thread's TEB |
 
-No APIs implemented yet.
+Every other census function is a gap. The loader logs it once per module when it binds imports. If agent code calls it, a trap prints `gap call DLL!Function from MODULE at ADDRESS` and the process aborts. To list the gaps for an image, run `cargo run --target i686-unknown-linux-gnu --bin xvm-windows-load -- IMAGE`.
 
 ## TEB fields
 
@@ -19,5 +21,6 @@ Agent code reads these through `fs` without calling an API. Evidence comes from 
 | `0x10` | `NT_TIB.FiberData` | `libwazuhext.dll` (OpenSSL async, `GetCurrentFiber`) | 0 until `ConvertThreadToFiber` exists |
 | `0x18` | `NT_TIB.Self` | All 17 images (MinGW start-up) | The TEB address |
 | `0x2C` | `ThreadLocalStoragePointer` | None seen in agent code; required by the PE TLS rules for the 11 images with a TLS directory | Array of per-module TLS blocks |
+| `0x34` | `LastErrorValue` | None seen in agent code; our `GetLastError` and `SetLastError` keep it here | Starts at 0 |
 
-Not set: `ClientId`, `LastErrorValue` and the PEB pointer at `0x30`. No agent image reads them inline.
+Not set: `ClientId` and the PEB pointer at `0x30`. No agent image reads them inline.
