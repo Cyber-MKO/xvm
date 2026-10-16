@@ -1,0 +1,13 @@
+/target/
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+# Agent packages and unpacked trees are never committed (vendor EULAs).
+*.msi
+*.pkg
+*.deb
+*.rpm
+census/reports/*.unpacked/
+census/packages/

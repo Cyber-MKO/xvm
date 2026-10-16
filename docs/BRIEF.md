@@ -1,6 +1,6 @@
 # Project Brief: Lightweight Emulated Hosts for SIEM Agents
 
-- Working name: TBD
+- Name: xvm
 - Owner: Kasim
 - As of: 2026-10-16
 - Status: pre-build
@@ -36,9 +36,12 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | No Wine, Darling or ReactOS; our own runtime | Decided | The Wazuh Windows agent did not work under Wine (2026-09-30). The cause was not diagnosed. |
 | First agent is Wazuh | Decided | Best-known agent, and Habeny already has Wazuh baselines. |
 | Golden baseline comes from a Windows evaluation VM | Decided | Real Windows host used once to capture reference data. |
-| Standalone repo; Habeny consumes it as a provider | Proposed | Needs confirmation. |
+| Standalone repo; Habeny consumes it as a provider | Decided | Confirmed by Kasim (2026-10-16). Repo: Cyber-MKO/xvm. |
 | Shared Linux kernel underneath all hosts | Proposed | See section 5. |
-| Rust for runtimes, Python for tooling and control plane | Proposed | Needs confirmation. |
+| Rust for runtimes, Python for tooling and control plane | Decided | Confirmed by Kasim (2026-10-16). Cargo workspace at the root; one Python package per tool. |
+| Project name is xvm | Decided | Confirmed by Kasim (2026-10-16). |
+| CI on GitHub Actions | Decided | Python: ruff and pytest. Rust: fmt, clippy and test. |
+| Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files
 
@@ -205,9 +208,9 @@ Each phase ends with an exit check before the next starts.
 
 ## 13. Open questions
 
-1. Project name.
-2. Standalone repo (recommended) or a folder inside Habeny?
-3. Implementation languages (proposal: Rust for runtimes and loaders, Python for the control plane and tooling).
+1. Resolved: the name is xvm.
+2. Resolved: standalone repo.
+3. Resolved: Rust and Python.
 4. Resource targets: what per-host RAM and CPU numbers count as success?
 5. Host hardware for macOS arm64 agents.
 6. Which agents follow Wazuh, and in what order?
