@@ -23,6 +23,7 @@ A one-time capture from a real Windows evaluation VM running the Wazuh agent. Em
 | 6 | Workstation | Copy both folders to the repo checkout, then run `xvm-golden import-manager <capture-dir> --archives <manager-dir>/archives.json --alerts <manager-dir>/alerts.json` |
 | 7 | Workstation | `xvm-golden verify <capture-dir>` must print `ok`. |
 | 8 | Workstation | Move the folder to `scenarios/golden/windows/captures/<host>-<yyyymmdd>/` and commit it. Git LFS stores the `.evtx` and manager files (see `.gitattributes`). Run `git lfs install` once first. |
+| 9 | Workstation | Build the base image: `xvm-profile base-from-golden scenarios/golden/windows/captures/<id> --name <base-name>`. Commit `control/profiles/bases/<base-name>.yaml`. |
 
 If `capture.ps1` is blocked, run it with `powershell -ExecutionPolicy Bypass -File .\capture.ps1 -OutDir C:\xvm-golden-out`.
 
@@ -50,7 +51,7 @@ The test user is removed even if a step fails. No event log is cleared.
 | --- | --- |
 | `manifest.json` | Host, agent version, step times, file hashes, warnings |
 | `registry/*.reg` | Identity keys: OS version, computer name, TCP/IP, uninstall, profiles, time zone, Wazuh service, Event Log |
-| `host/*` | `systeminfo`, `ipconfig /all`, and JSON for OS, computer, CPU, BIOS, network, hotfixes, users, groups, services, processes |
+| `host/*` | `systeminfo`, `ipconfig /all`, and JSON for OS, locale, computer, CPU, BIOS, network, network adapters, hotfixes, users, groups, group members, services, processes |
 | `wazuh/*` | Agent `ossec.conf`, version files, `ossec.log`. Never `client.keys`. |
 | `evtx/full/*.evtx` | Security, System and Application, whole log |
 | `evtx/scenario/*.evtx` | The same logs, scenario window only |

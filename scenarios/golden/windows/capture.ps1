@@ -88,7 +88,8 @@ function Invoke-Native {
 
 function Save-Json {
     param($Object, [string]$Path)
-    $Object | ConvertTo-Json -Depth 6 | Set-Content -Path $Path -Encoding UTF8
+    # -InputObject keeps a one-element array an array in the JSON.
+    ConvertTo-Json -InputObject $Object -Depth 6 | Set-Content -Path $Path -Encoding UTF8
 }
 
 function New-RandomPassword {
@@ -163,9 +164,32 @@ Save-Json (Get-CimInstance Win32_NetworkAdapterConfiguration -Filter 'IPEnabled 
         DNSServerSearchOrder, DHCPEnabled) (Join-Path $hostDir 'network.json')
 Save-Json (Get-CimInstance Win32_QuickFixEngineering |
     Select-Object HotFixID, Description, InstalledOn) (Join-Path $hostDir 'hotfixes.json')
-Save-Json (Get-LocalUser | Select-Object Name, Enabled, SID, LastLogon,
+# SIDs are written as text; ConvertTo-Json would otherwise expand the object.
+$sidText = @{ Name = 'SID'; Expression = { $_.SID.Value } }
+Save-Json @(Get-LocalUser | Select-Object Name, Enabled, $sidText, LastLogon,
     PasswordLastSet) (Join-Path $hostDir 'users.json')
-Save-Json (Get-LocalGroup | Select-Object Name, SID) (Join-Path $hostDir 'groups.json')
+Save-Json @(Get-LocalGroup | Select-Object Name, $sidText) (Join-Path $hostDir 'groups.json')
+$members = New-Object System.Collections.ArrayList
+foreach ($g in Get-LocalGroup) {
+    # Get-LocalGroupMember fails on groups holding orphaned domain SIDs; skip those.
+    try {
+        foreach ($m in Get-LocalGroupMember -Group $g.Name -ErrorAction Stop) {
+            [void]$members.Add([ordered]@{
+                group = $g.Name; member = $m.Name; sid = $m.SID.Value
+                class = [string]$m.ObjectClass; source = [string]$m.PrincipalSource
+            })
+        }
+    } catch {
+        [void]$Warnings.Add("Members of group $($g.Name) not read: $($_.Exception.Message)")
+    }
+}
+Save-Json @($members) (Join-Path $hostDir 'group-members.json')
+Save-Json @(Get-NetAdapter | Select-Object Name, InterfaceDescription, Status,
+    MacAddress) (Join-Path $hostDir 'netadapters.json')
+Save-Json ([ordered]@{
+    culture  = (Get-Culture).Name
+    timezone = (Get-TimeZone).Id
+}) (Join-Path $hostDir 'locale.json')
 Save-Json (Get-CimInstance Win32_Service |
     Select-Object Name, DisplayName, State, StartMode, PathName,
         StartName) (Join-Path $hostDir 'services.json')

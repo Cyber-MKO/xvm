@@ -4,7 +4,7 @@ Control plane: CLI and API, host profiles, Habeny provider (Phase 4). See docs/B
 
 | Path | Contents |
 | --- | --- |
-| `xvm_control/` | `xvm-profile` tool and the host profile schema |
+| `xvm_control/` | `xvm-profile` tool, the host profile schema, the `.reg` parser and the golden capture converter |
 | `profiles/bases/` | Base images built from golden captures |
 | `profiles/examples/` | Illustrative base and host profile |
 

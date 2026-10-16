@@ -57,3 +57,29 @@ A base image may not use `remove`, `null` values or `delete_keys`.
 `--bases` defaults to `control/profiles/bases` and can be repeated.
 
 Quote timestamps in YAML. Unquoted ones are accepted and converted to UTC text.
+
+## Building a base from a golden capture
+
+`xvm-profile base-from-golden CAPTURE --name NAME [--out FILE]` writes `control/profiles/bases/NAME.yaml`. It refuses a capture that fails `xvm-golden verify`. Notes on skipped data go to standard error.
+
+| Base section | Source in the capture |
+| --- | --- |
+| `os_info` | `host/os.json`, `host/locale.json`, the `CurrentVersion` registry key |
+| `hardware` | `host/cpu.json`, `computer.json`, `bios.json` |
+| `network.interfaces` | `host/netadapters.json` and `network.json`: names, descriptions, DHCP only |
+| `users`, `groups` | `host/users.json`, `groups.json`, `group-members.json` (local members only) |
+| `software` | `registry/uninstall.reg` (x86_64) and `uninstall-wow64.reg` (x86), entries with a `DisplayName` that are not system components |
+| `services` | `host/services.json` |
+| `registry.keys` | The identity exports: CurrentVersion, ComputerName, TCP/IP parameters, ProfileList, time zone, Event Log |
+
+These facts identify one machine, so the base leaves them out and each host profile supplies them:
+
+| Left out | Where it comes from instead |
+| --- | --- |
+| Host name and domain, including the registry values that hold them | `identity` and `registry` in the host profile |
+| MAC and IP addresses, gateway, DNS servers, per-interface TCP/IP keys | `network.interfaces` in the host profile |
+| BIOS and system serial numbers | `hardware` in the host profile |
+| The `WazuhSvc` service and the Wazuh Agent package | Our installer step, from `agent` in the host profile |
+| The scenario test user `xvmgolden` | Deleted during the capture |
+
+The `.reg` parser follows Microsoft's public description of the format. It reads `REG_SZ`, `REG_EXPAND_SZ`, `REG_MULTI_SZ`, `REG_DWORD`, `REG_QWORD` and `REG_BINARY`. Any other type, and keys under `HKEY_CURRENT_USER`, are reported as skipped.
