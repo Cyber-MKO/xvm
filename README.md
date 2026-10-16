@@ -6,7 +6,7 @@ Start with [docs/BRIEF.md](docs/BRIEF.md). Rules for contributors and agents are
 
 ## Status
 
-Phase 0 (Foundations). The API census tool is in [census/](census/).
+Phase 0 (Foundations). The API census tool is in [census/](census/). The golden baseline capture kit is in [scenarios/golden/windows/](scenarios/golden/windows/).
 
 ## Layout
 
@@ -32,4 +32,4 @@ Phase 0 (Foundations). The API census tool is in [census/](census/).
 | Rust lint | `cargo fmt --check && cargo clippy --all-targets -- -D warnings` |
 | Rust tests | `cargo test` |
 
-System tools for the census and its tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm`. Tests that need a missing tool are skipped.
+System tools for the census and its tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm jq`. Tests that need a missing tool are skipped.
