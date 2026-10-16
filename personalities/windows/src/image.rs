@@ -94,7 +94,19 @@ pub struct Tls {
     pub raw_data_end: u32,
     pub index_address: u32,
     pub zero_fill: u32,
+    /// Bits 20 to 23 hold the alignment of the TLS block.
+    pub characteristics: u32,
     pub callbacks: Vec<u32>,
+}
+
+impl Tls {
+    /// Alignment of each thread's copy of the TLS block, in bytes.
+    pub fn alignment(&self) -> usize {
+        match (self.characteristics >> 20) & 0xf {
+            0 => 1,
+            n => 1 << (n - 1),
+        }
+    }
 }
 
 /// Finds the address of an imported symbol. Implemented by the personality
@@ -341,6 +353,7 @@ impl Image {
             raw_data_end: self.u32(d + 4)?,
             index_address: self.u32(d + 8)?,
             zero_fill: self.u32(d + 16)?,
+            characteristics: self.u32(d + 20)?,
             callbacks,
         }))
     }
@@ -359,7 +372,7 @@ impl Image {
         u32_at(&self.memory, rva as usize, "image")
     }
 
-    fn write_u32(&mut self, rva: u32, value: u32) -> Result<(), PeError> {
+    pub fn write_u32(&mut self, rva: u32, value: u32) -> Result<(), PeError> {
         let slot = self
             .memory
             .get_mut(rva as usize..rva as usize + 4)

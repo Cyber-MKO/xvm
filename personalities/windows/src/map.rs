@@ -53,47 +53,60 @@ impl Mapped {
 
 impl Drop for Mapped {
     fn drop(&mut self) {
-        // SAFETY: base and len describe the mapping created in `map`.
+        // SAFETY: base and len describe the mapping created in `reserve`.
         unsafe { libc::munmap(self.base as usize as *mut libc::c_void, self.len) };
     }
 }
 
-/// Reserve memory at the preferred base (or anywhere, then rebase), copy the
-/// image in and apply section protections. Imports must already be bound,
-/// or be bound after rebasing by the caller before any code runs.
+/// Reserve, rebase and commit in one step. Use `reserve` and
+/// `Mapped::commit` when imports or TLS must be set up in between.
 pub fn map(image: &mut Image) -> Result<Mapped, MapError> {
+    let mapped = reserve(image)?;
+    mapped.commit(image)?;
+    Ok(mapped)
+}
+
+/// Reserve memory at the preferred base, or anywhere else and rebase the
+/// image to it. Nothing is copied yet: the image can still be bound and
+/// have its TLS index assigned, at its final address, before `commit`.
+pub fn reserve(image: &mut Image) -> Result<Mapped, MapError> {
     let page = page_size();
     if (image.headers.section_alignment as usize) < page {
         return Err(PeError::Unsupported("section alignment below the page size").into());
     }
     let len = round_up(image.memory.len(), page);
     let mapped = Mapped {
-        base: reserve(image.base, len)?,
+        base: reserve_at(image.base, len)?,
         len,
     };
     image.rebase(mapped.base)?;
-
-    // SAFETY: the mapping is len >= memory.len() bytes, writable, and ours.
-    unsafe {
-        ptr::copy_nonoverlapping(
-            image.memory.as_ptr(),
-            mapped.base as usize as *mut u8,
-            image.memory.len(),
-        );
-    }
-
-    protect(
-        &mapped,
-        0,
-        image.headers.size_of_headers as usize,
-        READ_ONLY,
-    )?;
-    for s in &image.headers.sections {
-        let start = s.virtual_address as usize;
-        let end = round_up(start + s.mapped_size() as usize, page);
-        protect(&mapped, start, end - start, s.protection())?;
-    }
     Ok(mapped)
+}
+
+impl Mapped {
+    /// Copy the image in and apply section protections.
+    pub fn commit(&self, image: &Image) -> Result<(), MapError> {
+        if image.base != self.base || image.memory.len() > self.len {
+            return Err(PeError::Unsupported("committing an image to another reservation").into());
+        }
+        // SAFETY: the mapping is len >= memory.len() bytes and ours. It is
+        // writable until the protections below are applied.
+        unsafe {
+            ptr::copy_nonoverlapping(
+                image.memory.as_ptr(),
+                self.base as usize as *mut u8,
+                image.memory.len(),
+            );
+        }
+        let page = page_size();
+        protect(self, 0, image.headers.size_of_headers as usize, READ_ONLY)?;
+        for s in &image.headers.sections {
+            let start = s.virtual_address as usize;
+            let end = round_up(start + s.mapped_size() as usize, page);
+            protect(self, start, end - start, s.protection())?;
+        }
+        Ok(())
+    }
 }
 
 const READ_ONLY: Protection = Protection {
@@ -102,7 +115,7 @@ const READ_ONLY: Protection = Protection {
     execute: false,
 };
 
-fn reserve(preferred: u32, len: usize) -> Result<u32, MapError> {
+fn reserve_at(preferred: u32, len: usize) -> Result<u32, MapError> {
     let prot = libc::PROT_READ | libc::PROT_WRITE;
     let flags = libc::MAP_PRIVATE | libc::MAP_ANONYMOUS;
     let hint = preferred as usize as *mut libc::c_void;

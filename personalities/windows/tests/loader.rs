@@ -10,6 +10,7 @@ use std::sync::OnceLock;
 
 use xvm_windows::gap::{Gap, GapKind};
 use xvm_windows::image::{ExportTarget, Image, Resolver, Symbol};
+use xvm_windows::tls::ProcessTls;
 
 fn fixtures() -> Option<&'static Path> {
     static DIR: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -228,4 +229,99 @@ fn maps_and_runs_i386_code() {
     // bump goes through a relocated pointer; a wrong fixup would fault.
     assert_eq!(bump(), 41);
     assert_eq!(bump(), 42);
+}
+
+#[test]
+fn registers_tls_templates_in_load_order() {
+    let (Some(mut first), Some(mut second)) = (load("tls.dll"), load("tls.dll")) else {
+        return;
+    };
+    let mut tls = ProcessTls::new();
+    assert_eq!(tls.register(&mut first).unwrap(), Some(0));
+    assert_eq!(tls.register(&mut second).unwrap(), Some(1));
+    // A module without a TLS directory takes no index.
+    assert_eq!(
+        tls.register(&mut load("sample.dll").unwrap()).unwrap(),
+        None
+    );
+
+    let dir = second.tls().unwrap().unwrap();
+    assert_eq!(
+        second
+            .u32(second.va_to_rva(dir.index_address).unwrap())
+            .unwrap(),
+        1
+    );
+    let template = &tls.templates()[1];
+    assert_eq!(template.module_base, 0x3000_0000);
+    assert_eq!(template.callbacks.len(), 1);
+    // tls_counter starts at 5.
+    assert!(template.data.windows(4).any(|w| w == 5u32.to_le_bytes()));
+}
+
+/// Run fixture code that reads the TEB and implicit TLS through fs.
+#[cfg(all(target_arch = "x86", target_os = "linux"))]
+#[test]
+fn code_reaches_teb_and_tls_through_fs() {
+    use xvm_windows::map;
+    use xvm_windows::teb::SEH_CHAIN_END;
+    use xvm_windows::thread::{DLL_PROCESS_ATTACH, DLL_THREAD_ATTACH, ThreadEnv};
+
+    let Some(mut dll) = load("tls.dll") else {
+        return;
+    };
+    let mut tls = ProcessTls::new();
+    let mapped = map::reserve(&mut dll).unwrap();
+    tls.register(&mut dll).unwrap();
+    mapped.commit(&dll).unwrap();
+
+    let exports = dll.exports().unwrap().unwrap();
+    let f = |n: &str| match exports.by_name(n).unwrap().target {
+        // SAFETY: every fixture export used here is cdecl, takes nothing
+        // and returns a 32-bit value.
+        ExportTarget::Rva(rva) => unsafe {
+            std::mem::transmute::<*const u8, extern "C" fn() -> u32>(mapped.address(rva))
+        },
+        ref other => panic!("{other:?}"),
+    };
+
+    let env = ThreadEnv::install(&tls).unwrap();
+    // SAFETY: the module is committed and has no imports.
+    unsafe { env.run_tls_callbacks(&tls, DLL_PROCESS_ATTACH) };
+    assert_eq!(f("tls_callback_calls")(), 1);
+    assert_eq!(f("tls_last_reason")(), DLL_PROCESS_ATTACH);
+    assert_eq!(f("tls_callback_handle")(), mapped.base());
+
+    assert_eq!(f("teb_self")(), env.teb());
+    assert_eq!(f("seh_head")(), SEH_CHAIN_END);
+    assert_eq!(f("fiber_data")(), 0);
+    let local = 0u32;
+    let here = &local as *const u32 as u32;
+    let stack_base = f("teb_stack_base")();
+    assert!(
+        here < stack_base && stack_base - here < 64 << 20,
+        "{here:#x} {stack_base:#x}"
+    );
+
+    assert_eq!(f("tls_index")(), 0);
+    assert_eq!(f("bump_tls")(), 6);
+    assert_eq!(f("bump_tls")(), 7);
+
+    // A second thread gets its own TEB and a fresh copy of the TLS block.
+    let other_teb = std::thread::scope(|s| {
+        s.spawn(|| {
+            let env = ThreadEnv::install(&tls).unwrap();
+            // SAFETY: as above.
+            unsafe { env.run_tls_callbacks(&tls, DLL_THREAD_ATTACH) };
+            assert_eq!(f("tls_last_reason")(), DLL_THREAD_ATTACH);
+            assert_eq!(f("teb_self")(), env.teb());
+            assert_eq!(f("bump_tls")(), 6);
+            env.teb()
+        })
+        .join()
+        .unwrap()
+    });
+    assert_ne!(other_teb, env.teb());
+    assert_eq!(f("teb_self")(), env.teb());
+    assert_eq!(f("bump_tls")(), 8);
 }

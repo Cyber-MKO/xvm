@@ -54,9 +54,9 @@ Loader status:
 | Layout, base relocations, exports, TLS directory | Done |
 | Import binding with gap records | Done |
 | Mapping into a 32-bit process and running code | Done |
-| TEB, `fs` segment, TLS slots and callbacks | Not started |
+| TEB, `fs` segment, implicit TLS, TLS callbacks | Done (fields in `docs/api/windows.md`) |
 | Process and thread start-up, DLL load order, `DllMain` | Not started |
-| Emulated DLLs (`kernel32`, `msvcrt` and the rest) | Not started |
+| Emulated DLLs (`kernel32`, `msvcrt` and the rest) | Not started. Design decided: Rust functions plus a minimal in-memory PE header per module (brief, Decisions). |
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
