@@ -5,6 +5,7 @@ Record every third-party source used, and every Apple open-source Darwin release
 | Component | Used for | License | Notes |
 | --- | --- | --- | --- |
 | pefile | PE parsing in the census tool | MIT | Python dependency, not shipped in runtimes |
+| serde, serde_json (with indexmap) | Engine data model and wire format | MIT or Apache-2.0 | Rust dependencies |
 | PyYAML | Reading host profiles | MIT | Python dependency |
 | jsonschema | Validating host profiles | MIT | Python dependency |
 | msitools, libarchive, rpm2cpio, cpio | Unpacking packages in the census tool | LGPL-2.1, BSD-2-Clause, GPL | Invoked as external programs |

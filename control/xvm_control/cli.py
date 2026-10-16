@@ -42,6 +42,16 @@ def _resolve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _compile(args: argparse.Namespace) -> int:
+    try:
+        index = profile.compile_tree(args.bases or [DEFAULT_BASES], args.hosts, args.out)
+    except profile.ProfileError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    print(f"{len(index['bases'])} base images, {len(index['hosts'])} hosts: {args.out}")
+    return 0
+
+
 def _base_from_golden(args: argparse.Namespace) -> int:
     try:
         base, notes = golden.build_base(args.capture, args.name, args.description)
@@ -75,6 +85,17 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--bases", type=Path, action="append", help="base image folder (repeatable)")
     r.add_argument("--format", choices=["yaml", "json"], default="yaml")
     r.set_defaults(func=_resolve)
+    c = sub.add_parser("compile", help="validate and write profiles as JSON for the engine")
+    c.add_argument("--bases", type=Path, action="append", help="base image folder or file")
+    c.add_argument(
+        "--hosts",
+        type=Path,
+        action="append",
+        required=True,
+        help="host profile folder or file (repeatable)",
+    )
+    c.add_argument("--out", type=Path, required=True)
+    c.set_defaults(func=_compile)
     g = sub.add_parser("base-from-golden", help="build a Windows base image from a golden capture")
     g.add_argument("capture", type=Path, help="capture folder (with manifest.json)")
     g.add_argument("--name", required=True, help="base image name, for example windows-2022")

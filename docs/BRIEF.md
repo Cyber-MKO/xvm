@@ -48,6 +48,10 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Host profiles are YAML, validated by a JSON Schema | Decided | Kasim, 2026-10-16. See `docs/host-profiles.md`. |
 | Host profiles are a base image plus per-host deltas | Decided | Kasim, 2026-10-16. Bases are built from golden captures. |
 | Golden captures are stored with Git LFS in this repo | Decided | Kasim, 2026-10-16. `.evtx` and manager logs go to LFS; manifests stay in plain git. |
+| Host-state engine is written in Rust | Decided | Kasim, 2026-10-16. Crate `engine/` (`xvm-engine`, daemon `xvm-engined`). |
+| The engine layers base images and host deltas itself | Decided | Kasim, 2026-10-16. Bases are held once and shared. Test vectors check it against `xvm-profile resolve`. |
+| Personalities reach the engine over a Unix socket | Decided | Kasim, 2026-10-16. One daemon for all hosts, one connection per host, length-prefixed JSON. |
+| `xvm-profile` is the only YAML parser; the engine reads compiled JSON | Decided | 2026-10-16. Avoids YAML 1.1 and 1.2 disagreements between Python and Rust. Unquoted timestamps are rejected. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files

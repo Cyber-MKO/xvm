@@ -4,7 +4,8 @@ Merge rules (profile over base):
 
 - Scalars and objects: the profile value wins; objects merge key by key.
 - users, groups, software, services and network.interfaces: entries merge by
-  name (case-insensitive); an entry with `remove: true` deletes the base entry.
+  name (case-insensitive, keeping the base's spelling); an entry with
+  `remove: true` deletes the base entry.
 - registry.keys: merge key by key, then value by value; a null value deletes it.
 - registry.delete_keys: deletes the key and every subkey from the base.
 """
@@ -83,28 +84,29 @@ def _check_no_removals(doc: dict, where: str) -> None:
             raise ProfileError(f"{where}: registry: a base image cannot delete values in {key}")
 
 
-def _dates_to_text(node):
-    """YAML turns unquoted timestamps into date objects; the schema expects text."""
+def _reject_dates(node, where: str, path: str = "") -> None:
+    """Unquoted YAML timestamps become date objects. Require quotes so every
+    consumer (and the engine, which reads compiled JSON) sees the same text."""
     if isinstance(node, dict):
-        return {k: _dates_to_text(v) for k, v in node.items()}
-    if isinstance(node, list):
-        return [_dates_to_text(v) for v in node]
-    if isinstance(node, datetime.datetime):
-        if node.tzinfo is None:
-            node = node.replace(tzinfo=datetime.UTC)
-        return node.isoformat().replace("+00:00", "Z")
-    if isinstance(node, datetime.date):
-        return node.isoformat()
-    return node
+        for k, v in node.items():
+            _reject_dates(v, where, f"{path}/{k}")
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _reject_dates(v, where, f"{path}/{i}")
+    elif isinstance(node, datetime.date):
+        raise ProfileError(
+            f'{where}: {path.lstrip("/")}: quote timestamps, for example "{node.isoformat()}"'
+        )
 
 
 def load(path: Path) -> dict:
     try:
-        doc = _dates_to_text(yaml.safe_load(path.read_text(encoding="utf-8")))
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
         raise ProfileError(f"{path}: invalid YAML: {exc}") from exc
     if not isinstance(doc, dict):
         raise ProfileError(f"{path}: expected a mapping at the top level")
+    _reject_dates(doc, str(path))
     validate(doc, str(path))
     return doc
 
@@ -128,7 +130,8 @@ def _merge_keyed(base: list[dict] | None, over: list[dict] | None, label: str) -
                 raise ProfileError(f"{label}: cannot remove {item['name']!r}: not in the base")
             del result[key]
         elif key in result:
-            result[key] = _merge_dict(result[key], item)
+            # Keep the base's spelling of the name, as the registry merge does.
+            result[key] = {**_merge_dict(result[key], item), "name": result[key]["name"]}
         else:
             result[key] = copy.deepcopy(item)
     return list(result.values())
@@ -222,3 +225,54 @@ def resolve_file(path: Path, search: list[Path]) -> dict:
         raise ProfileError(f"{path}: expected kind host-profile, got {profile['kind']}")
     base = load(find_base(profile["base"], search))
     return resolve(profile, base)
+
+
+def _yaml_files(paths: list[Path]) -> list[Path]:
+    out: list[Path] = []
+    for p in paths:
+        if p.is_dir():
+            out.extend(sorted([*p.glob("*.yaml"), *p.glob("*.yml")]))
+        elif p.is_file():
+            out.append(p)
+        else:
+            raise ProfileError(f"not found: {p}")
+    return out
+
+
+def compile_tree(base_paths: list[Path], host_paths: list[Path], out: Path) -> dict:
+    """Validate base images and host profiles and write them as JSON for the engine.
+
+    Profiles stay unmerged: the engine layers each host over its base itself.
+    Every host is resolved here once, so a host that cannot resolve is an error.
+    Returns the index written to out/compiled.json.
+    """
+    bases: dict[str, dict] = {}
+    for path in _yaml_files(base_paths):
+        doc = load(path)
+        if doc["kind"] != "base-image":
+            raise ProfileError(f"{path}: expected kind base-image, got {doc['kind']}")
+        if doc["name"] in bases:
+            raise ProfileError(f"{path}: duplicate base image name {doc['name']!r}")
+        bases[doc["name"]] = doc
+    hosts: dict[str, dict] = {}
+    for path in _yaml_files(host_paths):
+        doc = load(path)
+        if doc["kind"] != "host-profile":
+            raise ProfileError(f"{path}: expected kind host-profile, got {doc['kind']}")
+        if doc["name"] in hosts:
+            raise ProfileError(f"{path}: duplicate host name {doc['name']!r}")
+        if doc["base"] not in bases:
+            raise ProfileError(f"{path}: base image {doc['base']!r} not among the bases given")
+        resolve(doc, bases[doc["base"]])
+        hosts[doc["name"]] = doc
+    for sub in ("bases", "hosts"):
+        (out / sub).mkdir(parents=True, exist_ok=True)
+        for stale in (out / sub).glob("*.json"):
+            stale.unlink()
+    for name, doc in bases.items():
+        (out / "bases" / f"{name}.json").write_text(json.dumps(doc, indent=1) + "\n")
+    for name, doc in hosts.items():
+        (out / "hosts" / f"{name}.json").write_text(json.dumps(doc, indent=1) + "\n")
+    index = {"schema": 1, "bases": sorted(bases), "hosts": sorted(hosts)}
+    (out / "compiled.json").write_text(json.dumps(index, indent=1) + "\n")
+    return index

@@ -47,9 +47,9 @@ def test_keyed_lists(host, base):
 
 
 def test_names_match_case_insensitively(host, base):
-    host["users"] = [{"name": "guest", "remove": True}]
+    host["users"] = [{"name": "guest", "remove": True}, {"name": "ADMINISTRATOR", "enabled": False}]
     r = profile.resolve(host, base)
-    assert [u["name"] for u in r["users"]] == ["Administrator"]
+    assert r["users"] == [{**base["users"][0], "enabled": False}]  # base spelling kept
 
 
 def test_remove_missing_entry_fails(host, base):
@@ -153,7 +153,8 @@ def test_unquoted_yaml_timestamp(tmp_path):
     text = yaml.safe_dump(doc).replace("PLACEHOLDER", "2026-01-01 08:30:00")
     p = tmp_path / "windows-example.yaml"
     p.write_text(text)
-    assert profile.load(p)["os_info"]["install_date"] == "2026-01-01T08:30:00Z"
+    with pytest.raises(profile.ProfileError, match="os_info/install_date: quote timestamps"):
+        profile.load(p)
 
 
 def test_cli(capsys):

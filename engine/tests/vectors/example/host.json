@@ -1,0 +1,80 @@
+{
+ "schema": 1,
+ "kind": "host-profile",
+ "name": "win-web-01",
+ "base": "windows-example",
+ "os": "windows",
+ "identity": {
+  "hostname": "WIN-WEB-01",
+  "domain": "WORKGROUP"
+ },
+ "hardware": {
+  "memory_mb": 8192
+ },
+ "network": {
+  "interfaces": [
+   {
+    "name": "Ethernet0",
+    "mac": "02:00:00:00:01:01",
+    "ipv4": [
+     "192.0.2.11/24"
+    ],
+    "gateway": "192.0.2.1",
+    "dns": [
+     "192.0.2.53"
+    ],
+    "dhcp": false
+   }
+  ]
+ },
+ "users": [
+  {
+   "name": "Guest",
+   "remove": true
+  },
+  {
+   "name": "webadmin",
+   "sid": "S-1-5-21-1000000000-1000000000-1000000000-1001",
+   "enabled": true,
+   "groups": [
+    "Administrators"
+   ]
+  }
+ ],
+ "software": [
+  {
+   "name": "Example Web Server",
+   "version": "2.4.1",
+   "vendor": "Example Corp",
+   "architecture": "x86_64"
+  }
+ ],
+ "services": [
+  {
+   "name": "W32Time",
+   "state": "stopped"
+  },
+  {
+   "name": "ExampleWeb",
+   "display_name": "Example Web Server",
+   "state": "running",
+   "start_mode": "auto"
+  }
+ ],
+ "registry": {
+  "keys": {
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName": {
+    "ComputerName": {
+     "type": "REG_SZ",
+     "data": "WIN-WEB-01"
+    }
+   }
+  }
+ },
+ "agent": {
+  "product": "wazuh",
+  "version": "4.14.2",
+  "manager": "manager.example.invalid",
+  "group": "web"
+ }
+}

@@ -31,8 +31,8 @@ Examples live in [control/profiles/examples/](../control/profiles/examples/). Th
 | Field | Rule |
 | --- | --- |
 | Scalars and objects | The profile value wins. Objects merge key by key. |
-| `users`, `groups`, `software`, `services`, `network.interfaces` | Entries merge by `name`, ignoring case. `remove: true` deletes the base entry. Removing an entry the base lacks is an error. |
-| `registry.keys` | Merge key by key, then value by value, ignoring case. A value of `null` deletes it. |
+| `users`, `groups`, `software`, `services`, `network.interfaces` | Entries merge by `name`, ignoring case and keeping the base's spelling. `remove: true` deletes the base entry. Removing an entry the base lacks is an error. |
+| `registry.keys` | Merge key by key, then value by value, ignoring case and keeping the base's spelling. A value of `null` deletes it. |
 | `registry.delete_keys` | Deletes the key and all subkeys. Deleting a key the base lacks is an error. |
 
 A base image may not use `remove`, `null` values or `delete_keys`.
@@ -54,9 +54,13 @@ A base image may not use `remove`, `null` values or `delete_keys`.
 | Validate files | `xvm-profile validate FILE... [--bases DIR]` |
 | Print the resolved host | `xvm-profile resolve FILE [--bases DIR] [--format yaml\|json]` |
 
+| Compile for the engine | `xvm-profile compile --bases DIR --hosts DIR --out DIR` |
+
 `--bases` defaults to `control/profiles/bases` and can be repeated.
 
-Quote timestamps in YAML. Unquoted ones are accepted and converted to UTC text.
+`compile` validates every file, checks that each host resolves, and writes `compiled.json`, `bases/NAME.json` and `hosts/NAME.json`. Hosts stay unmerged: the engine layers them over their base. See [engine/README.md](../engine/README.md).
+
+Quote timestamps in YAML, for example `"2026-01-01T00:00:00Z"`. Unquoted timestamps are rejected, so every reader sees the same text.
 
 ## Building a base from a golden capture
 

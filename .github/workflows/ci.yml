@@ -46,3 +46,9 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
+      - name: Test the engine as a 32-bit build (the Windows personality is i686)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-multilib
+          rustup target add i686-unknown-linux-gnu
+          cargo test -p xvm-engine --target i686-unknown-linux-gnu

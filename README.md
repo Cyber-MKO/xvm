@@ -6,7 +6,7 @@ Start with [docs/BRIEF.md](docs/BRIEF.md). Rules for contributors and agents are
 
 ## Status
 
-Phase 0 (Foundations). The API census tool is in [census/](census/). The golden baseline capture kit is in [scenarios/golden/windows/](scenarios/golden/windows/). Host profiles are described in [docs/host-profiles.md](docs/host-profiles.md).
+Phase 0 (Foundations). The API census tool is in [census/](census/). The golden baseline capture kit is in [scenarios/golden/windows/](scenarios/golden/windows/). Host profiles are described in [docs/host-profiles.md](docs/host-profiles.md). The host-state engine is in [engine/](engine/).
 
 ## Layout
 

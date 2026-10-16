@@ -1,0 +1,40 @@
+# Edge cases for the engine's layered view. Values are illustrative.
+schema: 1
+kind: base-image
+name: edge-base
+os: windows
+source: {golden_capture: synthetic}
+os_info: {product_name: Edge OS, build: "100", architecture: x86_64}
+hardware:
+  cpu: {name: Base CPU, cores: 2, logical_processors: 4}
+  memory_mb: 2048
+network:
+  dns_suffix: base.example.invalid
+  interfaces:
+    - {name: Ethernet0, description: NIC zero, dhcp: true}
+    - {name: Ethernet1, description: NIC one, dhcp: true}
+users:
+  - {name: Administrator, enabled: true, groups: [Administrators]}
+  - {name: Guest, enabled: false}
+  - {name: Operator, enabled: true}
+groups:
+  - {name: Administrators, sid: S-1-5-32-544}
+services:
+  - {name: Alpha, state: running, start_mode: auto}
+  - {name: Beta, state: running, start_mode: manual}
+registry:
+  keys:
+    HKLM\SOFTWARE\Vendor\App:
+      Version: {type: REG_SZ, data: "1.0"}
+      Path: {type: REG_EXPAND_SZ, data: "%ProgramFiles%\\App"}
+      Flags: {type: REG_DWORD, data: 1}
+    HKLM\SOFTWARE\Vendor\App\Plugins\One:
+      Enabled: {type: REG_DWORD, data: 1}
+    HKLM\SOFTWARE\Vendor\App\Plugins\Two:
+      Enabled: {type: REG_DWORD, data: 0}
+    HKLM\SOFTWARE\Vendor\Legacy:
+      Old: {type: REG_SZ, data: gone}
+    HKLM\SOFTWARE\Vendor\Legacy\Child:
+      X: {type: REG_SZ, data: gone}
+    HKLM\SOFTWARE\Other:
+      Keep: {type: REG_MULTI_SZ, data: [a, b]}

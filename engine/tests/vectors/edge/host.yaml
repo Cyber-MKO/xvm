@@ -1,0 +1,36 @@
+schema: 1
+kind: host-profile
+name: edge-host
+base: edge-base
+os: windows
+identity: {hostname: EDGE-01}
+hardware:
+  cpu: {cores: 8}
+network:
+  interfaces:
+    - {name: ethernet1, remove: true}
+    - {name: ETHERNET0, ipv4: [192.0.2.5/24], dhcp: false}
+    - {name: Ethernet2, description: NIC two}
+users:
+  - {name: guest, remove: true}
+  - {name: operator, enabled: false, groups: [Users]}
+  - {name: svc-backup, enabled: true}
+services:
+  - {name: beta, state: stopped}
+  - {name: Gamma, state: running}
+software:
+  - {name: Added Tool, version: "3.0"}
+registry:
+  delete_keys:
+    - HKLM\SOFTWARE\Vendor\Legacy
+    - HKLM\SOFTWARE\Other
+  keys:
+    HKLM\software\vendor\app:
+      version: {type: REG_SZ, data: "2.0"}
+      Flags: null
+      NewValue: {type: REG_QWORD, data: 5}
+    HKLM\SOFTWARE\Other:
+      Fresh: {type: REG_SZ, data: re-added}
+    HKLM\SOFTWARE\Vendor\App\Plugins\Three:
+      Enabled: {type: REG_DWORD, data: 1}
+agent: {product: wazuh, version: 4.14.2}
