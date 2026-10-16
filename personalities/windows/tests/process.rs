@@ -292,3 +292,118 @@ fn module_handles_and_proc_addresses_through_kernel32() {
     );
     assert!(!new.iter().any(|g| g.2 == "missing"));
 }
+
+/// Call a cdecl export of the main module that takes nothing.
+fn call_export(runtime: &xvm_windows::runtime::Runtime, module: &str, name: &str) -> u32 {
+    let address = runtime
+        .lock()
+        .module(module)
+        .unwrap()
+        .export_address(name)
+        .unwrap();
+    // SAFETY: fixture exports used this way are cdecl, take nothing and
+    // return a 32-bit value.
+    let f: extern "C" fn() -> u32 = unsafe { std::mem::transmute(address as usize) };
+    f()
+}
+
+#[test]
+fn service_dispatcher_runs_service_main_and_delivers_stop() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let mut p = process(dir, "service.exe");
+    p.params.service = Some("XvmTestSvc".into());
+    let runtime = Runtime::new(p);
+
+    let main = {
+        let runtime = runtime.clone();
+        std::thread::spawn(move || {
+            let thread = runtime.attach().unwrap();
+            runtime.run_main(&thread).unwrap()
+        })
+    };
+    // Wait for the service to report SERVICE_RUNNING (4).
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while runtime.lock().services.status.map(|s| s.current_state) != Some(4) {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "service never reported RUNNING"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    runtime.service_control(1);
+    assert_eq!(
+        main.join().unwrap(),
+        1,
+        "dispatcher returns TRUE after STOPPED"
+    );
+
+    let _thread = runtime.attach().unwrap();
+    assert_eq!(call_export(&runtime, "service.exe", "service_argc"), 1);
+    let name = call_export(&runtime, "service.exe", "service_name");
+    // SAFETY: the fixture returns a NUL-terminated buffer of its own.
+    let name = unsafe { std::ffi::CStr::from_ptr(name as usize as *const std::ffi::c_char) };
+    assert_eq!(name.to_str().unwrap(), "XvmTestSvc");
+    assert_eq!(call_export(&runtime, "service.exe", "service_controls"), 1);
+    let main_teb = call_export(&runtime, "service.exe", "service_main_teb");
+    let dispatcher_teb = call_export(&runtime, "service.exe", "service_dispatcher_teb");
+    assert!(main_teb != 0 && dispatcher_teb != 0);
+    assert_ne!(
+        main_teb, dispatcher_teb,
+        "ServiceMain runs on its own thread"
+    );
+    assert_eq!(
+        call_export(&runtime, "service.exe", "service_handler_teb"),
+        dispatcher_teb,
+        "the handler runs on the dispatcher thread"
+    );
+    assert_eq!(runtime.lock().services.status.unwrap().current_state, 1);
+}
+
+#[test]
+fn service_dispatcher_fails_outside_the_service_manager() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "service.exe"));
+    let thread = runtime.attach().unwrap();
+    // ERROR_FAILED_SERVICE_CONTROLLER_CONNECT
+    assert_eq!(runtime.run_main(&thread).unwrap(), 1063);
+}
+
+#[test]
+fn new_threads_send_thread_attach_and_detach() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "startup.exe"));
+    let thread = runtime.attach().unwrap();
+    runtime.run_main(&thread).unwrap();
+
+    let count = |reason: u32| {
+        let address = runtime
+            .lock()
+            .module("initdll.dll")
+            .unwrap()
+            .export_address("dll_reason_count")
+            .unwrap();
+        // SAFETY: int dll_reason_count(unsigned long), cdecl.
+        let f: extern "C" fn(u32) -> i32 = unsafe { std::mem::transmute(address as usize) };
+        f(reason)
+    };
+    assert_eq!((count(1), count(2), count(3)), (1, 0, 0));
+    let teb = runtime
+        .spawn(|| {
+            let teb: u32;
+            // SAFETY: reading fs:0x18 on a thread with a TEB.
+            unsafe { std::arch::asm!("mov {0}, dword ptr fs:[0x18]", out(reg) teb) };
+            teb
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+    assert_ne!(teb, 0);
+    assert_ne!(teb, thread.teb());
+    assert_eq!((count(1), count(2), count(3)), (1, 1, 1));
+}

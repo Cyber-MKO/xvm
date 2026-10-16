@@ -61,6 +61,9 @@ pub struct Module {
     pub exports: Exports,
     /// TLS callbacks and `DllMain` have run (always true when emulated).
     pub initialized: bool,
+    /// `SizeOfStackReserve`: the default stack size of new threads, when
+    /// this is the main module.
+    pub stack_reserve: u32,
     mapped: Mapped,
 }
 
@@ -150,6 +153,9 @@ pub struct ProcessParams {
     pub environment: Vec<String>,
     pub current_directory: String,
     pub drives: DriveMap,
+    /// The service the Service Control Manager started this process as,
+    /// or `None` for a process started any other way.
+    pub service: Option<String>,
 }
 
 impl ProcessParams {
@@ -159,6 +165,7 @@ impl ProcessParams {
             environment: windows.environment_block(),
             current_directory: windows.agent.current_directory.clone(),
             drives: DriveMap::new(&windows.drives),
+            service: windows.agent.service.clone(),
         }
     }
 }
@@ -228,6 +235,33 @@ impl Default for CrtState {
     }
 }
 
+/// `SERVICE_STATUS`, as the service last reported it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(C)]
+pub struct ServiceStatus {
+    pub service_type: u32,
+    pub current_state: u32,
+    pub controls_accepted: u32,
+    pub win32_exit_code: u32,
+    pub service_specific_exit_code: u32,
+    pub check_point: u32,
+    pub wait_hint: u32,
+}
+
+/// The service this process runs, once `StartServiceCtrlDispatcher` has
+/// started it.
+#[derive(Debug, Default)]
+pub struct ServiceState {
+    pub dispatcher_started: bool,
+    /// From `RegisterServiceCtrlHandler`; 0 until then.
+    pub handler: u32,
+    pub status: Option<ServiceStatus>,
+    /// Controls that arrived before a handler was registered.
+    pub pending_controls: Vec<u32>,
+    /// `argv` for `ServiceMain`: the service name.
+    pub argv: Option<MainArgs>,
+}
+
 pub struct Process {
     search: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -241,6 +275,7 @@ pub struct Process {
     pub unhandled_exception_filter: u32,
     pub crt: CrtState,
     pub params: ProcessParams,
+    pub services: ServiceState,
 }
 
 impl Process {
@@ -258,6 +293,7 @@ impl Process {
             unhandled_exception_filter: 0,
             crt: CrtState::default(),
             params: ProcessParams::default(),
+            services: ServiceState::default(),
         }
     }
 
@@ -293,24 +329,42 @@ impl Process {
     /// initialised. The caller runs the steps outside any lock, since
     /// agent code may call back into the process.
     pub fn take_pending_init(&mut self) -> Vec<InitStep> {
-        let mut steps = Vec::new();
-        for m in self.modules.iter_mut().filter(|m| !m.initialized) {
-            m.initialized = true;
-            let tls_callbacks = self
+        let pending: Vec<usize> = (0..self.modules.len())
+            .filter(|&i| !self.modules[i].initialized)
+            .collect();
+        pending
+            .into_iter()
+            .map(|i| {
+                self.modules[i].initialized = true;
+                self.init_step(&self.modules[i])
+            })
+            .collect()
+    }
+
+    /// The notifications a new thread sends, dependencies first: every
+    /// initialised module with TLS callbacks or a `DllMain`.
+    pub fn thread_steps(&self) -> Vec<InitStep> {
+        self.modules
+            .iter()
+            .filter(|m| m.initialized && !m.emulated)
+            .map(|m| self.init_step(m))
+            .filter(|s| !s.tls_callbacks.is_empty() || s.dll_main.is_some())
+            .collect()
+    }
+
+    fn init_step(&self, m: &Module) -> InitStep {
+        InitStep {
+            module: m.name.clone(),
+            base: m.base(),
+            tls_callbacks: self
                 .tls
                 .templates()
                 .iter()
                 .filter(|t| t.module == m.name)
                 .flat_map(|t| t.callbacks.iter().copied())
-                .collect();
-            steps.push(InitStep {
-                module: m.name.clone(),
-                base: m.base(),
-                tls_callbacks,
-                dll_main: m.entry_point.filter(|_| m.is_dll),
-            });
+                .collect(),
+            dll_main: m.entry_point.filter(|_| m.is_dll),
         }
-        steps
     }
 
     pub fn modules(&self) -> &[Module] {
@@ -385,6 +439,7 @@ impl Process {
             path: Some(path.to_path_buf()),
             emulated: false,
             initialized: false,
+            stack_reserve: image.headers.stack_reserve,
             is_dll: image.headers.is_dll(),
             entry_point: image.entry_point(),
             exports: image
@@ -430,6 +485,7 @@ impl Process {
             path: None,
             emulated: true,
             initialized: true,
+            stack_reserve: 0,
             is_dll: true,
             entry_point: None,
             exports: image

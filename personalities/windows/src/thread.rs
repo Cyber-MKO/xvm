@@ -16,6 +16,7 @@ use crate::tls::{ProcessTls, TlsBlock};
 /// `fdwReason` values for DLL entry points and TLS callbacks.
 pub const DLL_PROCESS_ATTACH: u32 = 1;
 pub const DLL_THREAD_ATTACH: u32 = 2;
+pub const DLL_THREAD_DETACH: u32 = 3;
 
 /// GDT entry used for `fs` in every thread. The kernel picks it on first use.
 /// GDT TLS entries are per thread, so each thread sets the same entry to

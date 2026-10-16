@@ -66,6 +66,10 @@ pub struct AgentProcess {
     /// The full command line, as `GetCommandLine` returns it.
     pub command_line: String,
     pub current_directory: String,
+    /// The service the Service Control Manager starts the agent as. Absent
+    /// for an agent started from a console.
+    #[serde(default)]
+    pub service: Option<String>,
 }
 
 impl Profile {
@@ -124,10 +128,15 @@ impl Profile {
         }
         // Agents read these through the ANSI API. Code-page conversion
         // comes with GetACP; until then only ASCII is accepted.
-        let strings = windows.environment.iter().flat_map(|(k, v)| [k, v]).chain([
-            &windows.agent.command_line,
-            &windows.agent.current_directory,
-        ]);
+        let strings = windows
+            .environment
+            .iter()
+            .flat_map(|(k, v)| [k, v])
+            .chain([
+                &windows.agent.command_line,
+                &windows.agent.current_directory,
+            ])
+            .chain(windows.agent.service.as_ref());
         for s in strings {
             if !s.is_ascii() || s.contains('\0') {
                 return invalid(format!("{s:?} is not plain ASCII"));

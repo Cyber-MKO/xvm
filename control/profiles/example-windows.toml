@@ -17,6 +17,8 @@ drives = { C = "example-windows/c" }
 command_line = '"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe"'
 # Services start in the system directory.
 current_directory = 'C:\Windows\system32'
+# The Service Control Manager starts the agent as this service.
+service = 'WazuhSvc'
 
 # The environment of a 32-bit service running as LocalSystem on 64-bit
 # Windows. WOW64 changes the PROCESSOR_ARCHITECTURE and ProgramFiles values.

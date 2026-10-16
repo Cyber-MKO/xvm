@@ -6,7 +6,9 @@ SRC=$(cd "$(dirname "$0")" && pwd)
 OUT=$1
 mkdir -p "$OUT"
 cd "$OUT"
-llvm-dlltool -m i386 -k -d "$SRC/kernel32.def" -l kernel32.lib
+for d in kernel32 advapi32; do
+    llvm-dlltool -m i386 -k -d "$SRC/$d.def" -l $d.lib
+done
 CC="clang --target=i686-pc-windows-msvc -O1 -fno-stack-protector -c"
 LINK="lld-link /nologo /nodefaultlib /machine:x86"
 $CC "$SRC/sample.c" -o sample.obj
@@ -24,5 +26,7 @@ $CC "$SRC/startup.c" -o startup.obj
 $LINK /entry:start /subsystem:console /out:startup.exe startup.obj initdll.lib
 $CC "$SRC/failing.c" -o failing.obj
 $LINK /entry:start /subsystem:console /out:failing.exe failing.obj faildll.lib
+$CC "$SRC/service.c" -o service.obj
+$LINK /entry:start /subsystem:console /out:service.exe service.obj advapi32.lib kernel32.lib
 $CC "$SRC/importer.c" -o importer.obj
 $LINK /entry:start /subsystem:console /out:importer.exe importer.obj kernel32.lib sample.lib

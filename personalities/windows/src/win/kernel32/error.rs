@@ -4,6 +4,8 @@ use crate::teb::LAST_ERROR_VALUE;
 
 // From "System Error Codes" on Microsoft Learn.
 pub(crate) const ERROR_INVALID_HANDLE: u32 = 6;
+pub(crate) const ERROR_NOT_ENOUGH_MEMORY: u32 = 8;
+pub(crate) const ERROR_INVALID_PARAMETER: u32 = 87;
 pub(crate) const ERROR_MOD_NOT_FOUND: u32 = 126;
 pub(crate) const ERROR_PROC_NOT_FOUND: u32 = 127;
 

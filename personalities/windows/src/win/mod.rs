@@ -5,7 +5,8 @@
 
 use crate::emu::EmuExport;
 
-mod kernel32;
+mod advapi32;
+pub(crate) mod kernel32;
 mod msvcrt;
 mod text;
 
@@ -13,6 +14,7 @@ mod text;
 /// return an empty list; their imports become gaps.
 pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
     let (functions, data) = match dll.to_ascii_lowercase().as_str() {
+        "advapi32.dll" => (advapi32::exports(), Vec::new()),
         "kernel32.dll" => (kernel32::exports(), Vec::new()),
         "msvcrt.dll" => (msvcrt::exports(), msvcrt::data()),
         _ => (Vec::new(), Vec::new()),
