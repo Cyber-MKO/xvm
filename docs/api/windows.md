@@ -4,6 +4,12 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `kernel32.dll` | `GetThreadPriority` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/thread.rs` tests | Kept on the thread object |
+| `kernel32.dll` | `SetThreadPriority` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/thread.rs` tests | Kept, not applied to the host scheduler. Background mode is a logged gap |
+| `kernel32.dll` | `CreateSemaphoreA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | A name is a logged gap |
+| `kernel32.dll` | `ReleaseSemaphore` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | `ERROR_TOO_MANY_POSTS` past the maximum |
+| `kernel32.dll` | `VirtualQuery` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `tests/process.rs`, `virtual_query_and_protect_work_on_image_pages` | Pages of mapped images; writable image pages report `PAGE_READWRITE`. Other addresses are a logged gap |
+| `kernel32.dll` | `VirtualProtect` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `tests/process.rs`, `virtual_query_and_protect_work_on_image_pages` | Image pages, applied with `mprotect`. Guard and caching flags are a logged gap |
 | `msvcrt.dll` | `_fdopen` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Modes `r`, `w`, `a`, `+`, `t`, `b` and the hints. Text or binary from the mode, the descriptor or `_fmode` |
 | `msvcrt.dll` | `fgets` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Text mode: CR LF to LF, CTRL+Z ends the file |
 | `msvcrt.dll` | `feof` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests |  |

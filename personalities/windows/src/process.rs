@@ -20,6 +20,7 @@ use crate::gap::{Gap, GapKind};
 use crate::handles::HandleTable;
 use crate::image::{ExportTarget, Exports, Image, Resolver, Symbol};
 use crate::map::{self, MapError, Mapped};
+use crate::memory::MemoryMap;
 use crate::paths::DriveMap;
 use crate::pe::PeError;
 use crate::profile;
@@ -398,6 +399,8 @@ pub struct Process {
     pub tebs: Vec<u32>,
     /// `TlsAlloc` slots in use (`TlsSlots`, 64 entries).
     pub tls_slots: [bool; 64],
+    /// Pages of mapped images, for `VirtualQuery` and `VirtualProtect`.
+    pub memory: MemoryMap,
 }
 
 /// Why `Process::load_library` failed.
@@ -430,6 +433,7 @@ impl Process {
             threads_started: false,
             tebs: Vec::new(),
             tls_slots: [false; 64],
+            memory: MemoryMap::default(),
         }
     }
 
@@ -573,6 +577,11 @@ impl Process {
             .map_err(|e| LoadError::Map(name.clone(), e))?;
 
         gaps.into_iter().for_each(|gap| self.record_gap(gap));
+        self.memory.add_image(
+            mapped.base(),
+            image.headers.size_of_image,
+            &sections(&image),
+        );
         if tls_index.is_some() && self.threads_started {
             self.record_runtime_gap(
                 GapKind::Feature,
@@ -630,6 +639,11 @@ impl Process {
         let pe = |e| LoadError::Pe(name.to_string(), e);
         let image = Image::layout(name, &bytes).map_err(pe)?;
         mapped.commit(&image).map_err(map_err)?;
+        self.memory.add_image(
+            mapped.base(),
+            image.headers.size_of_image,
+            &sections(&image),
+        );
         self.modules.push(Module {
             name: name.to_string(),
             path: None,
@@ -777,6 +791,16 @@ fn normalize(name: &str) -> String {
 
 fn file_name(path: &Path) -> String {
     normalize(&path.file_name().unwrap_or_default().to_string_lossy())
+}
+
+/// (rva, length, protection) of each section, for the memory map.
+fn sections(image: &Image) -> Vec<(u32, u32, crate::pe::Protection)> {
+    image
+        .headers
+        .sections
+        .iter()
+        .map(|s| (s.virtual_address, s.mapped_size(), s.protection()))
+        .collect()
 }
 
 fn no_exports(name: &str) -> Exports {

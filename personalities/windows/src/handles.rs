@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::sync::{EventObject, ThreadObject, Waitable};
+use crate::sync::{EventObject, SemaphoreObject, ThreadObject, Waitable};
 
 /// An open file or directory.
 #[derive(Debug, Clone)]
@@ -30,6 +30,7 @@ pub enum Object {
     File(FileObject),
     Event(Arc<EventObject>),
     Thread(Arc<ThreadObject>),
+    Semaphore(Arc<SemaphoreObject>),
 }
 
 impl Object {
@@ -38,6 +39,7 @@ impl Object {
         match self {
             Object::Event(e) => Some(Waitable::Event(e.clone())),
             Object::Thread(t) => Some(Waitable::Thread(t.clone())),
+            Object::Semaphore(s) => Some(Waitable::Semaphore(s.clone())),
             Object::File(_) => None,
         }
     }

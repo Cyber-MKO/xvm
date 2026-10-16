@@ -6,7 +6,7 @@
 //! makes waiting on several objects at once (`WaitForMultipleObjects`)
 //! as simple as waiting on one. Waits never hold the process lock.
 
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
@@ -39,6 +39,8 @@ pub struct ThreadObject {
     pub id: u32,
     finished: AtomicBool,
     exit_code: AtomicU32,
+    /// `SetThreadPriority`'s value, kept but not applied to the host.
+    pub priority: AtomicI32,
 }
 
 impl ThreadObject {
@@ -47,6 +49,7 @@ impl ThreadObject {
             id,
             finished: AtomicBool::new(false),
             exit_code: AtomicU32::new(0),
+            priority: AtomicI32::new(0),
         }
     }
 
@@ -58,11 +61,32 @@ impl ThreadObject {
     }
 }
 
+/// A semaphore: signaled while its count is above zero.
+#[derive(Debug)]
+pub struct SemaphoreObject {
+    pub maximum: i32,
+    count: AtomicI32,
+}
+
+impl SemaphoreObject {
+    pub fn new(initial: i32, maximum: i32) -> Self {
+        SemaphoreObject {
+            maximum,
+            count: AtomicI32::new(initial),
+        }
+    }
+
+    pub fn count(&self) -> i32 {
+        self.count.load(Ordering::SeqCst)
+    }
+}
+
 /// Something a thread can wait for.
 #[derive(Debug, Clone)]
 pub enum Waitable {
     Event(Arc<EventObject>),
     Thread(Arc<ThreadObject>),
+    Semaphore(Arc<SemaphoreObject>),
 }
 
 impl Waitable {
@@ -70,6 +94,7 @@ impl Waitable {
         match self {
             Waitable::Event(e) => e.is_signaled(),
             Waitable::Thread(t) => t.finished.load(Ordering::SeqCst),
+            Waitable::Semaphore(s) => s.count() > 0,
         }
     }
 
@@ -77,6 +102,9 @@ impl Waitable {
     fn consume(&self) {
         match self {
             Waitable::Event(e) if !e.manual_reset => e.signaled.store(false, Ordering::SeqCst),
+            Waitable::Semaphore(s) => {
+                s.count.fetch_sub(1, Ordering::SeqCst);
+            }
             Waitable::Event(_) | Waitable::Thread(_) => {}
         }
     }
@@ -103,6 +131,19 @@ impl SyncHub {
             thread.finished.store(true, Ordering::SeqCst);
         }
         self.changed.notify_all();
+    }
+
+    /// Add `n` to the count and return the previous count, or None if
+    /// that would pass the maximum (the count is then unchanged).
+    pub fn release_semaphore(&self, semaphore: &SemaphoreObject, n: i32) -> Option<i32> {
+        let _guard = self.lock.lock().unwrap();
+        let previous = semaphore.count();
+        if n <= 0 || previous.checked_add(n)? > semaphore.maximum {
+            return None;
+        }
+        semaphore.count.store(previous + n, Ordering::SeqCst);
+        self.changed.notify_all();
+        Some(previous)
     }
 
     pub fn reset_event(&self, event: &EventObject) {
@@ -204,6 +245,19 @@ mod tests {
             Some(0),
             "stays signaled"
         );
+    }
+
+    #[test]
+    fn semaphores_count_down_on_waits_and_up_on_release() {
+        let hub = SyncHub::default();
+        let s = Arc::new(SemaphoreObject::new(1, 2));
+        let w = [Waitable::Semaphore(s.clone())];
+        assert_eq!(hub.wait(&w, false, Some(Duration::ZERO)), Some(0));
+        assert_eq!(hub.wait(&w, false, Some(Duration::ZERO)), None);
+        assert_eq!(hub.release_semaphore(&s, 2), Some(0));
+        assert_eq!(hub.release_semaphore(&s, 1), None, "past the maximum");
+        assert_eq!(s.count(), 2);
+        assert_eq!(hub.release_semaphore(&s, 0), None);
     }
 
     #[test]

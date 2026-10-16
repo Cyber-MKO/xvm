@@ -145,7 +145,8 @@ impl Mapped {
             );
         }
         let page = page_size();
-        protect(self, 0, image.headers.size_of_headers as usize, READ_ONLY)?;
+        // Headers and the space between sections are read only.
+        protect(self, 0, self.len, READ_ONLY)?;
         for s in &image.headers.sections {
             let start = s.virtual_address as usize;
             let end = round_up(start + s.mapped_size() as usize, page);

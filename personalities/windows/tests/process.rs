@@ -571,3 +571,60 @@ fn load_library_maps_initialises_and_notifies() {
         runtime.lock().module("advapi32.dll").map(|m| m.base())
     );
 }
+
+#[test]
+fn virtual_query_and_protect_work_on_image_pages() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "importer.exe"));
+    let _thread = runtime.attach().unwrap();
+    let (query, protect, sample, add) = {
+        let p = runtime.lock();
+        let k32 = p.module("kernel32.dll").unwrap();
+        let sample = p.module("sample.dll").unwrap();
+        (
+            k32.export_address("VirtualQuery").unwrap() as usize,
+            k32.export_address("VirtualProtect").unwrap() as usize,
+            sample.base(),
+            sample.export_address("add").unwrap(),
+        )
+    };
+    // SAFETY: the emulated exports have these stdcall signatures.
+    let (query, protect) = unsafe {
+        (
+            std::mem::transmute::<usize, extern "stdcall" fn(u32, *mut u32, u32) -> u32>(query),
+            std::mem::transmute::<usize, extern "stdcall" fn(u32, u32, u32, *mut u32) -> i32>(
+                protect,
+            ),
+        )
+    };
+    let mut info = [0u32; 7];
+    assert_eq!(query(add, info.as_mut_ptr(), 28), 28);
+    let [base, alloc_base, _, size, state, prot, kind] = info;
+    assert_eq!(base, add & !0xfff);
+    assert_eq!(alloc_base, sample);
+    assert!(size >= 0x1000);
+    assert_eq!(
+        (state, prot, kind),
+        (0x1000, 0x20, 0x100_0000),
+        "committed, PAGE_EXECUTE_READ, image"
+    );
+
+    // The pseudo-relocation dance: make the code page writable, write,
+    // then restore it.
+    let mut old = 0;
+    assert_eq!(protect(add, 4, 0x40, &mut old), 1);
+    assert_eq!(old, 0x20);
+    // SAFETY: the page is writable now; the byte is put back unchanged.
+    unsafe {
+        let p = add as *mut u8;
+        let byte = p.read();
+        p.write(byte);
+    }
+    assert_eq!(protect(add, 4, old, &mut old), 1);
+    assert_eq!(old, 0x40);
+    query(sample, info.as_mut_ptr(), 28);
+    assert_eq!(info[5], 0x02, "headers are read only");
+    assert_eq!(query(0x10, info.as_mut_ptr(), 28), 0, "outside images");
+}

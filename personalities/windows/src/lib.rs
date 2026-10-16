@@ -16,6 +16,7 @@ pub mod handles;
 pub mod image;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod map;
+pub mod memory;
 pub mod paths;
 pub mod pe;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
