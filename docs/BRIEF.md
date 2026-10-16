@@ -41,7 +41,10 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Rust for runtimes, Python for tooling and control plane | Decided | Confirmed by Kasim (2026-10-16). Cargo workspace at the root; one Python package per tool. |
 | Project name is xvm | Decided | Confirmed by Kasim (2026-10-16). |
 | CI on GitHub Actions | Decided | Python: ruff and pytest. Rust: fmt, clippy and test. |
-| First census target is Wazuh agent 4.14.9 for Windows | Proposed | Newest 4.x MSI on 2026-10-16. Findings and open questions in `docs/phase1-sizing.md`. |
+| Phase 1 target is Wazuh agent 4.14.2 for Windows | Decided | Habeny's default version. Census in `census/reports/`; findings in `docs/phase1-sizing.md`. |
+| Windows personality runs as a 32-bit Linux process | Decided | Wazuh's Windows binaries are all PE32 i386. Needs IA32 emulation in the host kernel. |
+| We provide `msvcrt.dll` ourselves, on top of host libc | Decided | Windows semantics added per function, from the census. |
+| A non-GUI `user32` subset is allowed | Decided | Only census functions, no window system. Consistent with rule 6. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files
@@ -75,7 +78,7 @@ Why only a subset of each OS: a complete Windows or macOS reimplementation is a 
 
 Per personality:
 
-- **Windows personality.** Our own PE32/PE32+ loader plus a minimal implementation of the system DLL surface the census shows (for example parts of `ntdll`, `kernel32`, `advapi32`, `wevtapi`, `ws2_32`, `iphlpapi`, `bcrypt`). Registry, Event Log, services and system information are served by the host-state engine. Networking maps to host sockets. No GUI subsystems at all.
+- **Windows personality.** Our own PE32 loader (PE32+ later if an agent needs it), running as a 32-bit Linux process, plus a minimal implementation of the system DLL surface the census shows (for example parts of `kernel32`, `msvcrt`, `advapi32`, `wevtapi`, `wsock32`, `ws2_32`, `crypt32`, `iphlpapi`). Registry, Event Log, services and system information are served by the host-state engine. Networking maps to host sockets. No GUI subsystems at all.
 - **macOS personality.** Our own Mach-O loader plus a minimal `libSystem` and syscall surface, `sysctl` values, plists, and a `log` command fed by the scenario engine. Constraint: macOS agents are arm64 or universal binaries. x86_64 slices can run natively on an x86 host; arm64-only binaries need an arm64 Linux host or CPU emulation. Apple has moved to Apple silicon only, so the x86_64 path will narrow over time.
 - **Linux personality.** Real binaries run natively. Host identity comes from namespaces, FUSE views of `/proc` and `/sys` (LXCFS-style) and `/etc`, and seccomp user notification to intercept selected calls such as audit netlink.
 

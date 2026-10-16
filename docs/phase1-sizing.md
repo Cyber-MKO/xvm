@@ -1,18 +1,19 @@
 # Phase 1 sizing: Wazuh Windows agent census
 
-- Package: `wazuh-agent-4.14.9-1.msi` (newest 4.x on packages.wazuh.com on 2026-10-16)
-- SHA-256: `e3f18109d36c98c2f861f210fc6661226d99251b79321c5d7ff27821b906ea49`
-- Generated report: [census/reports/wazuh-agent-4.14.9-windows.md](../census/reports/wazuh-agent-4.14.9-windows.md)
-- Status: waiting for Kasim's review. The PE loader does not start before that.
+- Target: `wazuh-agent-4.14.2-1.msi`, the default version in Habeny (`app/installers/wazuh.py`)
+- SHA-256: `e1eb434f1694283b89e07021cce1bded4ef25275d9efe6ca0edf2d514a7ea959`
+- Generated report: [census/reports/wazuh-agent-4.14.2-windows.md](../census/reports/wazuh-agent-4.14.2-windows.md)
+- Also censused: 4.14.9, the newest 4.x on 2026-10-16 ([report](../census/reports/wazuh-agent-4.14.9-windows.md)). See the version diff below.
+- Status: the four questions are answered (2026-10-16). See Decisions.
 
 ## Headline numbers
 
 | Measure | Value |
 | --- | --- |
 | PE images | 17 (all PE32, i386, built with MinGW) |
-| OS DLLs imported | 20 |
-| OS functions imported, whole package | 625 |
-| OS functions imported, agent service only | 602 |
+| OS DLLs imported | 19 |
+| OS functions imported, whole package | 617 |
+| OS functions imported, agent service only | 596 |
 | Delay-load imports | none |
 | Ordinal imports | none |
 | Bundled DLLs loaded only at run time | `libfimdb.dll`, `libwazuhshared.dll`, `syscollector.dll` |
@@ -21,34 +22,41 @@ The service is `wazuh-agent.exe` plus the DLLs it loads. It needs almost the who
 
 | Binary group | OS functions | Extra over the service |
 | --- | --- | --- |
-| Service: `wazuh-agent.exe` and all bundled DLLs | 602 | n/a |
-| Enrollment and tools: `agent-auth.exe`, `manage_agents.exe` | 272 | 2 (`msvcrt`) |
-| Active response: `netsh.exe`, `route-null.exe`, `restart-wazuh.exe` | 220 | 2 (`ws2_32`) |
-| GUI: `win32ui.exe` | 282 | 19 (mostly `user32`). Out of scope by rule 6. |
+| Service: `wazuh-agent.exe` and all bundled DLLs | 596 | n/a |
+| Enrollment and tools: `agent-auth.exe`, `manage_agents.exe` | 269 | 2 (`msvcrt`) |
+| Active response: `netsh.exe`, `route-null.exe`, `restart-wazuh.exe` | 217 | 0 |
+| GUI: `win32ui.exe` | 280 | 19 (mostly `user32`). Out of scope by rule 6. |
 
 ## Service surface per DLL
 
 | DLL | Functions | What it is for |
 | --- | --- | --- |
-| `kernel32.dll` | 188 | Files, processes, threads, sync, heap, virtual memory, TLS, fibers, toolhelp, `ReadDirectoryChangesW` |
+| `kernel32.dll` | 186 | Files, processes, threads, sync, heap, virtual memory, TLS, fibers, toolhelp, `ReadDirectoryChangesW` |
 | `msvcrt.dll` | 188 | C runtime. MinGW links the system CRT, so we must provide it. |
 | `advapi32.dll` | 101 | Registry, services (SCM), security and ACLs, legacy Event Log, CryptoAPI, LSA, audit policy |
 | `wsock32.dll` | 30 | BSD sockets |
 | `crypt32.dll` | 20 | Certificate stores and chains |
 | `ws2_32.dll` | 18 | Winsock 2 events and `getaddrinfo` |
 | `wevtapi.dll` | 8 | Event Log subscribe, render, bookmarks, message formatting |
-| `version.dll` | 6 | File version resources |
+| `version.dll` | 3 | File version resources |
 | `wintrust.dll` | 6 | `WinVerifyTrust`, catalog hashes |
 | `iphlpapi.dll` | 5 | Adapters, TCP and UDP tables |
 | `netapi32.dll` | 5 | Users and local groups |
 | `oleaut32.dll` | 5 | BSTR and VARIANT helpers for COM |
 | `ole32.dll` | 4 | `CoCreateInstance`, `CoSetProxyBlanket`: almost certainly WMI from `sysinfo.dll` |
 | `psapi.dll` | 4 | Process modules and memory |
-| `shlwapi.dll` | 4 | Path helpers |
+| `shlwapi.dll` | 5 | Path helpers |
 | `user32.dll` | 4 | `GetSystemMetrics`, `MessageBoxW`, `GetProcessWindowStation`, `GetUserObjectInformationW` |
 | `wtsapi32.dll` | 3 | Session enumeration |
-| `ntdll.dll` | 2 | `NtQueryInformationProcess`, `VerSetConditionMask` |
-| `shell32.dll` | 1 | `CommandLineToArgvW` |
+| `mpr.dll` | 1 | `WNetGetConnectionA` (mapped network drives) |
+
+## Version diff: 4.14.2 against 4.14.9
+
+The surfaces are almost the same, so the choice of version does not change the plan.
+
+| Only in 4.14.2 | Only in 4.14.9 |
+| --- | --- |
+| `kernel32!lstrcmpiA`, `mpr!WNetGetConnectionA`, `shlwapi!PathIsUNCA` | `kernel32!CreateSemaphoreW`, `GetModuleFileNameW`, `GetTickCount64`; `ntdll!NtQueryInformationProcess`, `VerSetConditionMask`; `shell32!CommandLineToArgvW`; `version!GetFileVersionInfoA`, `GetFileVersionInfoSizeA`, `VerQueryValueA`; `ws2_32!WSACleanup`, `WSAStartup` |
 
 ## Run-time lookups seen in strings
 
@@ -74,11 +82,11 @@ The string lists also contain many registry value names (`CurrentBuildNumber`, `
 5. **No delay loads and no ordinals.** The import side of the loader is simple.
 6. **The MSI runs script custom actions.** `InstallerScripts` (VBScript) writes `ossec.conf` from installer properties, sets permissions, creates a dump registry key and starts the service. Our installer step must do the same things from the host profile.
 
-## Questions for Kasim
+## Decisions (Kasim, 2026-10-16)
 
-| # | Question | Options | Recommendation |
+| # | Question | Decision | Consequence |
 | --- | --- | --- | --- |
-| 1 | How do we run i386 code? | A: the Windows personality is a 32-bit Linux process (i686 target, multilib). B: a 64-bit process that switches to a 32-bit code segment, like WoW64. C: CPU emulation. | A. Simplest and native speed. B only if we later need 64-bit agents in the same process. |
-| 2 | How do we provide `msvcrt.dll`? | A: our own CRT on top of host libc, with Windows semantics added (paths, text mode, `errno`, `_stat` layout). B: a full CRT written from scratch. | A, function by function from the census, each with a test. |
-| 3 | Is a non-GUI `user32` subset allowed under rule 6? | A: yes. Implement only the 4 census functions with no window system, and log `MessageBoxW` text. B: no. Leave the imports unresolved and fail. | A. It adds no GUI subsystem, and B stops the agent from loading. |
-| 4 | Which agent version is the Phase 1 target? | A: 4.14.9, as censused. B: the version in Habeny's Wazuh baselines. | Whichever Habeny uses. Rerunning the census takes three seconds. |
+| 1 | How do we run i386 code? | The Windows personality is a 32-bit Linux process (Rust target `i686-unknown-linux-gnu`). | Agent code runs natively. The host kernel needs `CONFIG_IA32_EMULATION=y` and must not boot with `ia32_emulation=0`. Checked on the dev container. Check on the Habeny host before Phase 4. |
+| 2 | How do we provide `msvcrt.dll`? | Our own CRT on top of host libc, with Windows semantics added (paths, text mode, `errno` values, `_stat` layout), one function at a time from the census. | Each function needs a census entry, a test and a row in `docs/api/windows.md` (rule 3). |
+| 3 | Is a non-GUI `user32` subset allowed under rule 6? | Yes. Only the census functions, with no window system. `MessageBoxW` logs its text and returns as if dismissed. | No windows, message loops or desktop. Any other `user32` call is a logged gap. |
+| 4 | Which agent version is the Phase 1 target? | 4.14.2, Habeny's default. | Census report for 4.14.2 is committed. 4.14.9 stays as a reference. |

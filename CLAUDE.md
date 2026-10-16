@@ -17,10 +17,11 @@ A container-like platform that runs many lightweight emulated hosts (Windows, ma
 7. **Response actions never touch the real machine.** Response commands and APIs record the call and arguments only.
 8. **Documentation style:** no em-dashes; short sentences; tables for comparisons.
 
-## Proposed stack (confirm with Kasim before scaffolding)
+## Stack (decided 2026-10-16)
 
-- Rust for loaders and personality runtimes.
+- Rust for loaders and personality runtimes. The Windows personality builds for `i686-unknown-linux-gnu`, because Wazuh's Windows binaries are 32-bit.
 - Python for the API census tool, control plane, scenario engine and test harness.
+- Phase 1 decisions (target version, CRT, `user32` subset) are in `docs/phase1-sizing.md`.
 
 ## Proposed repo layout
 
