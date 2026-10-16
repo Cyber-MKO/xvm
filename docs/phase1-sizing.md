@@ -75,9 +75,9 @@ The string lists also contain many registry value names (`CurrentBuildNumber`, `
 
 ## Findings that change the plan
 
-1. **The agent is 32-bit.** Every image is PE32 for i386. The brief assumed nothing about bitness. The loader must run i386 code. See question 1.
+1. **The agent is 32-bit.** Every image is PE32 for i386. The brief assumed nothing about bitness. The loader must run i386 code. See decision 1.
 2. **The CRT is not bundled.** The brief's risk table expected agents to link their own CRT. Wazuh links the system `msvcrt.dll`, so 188 CRT functions are ours to provide.
-3. **`user32.dll` is on the service path.** Four functions, most likely from OpenSSL (service detection and fatal-error popups). None need a window system. See question 3.
+3. **`user32.dll` is on the service path.** Four functions, most likely from OpenSSL (service detection and fatal-error popups). None need a window system. See decision 3.
 4. **COM is on the service path.** `sysinfo.dll` uses COM, very likely WMI. This is Phase 3 (inventory) work, but `ole32` must load in Phase 1.
 5. **No delay loads and no ordinals.** The import side of the loader is simple.
 6. **The MSI runs script custom actions.** `InstallerScripts` (VBScript) writes `ossec.conf` from installer properties, sets permissions, creates a dump registry key and starts the service. Our installer step must do the same things from the host profile.
