@@ -168,6 +168,40 @@ impl View<'_> {
         self.base.keys.get(nk).filter(|_| !self.deleted(nk))
     }
 
+    /// The key's spelling if a profile lists it (not merely implied).
+    pub(crate) fn listed(&self, nk: &str) -> Option<String> {
+        if let Some(b) = self.base_alive(nk) {
+            return Some(b.path.clone());
+        }
+        self.delta.keys.get(nk).map(|d| d.path.clone())
+    }
+
+    /// Listed keys strictly below `nk` (all keys when `nk` is empty), as
+    /// (normalised path, spelling). A base key the host deleted is left out.
+    pub(crate) fn listed_below(&self, nk: &str) -> BTreeMap<String, String> {
+        let mut out = BTreeMap::new();
+        if nk.is_empty() {
+            for (k, b) in &self.base.keys {
+                if !self.deleted(k) {
+                    out.insert(k.clone(), b.path.clone());
+                }
+            }
+            for (k, d) in &self.delta.keys {
+                out.entry(k.clone()).or_insert_with(|| d.path.clone());
+            }
+            return out;
+        }
+        for (k, b) in descendants(&self.base.keys, nk) {
+            if !self.deleted(k) {
+                out.insert(k.clone(), b.path.clone());
+            }
+        }
+        for (k, d) in descendants(&self.delta.keys, nk) {
+            out.entry(k.clone()).or_insert_with(|| d.path.clone());
+        }
+        out
+    }
+
     /// Does the key exist, listed or implied by a key below it?
     pub fn key_exists(&self, path: &str) -> bool {
         let nk = norm(path);

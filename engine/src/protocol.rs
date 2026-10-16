@@ -76,6 +76,7 @@ pub mod code {
     pub const NO_HOST: &str = "no_host";
     pub const UNKNOWN_HOST: &str = "unknown_host";
     pub const NOT_FOUND: &str = "not_found";
+    pub const HAS_SUBKEYS: &str = "has_subkeys";
     pub const UNSUPPORTED: &str = "unsupported";
 }
 

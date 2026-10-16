@@ -98,4 +98,22 @@ impl Client {
     pub fn reg_enum_subkeys(&mut self, key: &str) -> Result<Value, ClientError> {
         self.call("reg.enum_subkeys", json!({"key": key}))
     }
+
+    /// RegSetValueEx. `value` is `{"type": ..., "data": ...}`.
+    pub fn reg_set_value(
+        &mut self,
+        key: &str,
+        name: &str,
+        value: &Value,
+    ) -> Result<Value, ClientError> {
+        let mut params = json!({"key": key, "name": name});
+        params["type"] = value["type"].clone();
+        params["data"] = value["data"].clone();
+        self.call("reg.set_value", params)
+    }
+
+    /// Journal entries after `since`. See `Runtime::changes`.
+    pub fn changes(&mut self, since: u64) -> Result<Value, ClientError> {
+        self.call("changes", json!({"since": since}))
+    }
 }

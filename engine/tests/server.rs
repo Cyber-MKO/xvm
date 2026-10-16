@@ -122,6 +122,20 @@ fn queries_over_the_socket() {
     .unwrap();
     assert_eq!(c.call("resolved", json!({})).unwrap(), want);
 
+    // Writes go through the same connection and show up in the journal.
+    c.reg_set_value(
+        r"HKLM\SOFTWARE\Vendor\App",
+        "Version",
+        &json!({"type": "REG_SZ", "data": "4.0"}),
+    )
+    .unwrap();
+    assert_eq!(
+        c.reg_query_value(r"HKLM\SOFTWARE\Vendor\App", "Version")
+            .unwrap()["data"],
+        "4.0"
+    );
+    assert_eq!(c.changes(0).unwrap()["last_seq"], 1);
+
     // A second connection serves a different host on the same engine.
     let mut w = Client::connect(&socket, "win-web-01").unwrap();
     assert_eq!(w.section("identity").unwrap()["hostname"], "WIN-WEB-01");
@@ -172,7 +186,7 @@ fn unsupported_ops_are_logged_as_gaps() {
     let mut c = Client::connect(&socket, "edge-host").unwrap();
     assert_eq!(
         engine_code(
-            c.call("reg.set_value", json!({"key": "HKLM\\X"}))
+            c.call("wmi.query", json!({"query": "SELECT * FROM Win32_Process"}))
                 .unwrap_err()
         ),
         "unsupported"
@@ -181,7 +195,7 @@ fn unsupported_ops_are_logged_as_gaps() {
     let record: serde_json::Value = serde_json::from_str(log.trim()).unwrap();
     assert_eq!(
         record,
-        json!({"gap": "engine-op", "op": "reg.set_value", "host": "edge-host",
+        json!({"gap": "engine-op", "op": "wmi.query", "host": "edge-host",
                "agent": {"product": "wazuh", "version": "4.14.2"}})
     );
 }

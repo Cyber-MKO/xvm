@@ -52,6 +52,10 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | The engine layers base images and host deltas itself | Decided | Kasim, 2026-10-16. Bases are held once and shared. Test vectors check it against `xvm-profile resolve`. |
 | Personalities reach the engine over a Unix socket | Decided | Kasim, 2026-10-16. One daemon for all hosts, one connection per host, length-prefixed JSON. |
 | `xvm-profile` is the only YAML parser; the engine reads compiled JSON | Decided | 2026-10-16. Avoids YAML 1.1 and 1.2 disagreements between Python and Rust. Unquoted timestamps are rejected. |
+| Run-time changes live in a third engine layer above the profile | Proposed | 2026-10-16. In memory only; `reset` returns to the profile. Saving changes across restarts is not built yet. |
+| Personality and control connections may both write | Proposed | 2026-10-16. The agent's own registry writes and scenario events go through the same ops and one journal. |
+| Scenarios pass their own clock on each write | Proposed | 2026-10-16. Optional `time` parameter, so hosts can run on jittered clocks (section 8). |
+| A host's name cannot change at run time | Proposed | 2026-10-16. `identity.hostname` is refused by `section.update`, since every component knows the host by name. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files

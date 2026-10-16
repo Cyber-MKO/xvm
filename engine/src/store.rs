@@ -7,12 +7,13 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use serde_json::{Map, Value};
 
 use crate::merge::{merge_dict, merge_keyed};
 use crate::registry::{BaseRegistry, RegistryDelta, View};
+use crate::runtime::{Live, Runtime, Writer};
 
 /// Lists that merge entry by entry, keyed by `name`.
 pub const KEYED_LISTS: [&str; 4] = ["users", "groups", "software", "services"];
@@ -45,13 +46,14 @@ pub struct Base {
     registry: BaseRegistry,
 }
 
-/// One emulated host: a shared base plus this host's delta.
+/// One emulated host: a shared base, this host's delta, and its run-time changes.
 #[derive(Debug)]
 pub struct Host {
     pub name: String,
     pub base: Arc<Base>,
     delta: Map<String, Value>,
     registry: RegistryDelta,
+    runtime: RwLock<Runtime>,
 }
 
 fn object(v: Value, what: &str) -> Result<Map<String, Value>, StoreError> {
@@ -123,6 +125,7 @@ impl Host {
             base,
             delta,
             registry,
+            runtime: RwLock::new(Runtime::default()),
         })
     }
 
@@ -134,15 +137,77 @@ impl Host {
             .unwrap_or("")
     }
 
-    pub fn registry(&self) -> View<'_> {
+    /// The registry as the base and profile define it, without run-time changes.
+    pub fn profile_registry(&self) -> View<'_> {
         View {
             base: &self.base.registry,
             delta: &self.registry,
         }
     }
 
-    /// An object section, merged. `None` if neither the base nor the host has it.
+    /// Lock the run-time layer for reading. A poisoned lock still holds valid
+    /// state (every change is applied in full or not at all), so it is used.
+    pub fn read(&self) -> RwLockReadGuard<'_, Runtime> {
+        self.runtime.read().unwrap_or_else(|e| e.into_inner())
+    }
+
+    pub fn write(&self) -> RwLockWriteGuard<'_, Runtime> {
+        self.runtime.write().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// The live registry: profile plus run-time changes.
+    pub fn registry<'a>(&'a self, rt: &'a Runtime) -> Live<'a> {
+        Live {
+            lower: self.profile_registry(),
+            rt,
+        }
+    }
+
+    pub fn registry_writer<'a>(&'a self, rt: &'a mut Runtime) -> Writer<'a> {
+        Writer {
+            lower: self.profile_registry(),
+            rt,
+        }
+    }
+
+    /// A section with run-time changes applied.
+    pub fn section_with(&self, rt: &Runtime, name: &str) -> Option<Value> {
+        if name == "network" {
+            let mut net = rt
+                .sections
+                .get("network")
+                .cloned()
+                .or_else(|| self.network());
+            if let Some(ifs) = rt.lists.get("interfaces") {
+                let n = net.get_or_insert_with(|| Value::Object(Map::new()));
+                n["interfaces"] = Value::Array(ifs.clone());
+            }
+            return net;
+        }
+        rt.sections
+            .get(name)
+            .cloned()
+            .or_else(|| self.profile_section(name))
+    }
+
+    /// A keyed list with run-time changes applied. `None` for an unknown list.
+    pub fn list_with(&self, rt: &Runtime, name: &str) -> Option<Vec<Value>> {
+        let profile = self.profile_list(name)?;
+        Some(rt.lists.get(name).cloned().unwrap_or(profile))
+    }
+
+    /// A section, live. Takes the read lock.
     pub fn section(&self, name: &str) -> Option<Value> {
+        self.section_with(&self.read(), name)
+    }
+
+    /// A keyed list, live. Takes the read lock.
+    pub fn list(&self, name: &str) -> Option<Vec<Value>> {
+        self.list_with(&self.read(), name)
+    }
+
+    /// A section as the base and profile define it.
+    pub fn profile_section(&self, name: &str) -> Option<Value> {
         if name == "network" {
             return self.network();
         }
@@ -186,8 +251,8 @@ impl Host {
         merge_keyed(&list(b), &list(d))
     }
 
-    /// A keyed list, merged. `interfaces` is the list inside `network`.
-    pub fn list(&self, name: &str) -> Option<Vec<Value>> {
+    /// A keyed list as the base and profile define it. `interfaces` is the list inside `network`.
+    pub fn profile_list(&self, name: &str) -> Option<Vec<Value>> {
         if name == "interfaces" {
             return self
                 .network()
@@ -202,8 +267,9 @@ impl Host {
         Some(Self::keyed(&self.base.doc, &self.delta, name))
     }
 
-    /// The whole host, as `xvm-profile resolve` writes it.
+    /// The whole host, as `xvm-profile resolve` writes it, with run-time changes.
     pub fn resolved(&self) -> Value {
+        let rt = self.read();
         let mut out = Map::new();
         out.insert("schema".into(), 1.into());
         out.insert("kind".into(), "resolved-host".into());
@@ -229,19 +295,27 @@ impl Host {
         for (k, v) in merge_dict(&host_fields, &deltas) {
             out.insert(k, v);
         }
+        for (k, v) in &rt.sections {
+            if k != "network" {
+                out.insert(k.clone(), v.clone());
+            }
+        }
         for field in KEYED_LISTS {
-            if self.base.doc.contains_key(field) || self.delta.contains_key(field) {
+            let present = self.base.doc.contains_key(field)
+                || self.delta.contains_key(field)
+                || rt.lists.contains_key(field);
+            if present {
                 out.insert(
                     field.into(),
-                    Value::Array(self.list(field).unwrap_or_default()),
+                    Value::Array(self.list_with(&rt, field).unwrap_or_default()),
                 );
             }
         }
-        if let Some(net) = self.network() {
+        if let Some(net) = self.section_with(&rt, "network") {
             out.insert("network".into(), net);
         }
-        if self.base.registry_present() || self.registry_present() {
-            out.insert("registry".into(), self.registry().materialize());
+        if self.base.registry_present() || self.registry_present() || !rt.reg.is_empty() {
+            out.insert("registry".into(), self.registry(&rt).materialize());
         }
         Value::Object(out)
     }

@@ -8,6 +8,7 @@ use std::thread;
 use serde_json::{Map, Value, json};
 
 use crate::protocol::{Request, Response, code, read_message, write_message};
+use crate::runtime::{self, Rejected};
 use crate::store::{Host, SECTIONS, Store};
 
 /// Where gap records go: one JSON object per line (CLAUDE.md rule 4).
@@ -20,6 +21,33 @@ pub struct Server {
 
 /// A failed request: an error code and a message. Kept small; becomes a Response at the end.
 struct Fail(&'static str, String);
+
+impl From<Rejected> for Fail {
+    fn from(r: Rejected) -> Self {
+        Fail(r.0, r.1)
+    }
+}
+
+fn section_name(req: &Request) -> Result<&str, Fail> {
+    let n = param(req, "name")?;
+    if SECTIONS.contains(&n) {
+        Ok(n)
+    } else {
+        Err(Fail(code::BAD_REQUEST, format!("unknown section {n}")))
+    }
+}
+
+/// The scenario's clock for this change, or the engine's.
+fn time_param(req: &Request) -> Result<String, Fail> {
+    match req.params.get("time") {
+        None => Ok(runtime::now()),
+        Some(Value::String(t)) => {
+            runtime::check_time(t)?;
+            Ok(t.clone())
+        }
+        Some(_) => Err(Fail(code::BAD_REQUEST, "time must be text".into())),
+    }
+}
 
 fn param<'a>(req: &'a Request, name: &str) -> Result<&'a str, Fail> {
     req.params.get(name).and_then(Value::as_str).ok_or_else(|| {
@@ -82,14 +110,11 @@ impl Server {
         let h = host
             .as_deref()
             .ok_or_else(|| Fail(code::NO_HOST, "send hello first".into()))?;
-        let reg = h.registry();
         let no_key = |k: &str| Fail(code::NOT_FOUND, format!("no key {k}"));
-        match req.op.as_str() {
+        let op = req.op.as_str();
+        match op {
             "section" => {
-                let n = param(req, "name")?;
-                if !SECTIONS.contains(&n) {
-                    return Err(Fail(code::BAD_REQUEST, format!("unknown section {n}")));
-                }
+                let n = section_name(req)?;
                 Ok(h.section(n).unwrap_or(Value::Null))
             }
             "list" => {
@@ -98,29 +123,126 @@ impl Server {
                     .map(Value::Array)
                     .ok_or_else(|| Fail(code::BAD_REQUEST, format!("unknown list {n}")))
             }
-            "reg.key_exists" => Ok(Value::Bool(reg.key_exists(param(req, "key")?))),
-            "reg.key_path" => {
+            "reg.key_exists" | "reg.key_path" | "reg.query_value" | "reg.enum_values"
+            | "reg.enum_subkeys" | "reg.key_info" => {
                 let k = param(req, "key")?;
-                reg.key_path(k).map(Value::String).ok_or_else(|| no_key(k))
+                let rt = h.read();
+                let reg = h.registry(&rt);
+                match op {
+                    "reg.key_exists" => Ok(Value::Bool(reg.key_exists(k))),
+                    "reg.key_path" => reg.key_path(k).map(Value::String).ok_or_else(|| no_key(k)),
+                    "reg.query_value" => {
+                        let n = param(req, "name")?;
+                        reg.value(k, n)
+                            .map(|(name, v)| reg_value(name, &v))
+                            .ok_or_else(|| Fail(code::NOT_FOUND, format!("no value {n} in {k}")))
+                    }
+                    "reg.enum_values" => {
+                        let values = reg.values(k).ok_or_else(|| no_key(k))?;
+                        Ok(Value::Array(
+                            values.into_iter().map(|(n, v)| reg_value(n, &v)).collect(),
+                        ))
+                    }
+                    "reg.enum_subkeys" => {
+                        let names = reg.subkeys(k).ok_or_else(|| no_key(k))?;
+                        Ok(Value::Array(names.into_iter().map(Value::String).collect()))
+                    }
+                    _ => reg.key_info(k).ok_or_else(|| no_key(k)),
+                }
             }
-            "reg.query_value" => {
+            "reg.create_key" | "reg.set_value" | "reg.delete_value" | "reg.delete_key" => {
                 let k = param(req, "key")?;
+                let time = time_param(req)?;
+                let mut rt = h.write();
+                let mut w = h.registry_writer(&mut rt);
+                let done = match op {
+                    "reg.create_key" => w.create_key(k, &time),
+                    "reg.set_value" => {
+                        let n = param(req, "name")?;
+                        let value = json!({
+                            "type": req.params.get("type").cloned().unwrap_or(Value::Null),
+                            "data": req.params.get("data").cloned().unwrap_or(Value::Null),
+                        });
+                        w.set_value(k, n, &value, &time)
+                    }
+                    "reg.delete_value" => w.delete_value(k, param(req, "name")?, &time),
+                    _ => {
+                        let recursive = match req.params.get("recursive") {
+                            None => false,
+                            Some(Value::Bool(b)) => *b,
+                            Some(_) => {
+                                return Err(Fail(
+                                    code::BAD_REQUEST,
+                                    "recursive must be true or false".into(),
+                                ));
+                            }
+                        };
+                        w.delete_key(k, recursive, &time)
+                    }
+                };
+                done.map_err(Fail::from)
+            }
+            "list.upsert" | "list.remove" => {
                 let n = param(req, "name")?;
-                reg.value(k, n)
-                    .map(|(name, v)| reg_value(name, &v))
-                    .ok_or_else(|| Fail(code::NOT_FOUND, format!("no value {n} in {k}")))
+                let time = time_param(req)?;
+                let mut rt = h.write();
+                let lower = h
+                    .list_with(&rt, n)
+                    .ok_or_else(|| Fail(code::BAD_REQUEST, format!("unknown list {n}")))?;
+                let done = if op == "list.upsert" {
+                    let item = req
+                        .params
+                        .get("item")
+                        .ok_or_else(|| Fail(code::BAD_REQUEST, "list.upsert needs item".into()))?;
+                    rt.list_upsert(n, lower, item, &time)
+                } else {
+                    rt.list_remove(n, lower, param(req, "item")?, &time)
+                };
+                done.map_err(Fail::from)
             }
-            "reg.enum_values" => {
-                let k = param(req, "key")?;
-                let values = reg.values(k).ok_or_else(|| no_key(k))?;
-                Ok(Value::Array(
-                    values.into_iter().map(|(n, v)| reg_value(n, &v)).collect(),
-                ))
+            "section.update" => {
+                let n = section_name(req)?;
+                if n == "identity"
+                    && req
+                        .params
+                        .get("patch")
+                        .and_then(|p| p.get("hostname"))
+                        .is_some()
+                {
+                    // Renaming a host would break every component that knows it by name.
+                    return Err(Fail(
+                        code::BAD_REQUEST,
+                        "identity.hostname cannot change at run time".into(),
+                    ));
+                }
+                let time = time_param(req)?;
+                let patch = req
+                    .params
+                    .get("patch")
+                    .ok_or_else(|| Fail(code::BAD_REQUEST, "section.update needs patch".into()))?;
+                let mut rt = h.write();
+                let lower = h.section_with(&rt, n);
+                rt.section_update(n, lower, patch, &time)
+                    .map_err(Fail::from)
             }
-            "reg.enum_subkeys" => {
-                let k = param(req, "key")?;
-                let names = reg.subkeys(k).ok_or_else(|| no_key(k))?;
-                Ok(Value::Array(names.into_iter().map(Value::String).collect()))
+            "changes" => {
+                let since = match req.params.get("since") {
+                    None => 0,
+                    Some(v) => v.as_u64().ok_or_else(|| {
+                        Fail(code::BAD_REQUEST, "since must be a whole number".into())
+                    })?,
+                };
+                let limit = match req.params.get("limit") {
+                    None => 1000,
+                    Some(v) => v.as_u64().filter(|&n| n > 0).ok_or_else(|| {
+                        Fail(code::BAD_REQUEST, "limit must be a positive number".into())
+                    })? as usize,
+                };
+                Ok(h.read().changes(since, limit))
+            }
+            "reset" => {
+                let time = time_param(req)?;
+                Ok(h.write().reset(&time))
             }
             "resolved" => Ok(h.resolved()),
             other => {

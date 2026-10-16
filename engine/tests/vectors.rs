@@ -52,7 +52,7 @@ fn value_order_matches_python() {
         };
         for (path, values) in reg["keys"].as_object().unwrap() {
             let got: Vec<String> = h
-                .registry()
+                .profile_registry()
                 .values(path)
                 .unwrap()
                 .into_iter()
@@ -75,7 +75,9 @@ fn edge() -> Host {
 #[test]
 fn registry_lookups() {
     let h = edge();
-    let r = h.registry();
+    // The live view with no run-time changes must equal the profile view.
+    let rt = h.read();
+    let r = h.registry(&rt);
     // Case-insensitive, base spelling kept.
     assert_eq!(
         r.value(r"hklm\SOFTWARE\vendor\APP", "VERSION"),
