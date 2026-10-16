@@ -48,3 +48,20 @@ def test_cli_writes_reports(pe_fixtures, tmp_path):
     assert "`helper.dll` | bundled" in md
     assert "`ws2_32.dll!#115=WSAStartup`" in md
     assert "\u2014" not in md  # house style: no em-dashes
+
+
+def test_report_sections(pe_fixtures, tmp_path):
+    out = tmp_path / "reports"
+    cli.main(["scan", str(pe_fixtures), "--agent", "fake", "--out", str(out)])
+    md = (out / "fake.md").read_text()
+    assert "| `agent.exe` | AMD64 | WINDOWS_CUI | 4 | 7 | yes |" in md
+    assert "<summary>Function-like strings</summary>" in md
+
+
+def test_runtime_loaded_modules(pe_fixtures, tmp_path):
+    root = tmp_path / "tree"
+    shutil.copytree(pe_fixtures, root)
+    shutil.copy(root / "helper.dll", root / "plugin.dll")
+    (root / "plugin.dll").write_bytes((root / "plugin.dll").read_bytes() + b"\0")
+    c = scan.build_census(root, agent="fake", source="dir")
+    assert c["runtime_loaded_modules"] == ["plugin.dll"]

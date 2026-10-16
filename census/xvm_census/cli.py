@@ -26,7 +26,10 @@ def _cmd_scan(args: argparse.Namespace) -> int:
             except unpack.UnpackError as exc:
                 print(f"unpack failed: {exc}", file=sys.stderr)
                 return 1
-        census = scan.build_census(root, agent=args.agent, source=src.name, notes=notes)
+        digest = None if src.is_dir() else scan.sha256(src)
+        census = scan.build_census(
+            root, agent=args.agent, source=src.name, notes=notes, source_sha256=digest
+        )
         json_path, md_path = report.write(census, args.out, args.name or args.agent)
         if args.keep and not src.is_dir():
             # Keep the unpacked tree by moving it out of the temporary directory.

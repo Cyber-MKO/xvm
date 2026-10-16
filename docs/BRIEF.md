@@ -41,6 +41,7 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Rust for runtimes, Python for tooling and control plane | Decided | Confirmed by Kasim (2026-10-16). Cargo workspace at the root; one Python package per tool. |
 | Project name is xvm | Decided | Confirmed by Kasim (2026-10-16). |
 | CI on GitHub Actions | Decided | Python: ruff and pytest. Rust: fmt, clippy and test. |
+| First census target is Wazuh agent 4.14.9 for Windows | Proposed | Newest 4.x MSI on 2026-10-16. Findings and open questions in `docs/phase1-sizing.md`. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files
@@ -198,7 +199,7 @@ Each phase ends with an exit check before the next starts.
 
 | Risk | Mitigation |
 | --- | --- |
-| The Windows API surface agents need is larger than expected | Census first; implement only what is called; log every gap; agents statically link much of their own runtime (OpenSSL, CRT), which helps |
+| The Windows API surface agents need is larger than expected | Census first; implement only what is called; log every gap. Wazuh bundles OpenSSL but not its CRT: it imports 188 `msvcrt.dll` functions (census 2026-10-16). |
 | Dynamic loading hides calls from the census | Runtime logging of every unresolved import and `GetProcAddress` lookup |
 | Agents depend on behaviour, not just signatures (error codes, ordering, handle semantics) | Golden baseline and fidelity diffs catch behavioural drift |
 | macOS arm64-only agent binaries | arm64 Linux host or CPU emulation; prefer x86_64 slices while vendors still ship them |

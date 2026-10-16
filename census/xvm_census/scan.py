@@ -20,7 +20,7 @@ def classify_dll(name: str, bundled: set[str]) -> str:
     return "system"
 
 
-def _sha256(path: Path) -> str:
+def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -43,7 +43,7 @@ def scan_tree(root: Path) -> tuple[list[dict], dict]:
             continue
         if not (pe.is_pe(head) or macho.is_macho(head)):
             continue
-        digest = _sha256(path)
+        digest = sha256(path)
         if digest in seen:
             seen[digest]["also_at"].append(rel)
             counts["duplicates"] += 1
@@ -112,14 +112,28 @@ def aggregate(binaries: list[dict]) -> dict:
             for lib in s["dylibs"]:
                 dylibs.setdefault(lib["name"], set()).add(b["path"])
 
+    statically_imported = {d for b in pes for d in [*b["imports"], *b["delay_imports"]]}
+    runtime_only = sorted(
+        b["path"]
+        for b in pes
+        if b["is_dll"] and PurePosixPath(b["path"]).name.lower() not in statically_imported
+    )
+
     return {
         "dlls": dict(sorted(dlls.items())),
+        "runtime_loaded_modules": runtime_only,
         "dylibs": {k: sorted(v) for k, v in sorted(dylibs.items())},
         "dynamic_loading": dynamic,
     }
 
 
-def build_census(root: Path, agent: str, source: str, notes: list[str] | None = None) -> dict:
+def build_census(
+    root: Path,
+    agent: str,
+    source: str,
+    notes: list[str] | None = None,
+    source_sha256: str | None = None,
+) -> dict:
     binaries, counts = scan_tree(root)
     agg = aggregate(binaries)
     return {
@@ -128,10 +142,12 @@ def build_census(root: Path, agent: str, source: str, notes: list[str] | None = 
         "generated": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "agent": agent,
         "source": source,
+        "source_sha256": source_sha256,
         "counts": counts,
         "unpack_notes": notes or [],
         "dlls": agg["dlls"],
         "dylibs": agg["dylibs"],
+        "runtime_loaded_modules": agg["runtime_loaded_modules"],
         "dynamic_loading": agg["dynamic_loading"],
         "binaries": binaries,
     }

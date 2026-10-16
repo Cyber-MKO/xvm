@@ -31,6 +31,8 @@ def markdown(c: dict) -> str:
 
     add(f"# API census: {c['agent']}\n")
     add(f"- Source: `{c['source']}`")
+    if c.get("source_sha256"):
+        add(f"- SHA-256: `{c['source_sha256']}`")
     add(f"- Generated: {c['generated']} by {c['tool']}")
     add("- JSON with per-binary detail sits next to this file.\n")
 
@@ -47,6 +49,29 @@ def markdown(c: dict) -> str:
     add(f"| Bundled DLLs imported | {len(dlls) - len(os_dlls)} |")
     add(f"| Binaries with dynamic loading | {len(c['dynamic_loading'])} |")
     add("")
+
+    pes = [b for b in c["binaries"] if b["format"] == "pe"]
+    if pes:
+        add("## Binaries\n")
+        add("| Binary | Machine | Subsystem | OS DLLs | OS functions | Dynamic loading |")
+        add("| --- | --- | --- | --- | --- | --- |")
+        for b in pes:
+            tables = [*b["imports"].items(), *b["delay_imports"].items()]
+            os_tables = [(d, f) for d, f in tables if dlls.get(d, {}).get("kind") != "bundled"]
+            n_funcs = sum(len(f) for _, f in os_tables)
+            dynamic = "yes" if b["dynamic_loaders"] else "no"
+            add(
+                f"| `{b['path']}` | {b['machine']} | {b['subsystem']} | {len(os_tables)} "
+                f"| {n_funcs} | {dynamic} |"
+            )
+        add("")
+
+    if c.get("runtime_loaded_modules"):
+        add("## Bundled DLLs loaded only at run time\n")
+        add("No binary imports these statically. They are loaded with `LoadLibrary*`.\n")
+        for m in c["runtime_loaded_modules"]:
+            add(f"- `{m}`")
+        add("")
 
     if dlls:
         add("## DLLs by function count\n")
@@ -93,6 +118,11 @@ def markdown(c: dict) -> str:
                 f"of these, imported elsewhere in the package: "
                 f"{_code(d['function_candidates_imported_elsewhere'])}"
             )
+            if d["function_candidates"]:
+                add("")
+                add("<details><summary>Function-like strings</summary>\n")
+                add(_code(d["function_candidates"]))
+                add("\n</details>")
             add("")
 
     if c.get("dylibs"):

@@ -7,7 +7,10 @@ import re
 _ASCII = re.compile(rb"[\x20-\x7e]{4,}")
 _UTF16 = re.compile(rb"(?:[\x20-\x7e]\x00){4,}")
 
-_DLL = re.compile(r"(?i)\b([a-z0-9_.\-]{1,64}\.(?:dll|drv|sys|ocx|cpl))\b")
+# A module name starts with a letter, is at least two characters before the
+# extension, and is not glued to a preceding word character (Pascal-style
+# length prefixes produce strings like "1libfoo.dll").
+_DLL = re.compile(r"(?i)(?<![\w+.\-])([a-z][a-z0-9_+.\-]{1,63}\.(?:dll|drv|sys|ocx|cpl))\b")
 _DYLIB = re.compile(r"(/[\w@.+\-/]+\.(?:dylib|framework/[\w.\-]+)|\blib[\w.+\-]+\.so(?:\.\d+)*)")
 
 # Win32-style identifiers: CamelCase with at least two humps, optional A/W suffix,
