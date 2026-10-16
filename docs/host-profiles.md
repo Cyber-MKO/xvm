@@ -24,6 +24,8 @@ Examples live in [control/profiles/examples/](../control/profiles/examples/). Th
 | `software` | Installed packages |
 | `services` | Services with state and start mode |
 | `registry` | Windows only. Keys under `HKLM`, `HKU` or `HKCR`, typed values |
+| `files` | Files and directories: path, type, size, sha256, times, attributes (Windows), owner, mode (Unix), and `content` for bytes we author |
+| `processes` | Processes running at boot: id, image, path, command line, user, session, parent (an id), optional pinned pid, `start_offset_s` after boot |
 | `agent` | SIEM agent product, version, manager and group |
 
 ## Merge rules
@@ -35,7 +37,22 @@ Examples live in [control/profiles/examples/](../control/profiles/examples/). Th
 | `registry.keys` | Merge key by key, then value by value, ignoring case and keeping the base's spelling. A value of `null` deletes it. |
 | `registry.delete_keys` | Deletes the key and all subkeys. Deleting a key the base lacks is an error. |
 
+| `files` | Entries merge by path, in profile order. Windows and macOS paths ignore case; Linux paths do not. The base's spelling is kept. `remove: true` deletes the entry and, for a directory, everything below it. The result is sorted by the path's normal form. |
+| `processes` | Entries merge by `id`. `remove: true` deletes the base entry. Every `parent` must name a process that remains. |
+
 A base image may not use `remove`, `null` values or `delete_keys`.
+
+## File content
+
+| Form | Meaning |
+| --- | --- |
+| `content: {text: ...}` | UTF-8 text we author |
+| `content: {base64: ...}` | Bytes we author |
+| No `content` | Metadata only, for example a vendor file from a golden capture |
+
+`xvm-profile compile` moves content into the blob store (`blobs/SHA256`), stores identical bytes once, and fills in `size` and `sha256`. A declared `size` or `sha256` that does not match the content is an error. Never put vendor bytes in a profile (CLAUDE.md rule 1).
+
+Process owners written as `.\user` name a local account on the host itself, whatever the host is called.
 
 ## Registry values
 
@@ -73,6 +90,8 @@ Quote timestamps in YAML, for example `"2026-01-01T00:00:00Z"`. Unquoted timesta
 | `network.interfaces` | `host/netadapters.json` and `network.json`: names, descriptions, DHCP only |
 | `users`, `groups` | `host/users.json`, `groups.json`, `group-members.json` (local members only) |
 | `software` | `registry/uninstall.reg` (x86_64) and `uninstall-wow64.reg` (x86), entries with a `DisplayName` that are not system components |
+| `files` | `host/files.json`: metadata and SHA-256 of the folders the agent's FIM configuration watches, the hosts file folder and the top of the Windows folder. No bytes. |
+| `processes` | `host/processes.json`, with start offsets from the boot time. System Idle and System keep PIDs 0 and 4; the engine assigns the rest. |
 | `services` | `host/services.json` |
 | `registry.keys` | The identity exports: CurrentVersion, ComputerName, TCP/IP parameters, ProfileList, time zone, Event Log |
 
@@ -85,5 +104,8 @@ These facts identify one machine, so the base leaves them out and each host prof
 | BIOS and system serial numbers | `hardware` in the host profile |
 | The `WazuhSvc` service and the Wazuh Agent package | Our installer step, from `agent` in the host profile |
 | The scenario test user `xvmgolden` | Deleted during the capture |
+| The capture's PowerShell process tree, and the Wazuh agent's processes | Not part of the OS at boot; the personality registers the agent |
+| The boot time | The host profile's `os_info.last_boot`, or the engine's clock |
+| The VM's name in process owners | Written as `.\user` |
 
 The `.reg` parser follows Microsoft's public description of the format. It reads `REG_SZ`, `REG_EXPAND_SZ`, `REG_MULTI_SZ`, `REG_DWORD`, `REG_QWORD` and `REG_BINARY`. Any other type, and keys under `HKEY_CURRENT_USER`, are reported as skipped.

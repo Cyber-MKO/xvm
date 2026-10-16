@@ -6,7 +6,9 @@
 //! `xvm-profile compile`, which is the single YAML parser and validator.
 
 pub mod client;
+pub mod files;
 pub mod merge;
+pub mod procs;
 pub mod protocol;
 pub mod registry;
 pub mod runtime;

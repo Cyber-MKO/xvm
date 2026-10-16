@@ -570,3 +570,30 @@ fn concurrent_writers_lose_nothing() {
         .collect();
     assert_eq!(seqs, (1..=800).collect::<Vec<_>>());
 }
+
+#[test]
+fn implied_parents_outlive_their_last_subkey() {
+    let mut c = Conn::new();
+    // Plugins is implied by One, Two and Three; it is not listed itself.
+    for k in ["One", "Two", "Three"] {
+        c.ok(
+            "reg.delete_key",
+            json!({"key": format!(r"{APP}\Plugins\{k}")}),
+        );
+    }
+    assert_eq!(
+        c.ok("reg.key_exists", json!({"key": format!(r"{APP}\Plugins")})),
+        json!(true)
+    );
+    assert_eq!(
+        c.ok(
+            "reg.enum_subkeys",
+            json!({"key": format!(r"{APP}\Plugins")})
+        ),
+        json!([])
+    );
+    assert_eq!(
+        c.ok("reg.key_path", json!({"key": format!(r"{APP}\plugins")})),
+        json!(format!(r"{APP}\Plugins"))
+    );
+}

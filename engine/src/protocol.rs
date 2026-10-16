@@ -77,6 +77,13 @@ pub mod code {
     pub const UNKNOWN_HOST: &str = "unknown_host";
     pub const NOT_FOUND: &str = "not_found";
     pub const HAS_SUBKEYS: &str = "has_subkeys";
+    pub const EXISTS: &str = "exists";
+    pub const NOT_EMPTY: &str = "not_empty";
+    pub const IS_DIRECTORY: &str = "is_directory";
+    pub const NOT_A_DIRECTORY: &str = "not_a_directory";
+    pub const ACCESS_DENIED: &str = "access_denied";
+    /// The file exists but its bytes were never captured. Also a logged gap.
+    pub const NO_CONTENT: &str = "no_content";
     pub const UNSUPPORTED: &str = "unsupported";
 }
 

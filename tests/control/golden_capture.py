@@ -21,6 +21,79 @@ def _json(obj) -> bytes:
     return b"\xef\xbb\xbf" + json.dumps(obj).encode()
 
 
+BOOT_MS = 1792137600000  # 2026-10-16T08:00:00Z
+
+
+def _proc(pid, ppid, name, after_s=None, **extra):
+    p = {
+        "ProcessId": pid,
+        "ParentProcessId": ppid,
+        "Name": name,
+        "ExecutablePath": None,
+        "CommandLine": None,
+        "SessionId": 0,
+        "Owner": None,
+        "CreationDate": None if after_s is None else f"/Date({BOOT_MS + int(after_s * 1000)})/",
+    }
+    p.update(extra)
+    return p
+
+
+def _processes() -> list[dict]:
+    return [
+        _proc(0, 0, "System Idle Process"),
+        _proc(4, 0, "System", 0, Owner="NT AUTHORITY\\SYSTEM"),
+        _proc(300, 4, "smss.exe", 1, ExecutablePath="C:\\Windows\\System32\\smss.exe"),
+        _proc(
+            500,
+            300,
+            "svchost.exe",
+            5,
+            CommandLine="svchost.exe -k DcomLaunch",
+            Owner="NT AUTHORITY\\SYSTEM",
+        ),
+        _proc(520, 300, "svchost.exe", 6.25),
+        _proc(700, 300, "wazuh-agent.exe", 60),
+        _proc(710, 700, "cmd.exe", 61),
+        _proc(950, 999, "explorer.exe", 120, SessionId=1, Owner="GOLDEN-VM\\Administrator"),
+        _proc(900, 950, "powershell.exe", 3000, SessionId=1),
+        _proc(905, 900, "conhost.exe", 3000.5, SessionId=1),
+    ]
+
+
+def _files() -> list[dict]:
+    return [
+        {
+            "path": "C:\\Windows",
+            "dir": True,
+            "created": "2026-01-01T00:00:00Z",
+            "modified": "2026-10-16T08:00:00Z",
+            "accessed": "2026-10-16T09:00:00Z",
+            "attributes": "Directory",
+        },
+        {
+            "path": "C:\\Windows\\System32\\drivers\\etc\\hosts",
+            "dir": False,
+            "size": 824,
+            "sha256": "ab" * 32,
+            "created": "2026-01-01T00:00:00Z",
+            "modified": "2026-01-01T00:00:00Z",
+            "accessed": "2026-10-16T09:00:00Z",
+            "attributes": "Archive",
+        },
+        {
+            "path": "C:\\Windows\\regedit.exe",
+            "dir": False,
+            "size": 1000,
+            "created": "2026-01-01T00:00:00Z",
+            "modified": "2026-01-01T00:00:00Z",
+            "accessed": "2026-01-01T00:00:00Z",
+            "attributes": "ReadOnly, System, Archive",
+        },
+        {"path": "\\\\?\\C:\\long\\path.txt", "dir": False, "size": 1},
+    ]
+
+
 def files() -> dict[str, bytes]:
     expand = "%SystemRoot%\\x".encode("utf-16-le") + b"\0\0"
     multi = "a".encode("utf-16-le") + b"\0\0" + "b".encode("utf-16-le") + b"\0\0\0\0"
@@ -110,8 +183,11 @@ def files() -> dict[str, bytes]:
                 "BuildNumber": "20348",
                 "OSArchitecture": "64-bit",
                 "InstallDate": "/Date(1767225600000)/",
+                "LastBootUpTime": "/Date(1792137600000)/",
             }
         ),
+        "host/processes.json": _json(_processes()),
+        "host/files.json": _json(_files()),
         "host/locale.json": _json({"culture": "en-US", "timezone": "UTC"}),
         "host/cpu.json": _json(
             [
@@ -262,6 +338,7 @@ def write(root, overrides: dict[str, bytes] | None = None):
         "schema": 1,
         "kind": "windows-golden-baseline",
         "host": {"name": "GOLDEN-VM", "build": "20348"},
+        "capture_pid": 900,
         "scenario": {
             "start": "2026-10-16T10:00:00.000Z",
             "end": "2026-10-16T10:01:00.000Z",

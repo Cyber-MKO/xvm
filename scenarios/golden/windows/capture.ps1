@@ -193,8 +193,97 @@ Save-Json ([ordered]@{
 Save-Json (Get-CimInstance Win32_Service |
     Select-Object Name, DisplayName, State, StartMode, PathName,
         StartName) (Join-Path $hostDir 'services.json')
-Save-Json (Get-CimInstance Win32_Process |
-    Select-Object ProcessId, ParentProcessId, Name, ExecutablePath) (Join-Path $hostDir 'processes.json')
+# Processes, with what a base image's boot table needs. The owner lookup is
+# slow per process but runs once.
+$ownerOf = @{ Name = 'Owner'; Expression = {
+    $o = Invoke-CimMethod -InputObject $_ -MethodName GetOwner -ErrorAction SilentlyContinue
+    if ($o -and $o.User) { "$($o.Domain)\$($o.User)" } else { $null }
+} }
+Save-Json @(Get-CimInstance Win32_Process |
+    Select-Object ProcessId, ParentProcessId, Name, ExecutablePath, CommandLine, SessionId,
+        CreationDate, $ownerOf) (Join-Path $hostDir 'processes.json')
+
+# File metadata, never bytes (CLAUDE.md rule 1): the folders the agent's FIM
+# configuration watches, plus the hosts file folder and the top of the Windows
+# folder. Depth and count are capped so the capture stays bounded.
+$MaxFileDepth = 3
+$MaxFileEntries = 50000
+$MaxHashBytes = 64MB
+$roots = New-Object System.Collections.ArrayList
+[void]$roots.Add(@{ path = "$env:WINDIR\System32\drivers\etc"; depth = 1 })
+[void]$roots.Add(@{ path = $env:WINDIR; depth = 0 })
+try {
+    [xml]$conf = Get-Content -Raw $ossecConf
+    foreach ($d in $conf.SelectNodes('//syscheck/directories')) {
+        $depth = $MaxFileDepth
+        if ($d.GetAttribute('recursion_level')) {
+            $depth = [Math]::Min([int]$d.GetAttribute('recursion_level'), $MaxFileDepth)
+        }
+        foreach ($p in ($d.InnerText -split ',')) {
+            $p = [Environment]::ExpandEnvironmentVariables($p.Trim())
+            if ($p) { [void]$roots.Add(@{ path = $p; depth = $depth }) }
+        }
+    }
+} catch {
+    [void]$Warnings.Add("Could not read syscheck directories from ossec.conf: $($_.Exception.Message)")
+}
+$skip = @($AgentDir, $OutDir, $FimDir) | ForEach-Object { $_.TrimEnd('\') + '\' }
+$seen = @{}
+$fileEntries = New-Object System.Collections.ArrayList
+$hashFailures = 0
+
+function Add-FileEntry {
+    param($Item)
+    $full = $Item.FullName
+    foreach ($s in $skip) { if (($full + '\').StartsWith($s, [StringComparison]::OrdinalIgnoreCase)) { return $false } }
+    if ($seen.ContainsKey($full.ToLowerInvariant())) { return $false }
+    $seen[$full.ToLowerInvariant()] = $true
+    $entry = [ordered]@{
+        path       = $full
+        dir        = [bool]$Item.PSIsContainer
+        created    = $Item.CreationTimeUtc.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        modified   = $Item.LastWriteTimeUtc.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        accessed   = $Item.LastAccessTimeUtc.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        attributes = [string]$Item.Attributes
+    }
+    if (-not $Item.PSIsContainer) {
+        $entry.size = $Item.Length
+        if ($Item.Length -le $MaxHashBytes) {
+            try {
+                $entry.sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $full -ErrorAction Stop).Hash.ToLowerInvariant()
+            } catch { $script:hashFailures++ }
+        }
+    }
+    [void]$fileEntries.Add($entry)
+    return $true
+}
+
+function Add-Tree {
+    param([string]$Path, [int]$Depth)
+    if ($fileEntries.Count -ge $MaxFileEntries) { return }
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    if ($null -eq $item) { return }
+    [void](Add-FileEntry $item)
+    if (-not $item.PSIsContainer) { return }
+    $children = Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    foreach ($c in $children) {
+        if ($fileEntries.Count -ge $MaxFileEntries) { return }
+        if ($c.PSIsContainer -and $Depth -gt 0) {
+            Add-Tree -Path $c.FullName -Depth ($Depth - 1)
+        } else {
+            [void](Add-FileEntry $c)
+        }
+    }
+}
+
+foreach ($r in $roots) { Add-Tree -Path $r.path -Depth $r.depth }
+if ($fileEntries.Count -ge $MaxFileEntries) {
+    [void]$Warnings.Add("File metadata stopped at $MaxFileEntries entries.")
+}
+if ($hashFailures -gt 0) {
+    [void]$Warnings.Add("$hashFailures files could not be hashed (in use or access denied).")
+}
+Save-Json @($fileEntries) (Join-Path $hostDir 'files.json')
 
 $wazuhDir = Join-Path $OutDir 'wazuh'
 Copy-Item $ossecConf (Join-Path $wazuhDir 'ossec.conf')
@@ -293,6 +382,7 @@ $manifest = [ordered]@{
         build   = $os.BuildNumber
     }
     agent         = [ordered]@{ product = 'wazuh'; version = $agentVersion }
+    capture_pid   = $PID
     capture_start = $captureStart
     capture_end   = (Get-UtcNow)
     scenario      = [ordered]@{ start = $scenarioStart; end = $scenarioEnd; steps = $Steps }

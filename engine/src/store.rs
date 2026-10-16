@@ -11,7 +11,9 @@ use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use serde_json::{Map, Value};
 
-use crate::merge::{merge_dict, merge_keyed};
+use crate::files::{BaseFiles, Blobs, FileDelta, FileWriter, FilesView, LiveFiles, NoBlobs, Rules};
+use crate::merge::{merge_by_id, merge_dict, merge_keyed};
+use crate::procs::{ProcTable, boot_table};
 use crate::registry::{BaseRegistry, RegistryDelta, View};
 use crate::runtime::{Live, Runtime, Writer};
 
@@ -19,6 +21,8 @@ use crate::runtime::{Live, Runtime, Writer};
 pub const KEYED_LISTS: [&str; 4] = ["users", "groups", "software", "services"];
 /// Object sections a host can ask for whole.
 pub const SECTIONS: [&str; 5] = ["identity", "os_info", "hardware", "network", "agent"];
+/// Sections with their own layering, kept out of the generic object merge.
+const LAYERED: [&str; 4] = ["network", "registry", "files", "processes"];
 /// Fields that belong to the file, not to the host.
 const OWN_FIELDS: [&str; 6] = ["schema", "kind", "name", "description", "base", "source"];
 
@@ -41,9 +45,11 @@ impl From<crate::registry::RegistryError> for StoreError {
 #[derive(Debug)]
 pub struct Base {
     pub name: String,
-    /// The document without its registry, which lives in `registry`.
+    /// The document without its registry and files, which have their own layers.
     doc: Map<String, Value>,
     registry: BaseRegistry,
+    files: BaseFiles,
+    rules: Rules,
 }
 
 /// One emulated host: a shared base, this host's delta, and its run-time changes.
@@ -53,6 +59,11 @@ pub struct Host {
     pub base: Arc<Base>,
     delta: Map<String, Value>,
     registry: RegistryDelta,
+    files: FileDelta,
+    /// Process definitions, base and profile merged.
+    processes: Option<Vec<Value>>,
+    /// The process table at boot, restored by `reset`.
+    boot_procs: ProcTable,
     runtime: RwLock<Runtime>,
 }
 
@@ -85,22 +96,44 @@ fn text(doc: &Map<String, Value>, field: &str, what: &str) -> Result<String, Sto
 }
 
 impl Base {
+    /// A base with inline file content only (tests, vectors).
     pub fn from_value(v: Value) -> Result<Self, StoreError> {
+        Self::from_value_with(v, &NoBlobs)
+    }
+
+    pub fn from_value_with(v: Value, blobs: &dyn Blobs) -> Result<Self, StoreError> {
         let mut doc = object(v, "base image")?;
         kind_is(&doc, "base-image", "base image")?;
         let name = text(&doc, "name", "base image")?;
+        let rules = Rules::for_os(doc.get("os").and_then(Value::as_str).unwrap_or(""));
         let registry = BaseRegistry::from_section(doc.get("registry"))?;
+        let files = BaseFiles::from_section(doc.get("files"), rules, blobs)
+            .map_err(|e| StoreError(format!("{name}: files: {e}")))?;
         doc.remove("registry");
+        doc.remove("files");
         Ok(Base {
             name,
             doc,
             registry,
+            files,
+            rules,
         })
     }
 }
 
 impl Host {
+    /// A host with inline file content only, booted at its profile's
+    /// `os_info.last_boot` or, without one, at the engine's clock.
     pub fn from_value(v: Value, base: Arc<Base>) -> Result<Self, StoreError> {
+        Self::from_value_with(v, base, &NoBlobs, &crate::runtime::now())
+    }
+
+    pub fn from_value_with(
+        v: Value,
+        base: Arc<Base>,
+        blobs: &dyn Blobs,
+        boot_fallback: &str,
+    ) -> Result<Self, StoreError> {
         let mut delta = object(v, "host profile")?;
         kind_is(&delta, "host-profile", "host profile")?;
         let name = text(&delta, "name", "host profile")?;
@@ -119,14 +152,84 @@ impl Host {
         }
         let registry = RegistryDelta::from_section(delta.get("registry"), &base.registry)
             .map_err(|e| StoreError(format!("{name}: {}", e.0)))?;
+        let files = FileDelta::from_section(delta.get("files"), &base.files, base.rules, blobs)
+            .map_err(|e| StoreError(format!("{name}: files: {e}")))?;
         delta.remove("registry");
+        delta.remove("files");
+        let list = |m: &Map<String, Value>| m.get("processes").and_then(Value::as_array).cloned();
+        let processes = match (list(&base.doc), list(&delta)) {
+            (None, None) => None,
+            (b, d) => Some(merge_by_id(&b.unwrap_or_default(), &d.unwrap_or_default())),
+        };
+        let os_info = match (base.doc.get("os_info"), delta.get("os_info")) {
+            (Some(Value::Object(b)), Some(Value::Object(d))) => Some(merge_dict(b, d)),
+            (b, d) => d.or(b).and_then(Value::as_object).cloned(),
+        };
+        let boot = os_info
+            .as_ref()
+            .and_then(|o| o.get("last_boot"))
+            .and_then(Value::as_str)
+            .unwrap_or(boot_fallback)
+            .to_string();
+        let (live, pids) = boot_table(
+            processes.as_deref().unwrap_or_default(),
+            &name,
+            base.rules.windows,
+            &boot,
+        )
+        .map_err(|e| StoreError(format!("{name}: processes: {e}")))?;
+        let boot_procs = ProcTable { live, pids };
+        let mut runtime = Runtime::default();
+        runtime.procs = boot_procs.clone();
         Ok(Host {
             name,
             base,
             delta,
             registry,
-            runtime: RwLock::new(Runtime::default()),
+            files,
+            processes,
+            boot_procs,
+            runtime: RwLock::new(runtime),
         })
+    }
+
+    pub fn rules(&self) -> Rules {
+        self.base.rules
+    }
+
+    /// Files as the base and profile define them, without run-time changes.
+    pub fn profile_files(&self) -> FilesView<'_> {
+        FilesView {
+            base: &self.base.files,
+            delta: &self.files,
+            rules: self.base.rules,
+        }
+    }
+
+    pub fn files<'a>(&'a self, rt: &'a Runtime) -> LiveFiles<'a> {
+        LiveFiles {
+            lower: self.profile_files(),
+            rt: &rt.files,
+        }
+    }
+
+    pub fn files_writer<'a>(&'a self, rt: &'a mut Runtime) -> FileWriter<'a> {
+        FileWriter {
+            lower: self.profile_files(),
+            rt: &mut rt.files,
+        }
+    }
+
+    /// The process table as it was at boot.
+    pub fn boot_procs(&self) -> &ProcTable {
+        &self.boot_procs
+    }
+
+    /// Drop every run-time change and restore the boot process table.
+    pub fn reset(&self, rt: &mut Runtime, time: &str) -> Value {
+        let out = rt.reset(time);
+        rt.procs = self.boot_procs.clone();
+        out
     }
 
     pub fn os(&self) -> &str {
@@ -283,13 +386,15 @@ impl Host {
             .base
             .doc
             .iter()
-            .filter(|(k, _)| !skip(k))
+            .filter(|(k, _)| !skip(k) && *k != "processes")
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
         let deltas: Map<String, Value> = self
             .delta
             .iter()
-            .filter(|(k, _)| !skip(k) && !KEYED_LISTS.contains(&k.as_str()) && *k != "network")
+            .filter(|(k, _)| {
+                !skip(k) && !KEYED_LISTS.contains(&k.as_str()) && !LAYERED.contains(&k.as_str())
+            })
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
         for (k, v) in merge_dict(&host_fields, &deltas) {
@@ -317,6 +422,13 @@ impl Host {
         if self.base.registry_present() || self.registry_present() || !rt.reg.is_empty() {
             out.insert("registry".into(), self.registry(&rt).materialize());
         }
+        if self.base.files.is_present() || self.files.is_present() || !rt.files.map.is_empty() {
+            out.insert("files".into(), Value::Array(self.files(&rt).materialize()));
+        }
+        // Definitions, as in the profile. The running table is `proc.list`.
+        if let Some(p) = &self.processes {
+            out.insert("processes".into(), Value::Array(p.clone()));
+        }
         Value::Object(out)
     }
 
@@ -336,6 +448,40 @@ impl Base {
 pub struct Store {
     pub bases: BTreeMap<String, Arc<Base>>,
     pub hosts: BTreeMap<String, Arc<Host>>,
+}
+
+/// The blob store written by `xvm-profile compile`. Each blob is read once,
+/// checked against its name, and shared by every host that carries it.
+struct DirBlobs {
+    dir: std::path::PathBuf,
+    cache: std::sync::Mutex<std::collections::HashMap<String, Arc<[u8]>>>,
+}
+
+impl Blobs for DirBlobs {
+    fn get(&self, sha256: &str) -> Result<Arc<[u8]>, String> {
+        let well_formed = sha256.len() == 64
+            && sha256
+                .bytes()
+                .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c));
+        if !well_formed {
+            return Err(format!("bad blob name {sha256:?}"));
+        }
+        let mut cache = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(b) = cache.get(sha256) {
+            return Ok(b.clone());
+        }
+        let path = self.dir.join(sha256);
+        let bytes = fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+        if crate::files::sha256_hex(&bytes) != sha256 {
+            return Err(format!(
+                "{}: content does not match its name",
+                path.display()
+            ));
+        }
+        let b: Arc<[u8]> = Arc::from(bytes);
+        cache.insert(sha256.to_string(), b.clone());
+        Ok(b)
+    }
 }
 
 fn read_json(path: &Path) -> Result<Value, StoreError> {
@@ -361,9 +507,17 @@ impl Store {
                 .collect()
         };
         let mut store = Store::default();
+        let blobs = DirBlobs {
+            dir: dir.join("blobs"),
+            cache: Default::default(),
+        };
+        // Hosts without os_info.last_boot boot when the engine loads them.
+        let boot = crate::runtime::now();
         for name in names("bases") {
-            let base =
-                Base::from_value(read_json(&dir.join("bases").join(format!("{name}.json")))?)?;
+            let base = Base::from_value_with(
+                read_json(&dir.join("bases").join(format!("{name}.json")))?,
+                &blobs,
+            )?;
             store.bases.insert(base.name.clone(), Arc::new(base));
         }
         for name in names("hosts") {
@@ -378,7 +532,7 @@ impl Store {
                 .get(&base_name)
                 .cloned()
                 .ok_or_else(|| StoreError(format!("{name}: unknown base {base_name:?}")))?;
-            let host = Host::from_value(doc, base)?;
+            let host = Host::from_value_with(doc, base, &blobs, &boot)?;
             store.hosts.insert(host.name.clone(), Arc::new(host));
         }
         Ok(store)

@@ -4,47 +4,114 @@
   "title": "xvm host profile or base image",
   "description": "A base image holds the facts shared by many hosts. A host profile names a base and lists only what differs. Every host fact an emulated host reports comes from these files (CLAUDE.md rule 5).",
   "type": "object",
-  "required": ["schema", "kind", "name", "os"],
+  "required": [
+    "schema",
+    "kind",
+    "name",
+    "os"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema": {"const": 1},
-    "kind": {"enum": ["base-image", "host-profile", "resolved-host"]},
-    "name": {"$ref": "#/$defs/name"},
-    "description": {"type": "string"},
-    "base": {"$ref": "#/$defs/name"},
+    "schema": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "base-image",
+        "host-profile",
+        "resolved-host"
+      ]
+    },
+    "name": {
+      "$ref": "#/$defs/name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "base": {
+      "$ref": "#/$defs/name"
+    },
     "source": {
       "description": "Where the facts came from, for example a golden capture manifest.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "golden_capture": {"type": "string"},
-        "manifest_sha256": {"$ref": "#/$defs/sha256"}
+        "golden_capture": {
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
-    "os": {"enum": ["windows", "macos", "linux"]},
+    "os": {
+      "enum": [
+        "windows",
+        "macos",
+        "linux"
+      ]
+    },
     "identity": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "hostname": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,62}$"},
-        "domain": {"type": "string"},
-        "machine_id": {"type": "string"}
+        "hostname": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,62}$"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "machine_id": {
+          "type": "string"
+        }
       }
     },
     "os_info": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "product_name": {"type": "string"},
-        "edition": {"type": "string"},
-        "version": {"type": "string"},
-        "build": {"type": "string"},
-        "ubr": {"type": "integer", "minimum": 0},
-        "display_version": {"type": "string"},
-        "architecture": {"enum": ["x86", "x86_64", "arm64"]},
-        "install_date": {"type": "string", "format": "date-time"},
-        "locale": {"type": "string"},
-        "timezone": {"type": "string"}
+        "product_name": {
+          "type": "string"
+        },
+        "edition": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "build": {
+          "type": "string"
+        },
+        "ubr": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "display_version": {
+          "type": "string"
+        },
+        "architecture": {
+          "enum": [
+            "x86",
+            "x86_64",
+            "arm64"
+          ]
+        },
+        "install_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "last_boot": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Boot time. Without it the engine uses its own start time."
+        }
       }
     },
     "hardware": {
@@ -55,32 +122,64 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "name": {"type": "string"},
-            "vendor": {"type": "string"},
-            "cores": {"type": "integer", "minimum": 1},
-            "logical_processors": {"type": "integer", "minimum": 1},
-            "mhz": {"type": "integer", "minimum": 1}
+            "name": {
+              "type": "string"
+            },
+            "vendor": {
+              "type": "string"
+            },
+            "cores": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "logical_processors": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mhz": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         },
-        "memory_mb": {"type": "integer", "minimum": 1},
+        "memory_mb": {
+          "type": "integer",
+          "minimum": 1
+        },
         "system": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "manufacturer": {"type": "string"},
-            "model": {"type": "string"},
-            "uuid": {"type": "string"},
-            "serial": {"type": "string"}
+            "manufacturer": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "uuid": {
+              "type": "string"
+            },
+            "serial": {
+              "type": "string"
+            }
           }
         },
         "bios": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "vendor": {"type": "string"},
-            "version": {"type": "string"},
-            "release_date": {"type": "string"},
-            "serial": {"type": "string"}
+            "vendor": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "release_date": {
+              "type": "string"
+            },
+            "serial": {
+              "type": "string"
+            }
           }
         }
       }
@@ -89,14 +188,41 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "interfaces": {"type": "array", "items": {"$ref": "#/$defs/interface"}},
-        "dns_suffix": {"type": "string"}
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/interface"
+          }
+        },
+        "dns_suffix": {
+          "type": "string"
+        }
       }
     },
-    "users": {"type": "array", "items": {"$ref": "#/$defs/user"}},
-    "groups": {"type": "array", "items": {"$ref": "#/$defs/group"}},
-    "software": {"type": "array", "items": {"$ref": "#/$defs/package"}},
-    "services": {"type": "array", "items": {"$ref": "#/$defs/service"}},
+    "users": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/user"
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/group"
+      }
+    },
+    "software": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/package"
+      }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/service"
+      }
+    },
     "registry": {
       "description": "Windows only. Keys use hive abbreviations (HKLM, HKU, HKCR).",
       "type": "object",
@@ -104,136 +230,614 @@
       "properties": {
         "keys": {
           "type": "object",
-          "propertyNames": {"pattern": "^(HKLM|HKU|HKCR)(\\\\[^\\\\]+)+$"},
+          "propertyNames": {
+            "pattern": "^(HKLM|HKU|HKCR)(\\\\[^\\\\]+)+$"
+          },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {"oneOf": [{"$ref": "#/$defs/regvalue"}, {"type": "null"}]}
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/regvalue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
           }
         },
         "delete_keys": {
           "type": "array",
-          "items": {"type": "string", "pattern": "^(HKLM|HKU|HKCR)(\\\\[^\\\\]+)+$"}
+          "items": {
+            "type": "string",
+            "pattern": "^(HKLM|HKU|HKCR)(\\\\[^\\\\]+)+$"
+          }
         }
       }
     },
     "agent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["product", "version"],
+      "required": [
+        "product",
+        "version"
+      ],
       "properties": {
-        "product": {"enum": ["wazuh"]},
-        "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
-        "manager": {"type": "string"},
-        "group": {"type": "string"}
+        "product": {
+          "enum": [
+            "wazuh"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "manager": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        }
+      }
+    },
+    "files": {
+      "description": "Files and directories. Keyed by path: case-insensitive on Windows and macOS.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "processes": {
+      "description": "Processes running at boot. Keyed by id, a label local to the profile.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/process"
       }
     }
   },
   "allOf": [
     {
-      "if": {"properties": {"kind": {"const": "host-profile"}}},
-      "then": {"required": ["base", "identity"]}
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "host-profile"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "base",
+          "identity"
+        ]
+      }
     },
     {
-      "if": {"properties": {"kind": {"const": "base-image"}}},
-      "then": {"not": {"required": ["base"]}}
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "base-image"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "base"
+          ]
+        }
+      }
     },
     {
-      "if": {"not": {"properties": {"os": {"const": "windows"}}}},
-      "then": {"not": {"required": ["registry"]}}
+      "if": {
+        "not": {
+          "properties": {
+            "os": {
+              "const": "windows"
+            }
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "registry"
+          ]
+        }
+      }
     }
   ],
   "$defs": {
-    "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"},
-    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "remove": {"description": "In a host profile, deletes the base entry with the same key.", "const": true},
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "remove": {
+      "description": "In a host profile, deletes the base entry with the same key.",
+      "const": true
+    },
     "interface": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "remove": {"$ref": "#/$defs/remove"},
-        "description": {"type": "string"},
-        "mac": {"type": "string", "pattern": "^([0-9A-F]{2}:){5}[0-9A-F]{2}$"},
-        "ipv4": {"type": "array", "items": {"type": "string", "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"}},
-        "gateway": {"type": "string"},
-        "dns": {"type": "array", "items": {"type": "string"}},
-        "dhcp": {"type": "boolean"}
+        "name": {
+          "type": "string"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "description": {
+          "type": "string"
+        },
+        "mac": {
+          "type": "string",
+          "pattern": "^([0-9A-F]{2}:){5}[0-9A-F]{2}$"
+        },
+        "ipv4": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"
+          }
+        },
+        "gateway": {
+          "type": "string"
+        },
+        "dns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dhcp": {
+          "type": "boolean"
+        }
       }
     },
     "user": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "remove": {"$ref": "#/$defs/remove"},
-        "sid": {"type": "string", "pattern": "^S-1-(\\d+-)*\\d+$"},
-        "uid": {"type": "integer"},
-        "enabled": {"type": "boolean"},
-        "home": {"type": "string"},
-        "groups": {"type": "array", "items": {"type": "string"}}
+        "name": {
+          "type": "string"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "sid": {
+          "type": "string",
+          "pattern": "^S-1-(\\d+-)*\\d+$"
+        },
+        "uid": {
+          "type": "integer"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "home": {
+          "type": "string"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "group": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "remove": {"$ref": "#/$defs/remove"},
-        "sid": {"type": "string", "pattern": "^S-1-(\\d+-)*\\d+$"},
-        "gid": {"type": "integer"}
+        "name": {
+          "type": "string"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "sid": {
+          "type": "string",
+          "pattern": "^S-1-(\\d+-)*\\d+$"
+        },
+        "gid": {
+          "type": "integer"
+        }
       }
     },
     "package": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "remove": {"$ref": "#/$defs/remove"},
-        "version": {"type": "string"},
-        "vendor": {"type": "string"},
-        "architecture": {"enum": ["x86", "x86_64", "arm64", "noarch"]},
-        "install_date": {"type": "string"},
-        "location": {"type": "string"}
+        "name": {
+          "type": "string"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "version": {
+          "type": "string"
+        },
+        "vendor": {
+          "type": "string"
+        },
+        "architecture": {
+          "enum": [
+            "x86",
+            "x86_64",
+            "arm64",
+            "noarch"
+          ]
+        },
+        "install_date": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        }
       }
     },
     "service": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "remove": {"$ref": "#/$defs/remove"},
-        "display_name": {"type": "string"},
-        "state": {"enum": ["running", "stopped"]},
-        "start_mode": {"enum": ["auto", "manual", "disabled", "boot", "system"]},
-        "path": {"type": "string"},
-        "account": {"type": "string"}
+        "name": {
+          "type": "string"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "running",
+            "stopped"
+          ]
+        },
+        "start_mode": {
+          "enum": [
+            "auto",
+            "manual",
+            "disabled",
+            "boot",
+            "system"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "account": {
+          "type": "string"
+        }
       }
     },
     "regvalue": {
       "type": "object",
-      "required": ["type", "data"],
+      "required": [
+        "type",
+        "data"
+      ],
       "additionalProperties": false,
       "properties": {
-        "type": {"enum": ["REG_SZ", "REG_EXPAND_SZ", "REG_MULTI_SZ", "REG_DWORD", "REG_QWORD", "REG_BINARY"]},
+        "type": {
+          "enum": [
+            "REG_SZ",
+            "REG_EXPAND_SZ",
+            "REG_MULTI_SZ",
+            "REG_DWORD",
+            "REG_QWORD",
+            "REG_BINARY"
+          ]
+        },
         "data": {}
       },
       "allOf": [
-        {"if": {"properties": {"type": {"enum": ["REG_SZ", "REG_EXPAND_SZ"]}}},
-         "then": {"properties": {"data": {"type": "string"}}}},
-        {"if": {"properties": {"type": {"const": "REG_MULTI_SZ"}}},
-         "then": {"properties": {"data": {"type": "array", "items": {"type": "string"}}}}},
-        {"if": {"properties": {"type": {"const": "REG_DWORD"}}},
-         "then": {"properties": {"data": {"type": "integer", "minimum": 0, "maximum": 4294967295}}}},
-        {"if": {"properties": {"type": {"const": "REG_QWORD"}}},
-         "then": {"properties": {"data": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615}}}},
-        {"if": {"properties": {"type": {"const": "REG_BINARY"}}},
-         "then": {"properties": {"data": {"type": "string", "pattern": "^([0-9a-f]{2})*$"}}}}
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "REG_SZ",
+                  "REG_EXPAND_SZ"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "REG_MULTI_SZ"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "REG_DWORD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4294967295
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "REG_QWORD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 18446744073709551615
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "REG_BINARY"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "string",
+                "pattern": "^([0-9a-f]{2})*$"
+              }
+            }
+          }
+        }
       ]
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "file": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "remove": {
+          "$ref": "#/$defs/remove",
+          "description": "Deletes the base entry and, for a directory, everything below it."
+        },
+        "type": {
+          "enum": [
+            "file",
+            "dir"
+          ]
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "created": {
+          "$ref": "#/$defs/time"
+        },
+        "modified": {
+          "$ref": "#/$defs/time"
+        },
+        "accessed": {
+          "$ref": "#/$defs/time"
+        },
+        "attributes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "readonly",
+              "hidden",
+              "system",
+              "archive",
+              "compressed",
+              "encrypted",
+              "temporary",
+              "offline",
+              "not_content_indexed",
+              "sparse",
+              "reparse_point"
+            ]
+          }
+        },
+        "owner": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "pattern": "^[0-7]{3,4}$"
+        },
+        "content": {
+          "description": "Bytes we author. Vendor files carry metadata only (CLAUDE.md rule 1).",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "text"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "text": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "base64"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "base64": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "blob"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "blob": {
+                  "$ref": "#/$defs/sha256"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "dir"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "size"
+                  ]
+                },
+                {
+                  "required": [
+                    "sha256"
+                  ]
+                },
+                {
+                  "required": [
+                    "content"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "process": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string"
+        },
+        "command_line": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "pid": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "session": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "start_offset_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds after boot."
+        }
+      }
     }
   }
 }

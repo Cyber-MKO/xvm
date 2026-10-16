@@ -8,13 +8,22 @@ Merge rules (profile over base):
   `remove: true` deletes the base entry.
 - registry.keys: merge key by key, then value by value; a null value deletes it.
 - registry.delete_keys: deletes the key and every subkey from the base.
+- files: entries merge by path (case-insensitive on Windows and macOS, keeping
+  the base's spelling), in profile order; `remove: true` deletes the entry
+  and, for a directory, everything below it. The result is sorted by the
+  path's normal form.
+- processes: entries merge by id; `remove: true` deletes the base entry.
 """
 
 from __future__ import annotations
 
+import base64
+import binascii
 import copy
 import datetime
+import hashlib
 import json
+import re
 from importlib import resources
 from pathlib import Path
 
@@ -23,6 +32,27 @@ import yaml
 
 KEYED_LISTS = ("users", "groups", "software", "services")
 NESTED_KEYED_LISTS = (("network", "interfaces"),)
+SPECIAL_FIELDS = (*KEYED_LISTS, "registry", "network", "files", "processes")
+_WIN_PATH = re.compile(r"^[A-Za-z]:(\\[^\\/:*?\"<>|]+)*\\?$")
+_UNIX_PATH = re.compile(r"^/([^/\0]+/?)*$")
+
+
+def path_rules(os_name: str) -> tuple[str, bool]:
+    """(separator, case-insensitive) for an OS. macOS volumes are case-insensitive by default."""
+    if os_name == "windows":
+        return "\\", True
+    return "/", os_name == "macos"
+
+
+def norm_path(path: str, os_name: str) -> str:
+    """Normal form used to match paths. The root is "c:" on Windows and "" elsewhere."""
+    sep, fold = path_rules(os_name)
+    if os_name == "windows":
+        path = path.replace("/", "\\")
+    path = path.rstrip(sep)
+    return path.lower() if fold else path
+
+
 # Fields that belong to the file, not to the host, and never inherit from the base.
 OWN_FIELDS = ("schema", "kind", "name", "description", "base", "source")
 
@@ -61,7 +91,63 @@ def _keyed_lists(doc: dict):
         yield f"{parent}.{field}", doc.get(parent, {}).get(field)
 
 
+def _check_paths(doc: dict, where: str) -> None:
+    os_name = doc["os"]
+    pattern = _WIN_PATH if os_name == "windows" else _UNIX_PATH
+    sep, _ = path_rules(os_name)
+    seen: dict[str, dict] = {}
+    for f in doc.get("files", []):
+        if not pattern.match(f["path"]):
+            raise ProfileError(f"{where}: files: {f['path']!r} is not an absolute {os_name} path")
+        key = norm_path(f["path"], os_name)
+        if key in seen:
+            raise ProfileError(f"{where}: files: duplicate path {f['path']!r}")
+        seen[key] = f
+        if f.get("content") and "base64" in f["content"]:
+            try:
+                base64.b64decode(f["content"]["base64"], validate=True)
+            except binascii.Error as exc:
+                raise ProfileError(f"{where}: files: {f['path']!r}: bad base64") from exc
+    for key, f in seen.items():
+        if f.get("remove"):
+            continue
+        parent = key.rsplit(sep, 1)[0] if sep in key else None
+        while parent:
+            above = seen.get(parent)
+            if (
+                above is not None
+                and not above.get("remove")
+                and above.get("type", "file") == "file"
+            ):
+                raise ProfileError(
+                    f"{where}: files: {f['path']!r} is below the file {above['path']!r}"
+                )
+            parent = parent.rsplit(sep, 1)[0] if sep in parent else None
+
+
+def _check_processes(doc: dict, where: str, resolved: bool) -> None:
+    procs = doc.get("processes", [])
+    ids = [p["id"] for p in procs]
+    if len(ids) != len(set(ids)):
+        raise ProfileError(f"{where}: processes: duplicate id")
+    if not resolved:
+        return
+    pins = [p["pid"] for p in procs if "pid" in p]
+    if len(pins) != len(set(pins)):
+        raise ProfileError(f"{where}: processes: two processes pin the same pid")
+    known = set(ids)
+    for p in procs:
+        if "image" not in p:
+            raise ProfileError(f"{where}: processes: {p['id']!r} has no image")
+        if p.get("parent") is not None and p["parent"] not in known:
+            raise ProfileError(
+                f"{where}: processes: {p['id']!r} names unknown parent {p['parent']!r}"
+            )
+
+
 def _check_unique_names(doc: dict, where: str) -> None:
+    _check_paths(doc, where)
+    _check_processes(doc, where, resolved=doc["kind"] != "host-profile")
     for label, items in _keyed_lists(doc):
         seen: set[str] = set()
         for item in items or []:
@@ -72,6 +158,10 @@ def _check_unique_names(doc: dict, where: str) -> None:
 
 
 def _check_no_removals(doc: dict, where: str) -> None:
+    for label in ("files", "processes"):
+        for item in doc.get(label, []):
+            if item.get("remove"):
+                raise ProfileError(f"{where}: {label}: a base image cannot remove entries")
     for label, items in _keyed_lists(doc):
         for item in items or []:
             if item.get("remove"):
@@ -137,6 +227,41 @@ def _merge_keyed(base: list[dict] | None, over: list[dict] | None, label: str) -
     return list(result.values())
 
 
+def _merge_processes(base: list[dict], over: list[dict]) -> list[dict]:
+    result = {p["id"]: copy.deepcopy(p) for p in base}
+    for item in over:
+        if item.get("remove"):
+            if item["id"] not in result:
+                raise ProfileError(f"processes: cannot remove {item['id']!r}: not in the base")
+            del result[item["id"]]
+        elif item["id"] in result:
+            result[item["id"]] = _merge_dict(result[item["id"]], item)
+        else:
+            result[item["id"]] = copy.deepcopy(item)
+    return list(result.values())
+
+
+def _merge_files(base: list[dict], over: list[dict], os_name: str) -> list[dict]:
+    sep, _ = path_rules(os_name)
+    result = {norm_path(f["path"], os_name): copy.deepcopy(f) for f in base}
+    for item in over:
+        key = norm_path(item["path"], os_name)
+        if item.get("remove"):
+            doomed = [k for k in result if k == key or k.startswith(key + sep)]
+            if not doomed:
+                raise ProfileError(f"files: cannot remove {item['path']!r}: not in the base")
+            for k in doomed:
+                del result[k]
+        elif key in result:
+            merged = _merge_dict(result[key], item)
+            merged["path"] = result[key]["path"]
+            result[key] = merged
+        else:
+            result[key] = copy.deepcopy(item)
+    # Sorted by normal form: one canonical order for Python and the engine.
+    return [result[k] for k in sorted(result)]
+
+
 def _key_norm(key: str) -> str:
     return key.lower().rstrip("\\")
 
@@ -179,7 +304,7 @@ def resolve(profile: dict, base: dict) -> dict:
     deltas = {k: v for k, v in profile.items() if k not in OWN_FIELDS}
     out = _merge_dict(
         host_fields,
-        {k: v for k, v in deltas.items() if k not in (*KEYED_LISTS, "registry", "network")},
+        {k: v for k, v in deltas.items() if k not in SPECIAL_FIELDS},
     )
     for field in KEYED_LISTS:
         if field in base or field in profile:
@@ -197,6 +322,10 @@ def resolve(profile: dict, base: dict) -> dict:
         out["network"] = net
     if "registry" in base or "registry" in profile:
         out["registry"] = _merge_registry(base.get("registry", {}), profile.get("registry", {}))
+    if "files" in base or "files" in profile:
+        out["files"] = _merge_files(base.get("files", []), profile.get("files", []), base["os"])
+    if "processes" in base or "processes" in profile:
+        out["processes"] = _merge_processes(base.get("processes", []), profile.get("processes", []))
 
     resolved = {
         "schema": 1,
@@ -239,6 +368,36 @@ def _yaml_files(paths: list[Path]) -> list[Path]:
     return out
 
 
+def content_bytes(content: dict) -> bytes:
+    if "text" in content:
+        return content["text"].encode("utf-8")
+    return base64.b64decode(content["base64"], validate=True)
+
+
+def _store_blobs(doc: dict, blobs: Path) -> None:
+    """Move inline file content into the content-addressed blob store.
+
+    Identical bytes are stored once, however many hosts carry them. Size and
+    sha256 are filled in, and must match if the profile already gave them.
+    """
+    for f in doc.get("files", []):
+        content = f.get("content")
+        if not content or "blob" in content:
+            continue
+        data = content_bytes(content)
+        digest = hashlib.sha256(data).hexdigest()
+        for field, value in (("size", len(data)), ("sha256", digest)):
+            if field in f and f[field] != value:
+                raise ProfileError(
+                    f"{doc['name']}: files: {f['path']!r}: {field} does not match content"
+                )
+            f[field] = value
+        target = blobs / digest
+        if not target.exists():
+            target.write_bytes(data)
+        f["content"] = {"blob": digest}
+
+
 def compile_tree(base_paths: list[Path], host_paths: list[Path], out: Path) -> dict:
     """Validate base images and host profiles and write them as JSON for the engine.
 
@@ -269,6 +428,9 @@ def compile_tree(base_paths: list[Path], host_paths: list[Path], out: Path) -> d
         (out / sub).mkdir(parents=True, exist_ok=True)
         for stale in (out / sub).glob("*.json"):
             stale.unlink()
+    (out / "blobs").mkdir(exist_ok=True)
+    for doc in [*bases.values(), *hosts.values()]:
+        _store_blobs(doc, out / "blobs")
     for name, doc in bases.items():
         (out / "bases" / f"{name}.json").write_text(json.dumps(doc, indent=1) + "\n")
     for name, doc in hosts.items():

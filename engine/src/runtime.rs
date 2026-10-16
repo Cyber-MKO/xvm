@@ -54,6 +54,10 @@ pub struct RtKey {
 
 #[derive(Debug, Default)]
 pub struct Runtime {
+    /// Files changed at run time. Tombstones for deleted paths.
+    pub(crate) files: crate::files::RtFiles,
+    /// The live process table. Filled from the profile when the host loads.
+    pub(crate) procs: crate::procs::ProcTable,
     /// Normalised key path to its state. `None` is a tombstone: deleted at run time.
     pub(crate) reg: BTreeMap<String, Option<RtKey>>,
     /// Last write time of keys changed at run time.
@@ -82,12 +86,9 @@ fn civil(days: i64) -> (i64, u32, u32) {
     (y, m, d)
 }
 
-/// The engine's clock as RFC 3339 UTC with milliseconds.
-pub fn now() -> String {
-    let t = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    let secs = t.as_secs() as i64;
+/// Milliseconds since 1970 as RFC 3339 UTC with milliseconds.
+pub fn format_ms(ms: i64) -> String {
+    let secs = ms.div_euclid(1000);
     let (y, mo, d) = civil(secs.div_euclid(86_400));
     let s = secs.rem_euclid(86_400);
     format!(
@@ -95,8 +96,16 @@ pub fn now() -> String {
         s / 3600,
         s % 3600 / 60,
         s % 60,
-        t.subsec_millis()
+        ms.rem_euclid(1000)
     )
+}
+
+/// The engine's clock as RFC 3339 UTC with milliseconds.
+pub fn now() -> String {
+    let t = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    format_ms(t.as_millis() as i64)
 }
 
 /// Accept `YYYY-MM-DDTHH:MM:SS[.fraction]Z`. Scenarios pass their own clock
@@ -323,7 +332,7 @@ impl Live<'_> {
 // ---------------------------------------------------------------- changes
 
 impl Runtime {
-    fn record(&mut self, time: &str, mut change: Map<String, Value>) -> u64 {
+    pub(crate) fn record(&mut self, time: &str, mut change: Map<String, Value>) -> u64 {
         self.next_seq += 1;
         change.insert("seq".into(), self.next_seq.into());
         change.insert("time".into(), time.into());
@@ -520,6 +529,26 @@ impl Writer<'_> {
                 format!("{path} has subkeys; pass recursive to delete the tree"),
             ));
         }
+        // Implied ancestors become real keys, so they outlive their last subkey.
+        let mut keep = Vec::new();
+        {
+            let live = self.live();
+            let mut cur = parent(&nk);
+            while let Some(p) = cur {
+                if p.split('\\').count() < 2 {
+                    break;
+                }
+                if live.listed(p).is_none()
+                    && let Some(spelled) = live.key_path(p)
+                {
+                    keep.push((p.to_string(), spelled));
+                }
+                cur = parent(p);
+            }
+        }
+        for (p, spelled) in keep {
+            self.rt.copy_key(Some(Vec::new()), &p, spelled);
+        }
         for k in below.keys().chain(std::iter::once(&nk)) {
             self.rt.reg.insert(k.clone(), None);
             self.rt.last_write.remove(k);
@@ -657,7 +686,9 @@ impl Runtime {
     }
 
     /// Drop every run-time change. The journal keeps counting and records the reset.
+    /// The caller restores the boot process table (see `Host::reset`).
     pub fn reset(&mut self, time: &str) -> Value {
+        self.files = crate::files::RtFiles::default();
         self.reg.clear();
         self.last_write.clear();
         self.lists.clear();

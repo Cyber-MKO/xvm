@@ -98,5 +98,43 @@
  "agent": {
   "product": "wazuh",
   "version": "4.14.2"
- }
+ },
+ "files": [
+  {
+   "path": "c:\\windows\\temp",
+   "remove": true
+  },
+  {
+   "path": "C:\\WINDOWS\\system32\\drivers\\etc\\HOSTS",
+   "content": {
+    "text": "# edge hosts\r\n192.0.2.1 gateway\r\n"
+   }
+  },
+  {
+   "path": "C:\\Users\\svc-backup\\notes.txt",
+   "content": {
+    "text": "backup at 02:00"
+   },
+   "owner": "S-1-5-21-1-2-3-1001"
+  }
+ ],
+ "processes": [
+  {
+   "id": "spooler",
+   "remove": true
+  },
+  {
+   "id": "svchost-2",
+   "command_line": "svchost.exe -k netsvcs -p"
+  },
+  {
+   "id": "backup",
+   "image": "backup.exe",
+   "path": "C:\\Program Files\\Backup\\backup.exe",
+   "parent": "svchost-1",
+   "user": "EDGE-01\\svc-backup",
+   "session": 0,
+   "start_offset_s": 30
+  }
+ ]
 }

@@ -36,6 +36,30 @@ fn is_removal(item: &Value) -> bool {
     item.get("remove").and_then(Value::as_bool) == Some(true)
 }
 
+/// Merge two process lists, keyed by `id`, the way `merge_keyed` merges by name.
+pub fn merge_by_id(base: &[Value], delta: &[Value]) -> Vec<Value> {
+    let id = |v: &Value| v.get("id").and_then(Value::as_str).map(str::to_string);
+    let mut out: Vec<Value> = Vec::with_capacity(base.len() + delta.len());
+    for b in base {
+        let over = delta.iter().find(|d| id(d) == id(b));
+        match over {
+            Some(d) if is_removal(d) => {}
+            Some(Value::Object(d)) => {
+                if let Value::Object(bm) = b {
+                    out.push(Value::Object(merge_dict(bm, d)));
+                }
+            }
+            _ => out.push(b.clone()),
+        }
+    }
+    for d in delta {
+        if !base.iter().any(|b| id(b) == id(d)) && !is_removal(d) {
+            out.push(d.clone());
+        }
+    }
+    out
+}
+
 /// Merge two keyed lists (users, services, interfaces...).
 ///
 /// Base entries keep their position and spelling of `name`. A delta entry with

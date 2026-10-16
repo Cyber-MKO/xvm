@@ -10,9 +10,13 @@ left out, so each host profile must supply them:
 | BIOS and system serial numbers | Per host |
 | Wazuh service and Wazuh Agent package | Our installer step adds them from the host profile |
 | The scenario test user | Deleted during the capture |
+| The capture's PowerShell tree and the Wazuh agent processes | Not part of the OS at boot |
+| The boot time | Per host; the engine boots each host itself |
+| The VM's name in process owners | Written as `.\\user`, meaning the host itself |
 
-Software comes from the Uninstall registry keys. Users, groups, services and
-hardware come from the host JSON files.
+Software comes from the Uninstall registry keys. Users, groups, services,
+hardware, processes and file metadata come from the host JSON files. Files
+carry metadata and the captured SHA-256 only, never bytes (CLAUDE.md rule 1).
 """
 
 from __future__ import annotations
@@ -82,19 +86,23 @@ def _as_list(value) -> list:
     return value if isinstance(value, list) else [value]
 
 
-def _date(value) -> str | None:
-    """Accept Windows PowerShell 5.1 "/Date(ms)/" and ISO 8601 text; return ISO UTC."""
+def _instant(value) -> datetime | None:
+    """Accept Windows PowerShell 5.1 "/Date(ms)/" and ISO 8601 text, at full precision."""
     if not value:
         return None
     if isinstance(value, dict) and "value" in value:  # PowerShell 7 DateTime with extras
         value = value["value"]
     m = _MS_DATE.match(str(value))
     if m:
-        dt = datetime.fromtimestamp(int(m.group(1)) / 1000, UTC)
-    else:
-        dt = baseline.parse_time(str(value))
-        dt = dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
-    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return datetime.fromtimestamp(int(m.group(1)) / 1000, UTC)
+    dt = baseline.parse_time(str(value))
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
+
+
+def _date(value) -> str | None:
+    """ISO UTC text to the second, as profiles store times."""
+    dt = _instant(value)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ") if dt else None
 
 
 def _identity_value(key: str, name: str) -> bool:
@@ -297,6 +305,129 @@ def _services(root: Path) -> list[dict]:
     return sorted(out, key=lambda e: e["name"].lower())
 
 
+# Windows FileAttributes names (as PowerShell prints them) to profile attributes.
+FILE_ATTRIBUTES = {
+    "readonly": "readonly",
+    "hidden": "hidden",
+    "system": "system",
+    "archive": "archive",
+    "compressed": "compressed",
+    "encrypted": "encrypted",
+    "temporary": "temporary",
+    "offline": "offline",
+    "notcontentindexed": "not_content_indexed",
+    "sparsefile": "sparse",
+    "reparsepoint": "reparse_point",
+}
+# Processes that belong to the agent, not to the OS. Lower case.
+AGENT_PROCESSES = ("wazuh-agent.exe", "ossec-agent.exe")
+# Pinned PIDs: fixed on every Windows host.
+FIXED_PIDS = {"system idle process": 0, "system": 4}
+
+
+def _files(root: Path, notes: list[str]) -> list[dict]:
+    out: list[dict] = []
+    for f in _as_list(_read_json(root / "host" / "files.json")):
+        path = str(f.get("path", ""))
+        if not profile._WIN_PATH.match(path):
+            notes.append(f"file skipped, not a plain absolute path: {path}")
+            continue
+        entry: dict = {"path": path}
+        if f.get("dir"):
+            entry["type"] = "dir"
+        else:
+            if isinstance(f.get("size"), int):
+                entry["size"] = f["size"]
+            if isinstance(f.get("sha256"), str) and re.fullmatch(r"[0-9a-f]{64}", f["sha256"]):
+                entry["sha256"] = f["sha256"]
+        for field in ("created", "modified", "accessed"):
+            if t := _date(f.get(field)):
+                entry[field] = t
+        names = [a.strip().lower() for a in str(f.get("attributes", "")).split(",")]
+        attrs = sorted({FILE_ATTRIBUTES[a] for a in names if a in FILE_ATTRIBUTES})
+        if attrs:
+            entry["attributes"] = attrs
+        out.append(entry)
+    # Folders listed only as parents of captured files stay implied.
+    return out
+
+
+def _processes(root: Path, manifest: dict, notes: list[str]) -> list[dict]:
+    procs = _as_list(_read_json(root / "host" / "processes.json"))
+    os_json = _as_list(_read_json(root / "host" / "os.json"))
+    boot = _instant(os_json[0].get("LastBootUpTime")) if os_json else None
+    by_pid = {p["ProcessId"]: p for p in procs if isinstance(p.get("ProcessId"), int)}
+    children: dict[int, list[int]] = {}
+    for p in by_pid.values():
+        children.setdefault(p.get("ParentProcessId"), []).append(p["ProcessId"])
+
+    # Drop the capture's own PowerShell tree and the agent's processes, with their children.
+    dropped: set[int] = set()
+    roots = [manifest.get("capture_pid")] + [
+        pid for pid, p in by_pid.items() if str(p.get("Name", "")).lower() in AGENT_PROCESSES
+    ]
+    stack = [r for r in roots if r in by_pid]
+    while stack:
+        pid = stack.pop()
+        if pid in dropped:
+            continue
+        dropped.add(pid)
+        stack.extend(c for c in children.get(pid, []) if c != pid)
+    if manifest.get("capture_pid") not in by_pid:
+        notes.append("capture PowerShell process not found in processes.json")
+
+    def start(p: dict) -> datetime:
+        # Processes without a start time (System Idle) sort first.
+        return _instant(p.get("CreationDate")) or datetime.min.replace(tzinfo=UTC)
+
+    kept = sorted(
+        (p for pid, p in by_pid.items() if pid not in dropped),
+        key=lambda p: (start(p), p["ProcessId"]),
+    )
+    ids: dict[int, str] = {}
+    counts: dict[str, int] = {}
+    for p in kept:
+        stem = re.sub(r"\.exe$", "", str(p.get("Name", "process")).lower())
+        stem = re.sub(r"[^a-z0-9._-]+", "-", stem).strip("-.") or "process"
+        counts[stem] = counts.get(stem, 0) + 1
+        ids[p["ProcessId"]] = stem if counts[stem] == 1 else f"{stem}-{counts[stem]}"
+    machine = str(manifest.get("host", {}).get("name") or "").lower()
+
+    def owner(value: str) -> str:
+        # Local accounts name the capture VM; ".\\user" means "this host" (rule 5).
+        domain, sep, user = value.partition("\\")
+        if sep and machine and domain.lower() == machine:
+            return f".\\{user}"
+        return value
+
+    out = []
+    for p in kept:
+        name = str(p.get("Name") or "")
+        entry: dict = {"id": ids[p["ProcessId"]], "image": name or "unknown"}
+        if name.lower() in FIXED_PIDS and p["ProcessId"] == FIXED_PIDS[name.lower()]:
+            entry["pid"] = p["ProcessId"]
+        for field, src in (
+            ("path", "ExecutablePath"),
+            ("command_line", "CommandLine"),
+        ):
+            if p.get(src):
+                entry[field] = str(p[src])
+        if p.get("Owner"):
+            entry["user"] = owner(str(p["Owner"]))
+        if isinstance(p.get("SessionId"), int):
+            entry["session"] = p["SessionId"]
+        parent = p.get("ParentProcessId")
+        # Parent PID 0 means no parent on Windows.
+        if parent and parent in ids and parent != p["ProcessId"]:
+            entry["parent"] = ids[parent]
+        started = _instant(p.get("CreationDate"))
+        if boot and started:
+            offset = (started - boot).total_seconds()
+            entry["start_offset_s"] = max(0, round(offset, 3))
+        out.append(entry)
+    return out
+
+
 def build_base(capture: Path, name: str, description: str | None = None) -> tuple[dict, list[str]]:
     """Return (base image, notes). Raises ConvertError if the capture is unusable."""
     problems = baseline.verify(capture)
@@ -323,6 +454,8 @@ def build_base(capture: Path, name: str, description: str | None = None) -> tupl
         "groups": groups,
         "software": _software(capture, notes),
         "services": _services(capture),
+        "files": _files(capture, notes),
+        "processes": _processes(capture, manifest, notes),
         "registry": {"keys": keys},
     }
     base = {k: v for k, v in base.items() if v not in ({}, [])}

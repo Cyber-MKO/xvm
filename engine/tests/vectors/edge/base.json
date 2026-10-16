@@ -9,7 +9,8 @@
  "os_info": {
   "product_name": "Edge OS",
   "build": "100",
-  "architecture": "x86_64"
+  "architecture": "x86_64",
+  "last_boot": "2026-10-16T08:00:00Z"
  },
  "hardware": {
   "cpu": {
@@ -119,5 +120,86 @@
     }
    }
   }
- }
+ },
+ "files": [
+  {
+   "path": "C:\\Windows",
+   "type": "dir",
+   "attributes": [
+    "system"
+   ]
+  },
+  {
+   "path": "C:\\Windows\\System32\\kernel32.dll",
+   "size": 787456,
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+   "modified": "2026-01-01T00:00:00Z",
+   "attributes": [
+    "archive"
+   ]
+  },
+  {
+   "path": "C:\\Windows\\System32\\drivers\\etc\\hosts",
+   "content": {
+    "text": "# xvm hosts file\r\n127.0.0.1 localhost\r\n"
+   },
+   "modified": "2026-01-01T00:00:00Z"
+  },
+  {
+   "path": "C:\\Windows\\Temp\\old.log",
+   "content": {
+    "text": "old"
+   }
+  },
+  {
+   "path": "C:\\Windows\\Temp\\Sub\\deep.txt",
+   "content": {
+    "base64": "AAEC"
+   }
+  },
+  {
+   "path": "C:\\ProgramData\\Vendor\\config.ini",
+   "content": {
+    "text": "[main]\nlevel=1\n"
+   }
+  }
+ ],
+ "processes": [
+  {
+   "id": "system",
+   "image": "System",
+   "pid": 4,
+   "user": "NT AUTHORITY\\SYSTEM",
+   "start_offset_s": 0
+  },
+  {
+   "id": "smss",
+   "image": "smss.exe",
+   "path": "C:\\Windows\\System32\\smss.exe",
+   "parent": "system",
+   "start_offset_s": 1
+  },
+  {
+   "id": "svchost-1",
+   "image": "svchost.exe",
+   "path": "C:\\Windows\\System32\\svchost.exe",
+   "command_line": "svchost.exe -k DcomLaunch",
+   "parent": "smss",
+   "start_offset_s": 5
+  },
+  {
+   "id": "svchost-2",
+   "image": "svchost.exe",
+   "path": "C:\\Windows\\System32\\svchost.exe",
+   "command_line": "svchost.exe -k netsvcs",
+   "parent": "smss",
+   "start_offset_s": 6
+  },
+  {
+   "id": "spooler",
+   "image": "spoolsv.exe",
+   "parent": "smss",
+   "start_offset_s": 9
+  }
+ ]
 }

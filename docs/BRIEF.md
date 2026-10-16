@@ -56,6 +56,10 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Personality and control connections may both write | Proposed | 2026-10-16. The agent's own registry writes and scenario events go through the same ops and one journal. |
 | Scenarios pass their own clock on each write | Proposed | 2026-10-16. Optional `time` parameter, so hosts can run on jittered clocks (section 8). |
 | A host's name cannot change at run time | Proposed | 2026-10-16. `identity.hostname` is refused by `section.update`, since every component knows the host by name. |
+| Engine holds file metadata; bytes live in a content-addressed blob store | Decided | Kasim, 2026-10-16. Identical files are stored once across all hosts. A host's writes get their own copy. |
+| Base images carry captured file metadata, no vendor bytes | Decided | Kasim, 2026-10-16. Paths, sizes, times and SHA-256 from the golden VM. Reading such a file is a logged gap (rules 1 and 4). |
+| Processes come from the profile at boot plus live registration | Decided | Kasim, 2026-10-16. The engine assigns Windows-style PIDs, deterministic per host. Personalities register the agent's real processes. |
+| Implied directories and registry keys outlive their contents | Decided | 2026-10-16. Deleting the last file under an implied folder keeps the folder, as on a real system. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files

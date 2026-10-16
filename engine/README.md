@@ -1,6 +1,6 @@
 # engine
 
-The host-state engine (brief section 6, component 1). One process serves the facts of every emulated host: identity, OS, hardware, network, users, groups, software, services and the Windows registry. Personality runtimes ask it instead of hardcoding anything (CLAUDE.md rule 5).
+The host-state engine (brief section 6, component 1). One process serves the facts of every emulated host: identity, OS, hardware, network, users, groups, software, services, the Windows registry, files and processes. Personality runtimes ask it instead of hardcoding anything (CLAUDE.md rule 5).
 
 ## How it fits
 
@@ -46,6 +46,11 @@ Each message is a 4-byte big-endian length, then JSON. A request is `{"id": N, "
 | `reg.enum_values` | `key` | Array of `{name, type, data}` |
 | `reg.enum_subkeys` | `key` | Array of names |
 | `reg.key_info` | `key` | `{path, subkeys, values, last_write}` |
+| `file.stat` | `path` | Metadata: `path`, `type`, `size`, `sha256`, times, `attributes`, `owner`, `mode`, `has_content`. Implied directories add `implied: true`. |
+| `file.list` | `path` | Array of the children's metadata, sorted by normal form |
+| `file.read` | `path`, optional `offset`, `length` (at most 4 MiB) | `{data (base64), eof}` |
+| `proc.list` | none | Running processes: `pid`, `ppid`, `image`, `path`, `command_line`, `user`, `session`, `start_time`, `profile_id` or `native_pid` |
+| `proc.get` | `pid` | One running process |
 | `resolved` | none | The whole host: equal to `xvm-profile resolve` until something changes it at run time |
 
 ### Run-time changes
@@ -61,6 +66,13 @@ Every write takes an optional `time` (`2026-10-16T10:00:00Z`, fraction allowed).
 | `list.upsert` | `name`, `item` | Merges `item` into the entry with the same name, or appends it |
 | `list.remove` | `name`, `item` (a name) | Removes the entry |
 | `section.update` | `name`, `patch` | Deep-merges `patch`. Nulls, `network.interfaces` (use the list ops) and `identity.hostname` are refused. |
+| `file.write` | `path`, `data` (base64), optional `append` or `offset` | Without either, replaces the file. The parent must exist. A new file gets `created`, and on Windows the `archive` attribute. Read-only files refuse. |
+| `file.mkdir` | `path` | Fails with `exists` if the path exists, `not_found` if the parent does not |
+| `file.delete` | `path`, optional `recursive` | A non-empty directory needs `recursive` (`not_empty`) |
+| `file.rename` | `from`, `to` | Moves a file or a whole directory. `to` must not exist. |
+| `file.set` | `path`, `patch` | Changes `attributes` (Windows), `created`, `modified`, `accessed`, `owner` or `mode` |
+| `proc.start` | `image`, optional `path`, `command_line`, `user`, `session`, `parent_pid`, `native_pid` | The new process, with its engine-assigned `pid` |
+| `proc.exit` | `pid`, optional `exit_code` | Ends the process. Its children keep running with their old `ppid`, as on Windows. |
 | `changes` | optional `since` (default 0), `limit` (default 1000) | `{changes, last_seq, lost}`: journal entries after `since`, in order |
 | `reset` | none | Drops every run-time change. The journal keeps counting and records the reset. |
 
@@ -77,7 +89,33 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | `unknown_host` | `hello` named a host that is not loaded |
 | `not_found` | Registry key or value, or list entry, does not exist |
 | `has_subkeys` | `reg.delete_key` without `recursive` on a key with subkeys |
+| `exists` | `file.mkdir` or `file.rename` onto a path that exists |
+| `not_empty` | `file.delete` without `recursive` on a non-empty directory |
+| `is_directory` | Reading or writing a directory as a file |
+| `not_a_directory` | Listing a file, or creating a path below a file |
+| `access_denied` | Writing a read-only file |
+| `no_content` | Reading or appending to a file whose bytes were never captured. Also written to the gap log. |
 | `unsupported` | The op is not implemented. Also written to the gap log with the host and agent (rule 4). |
+
+## Files
+
+| Behaviour | Detail |
+| --- | --- |
+| Paths | Absolute. Windows paths take `\` or `/` and match without regard to case; macOS paths also ignore case; Linux paths are case-sensitive. The base's spelling is kept. |
+| Directories | A directory exists if it is listed or anything below it is. The root (a drive, or `/`) exists once anything is listed under it. A directory implied only by its contents stays when they are deleted or moved, as on a real file system. |
+| Bytes | Profile files share one copy per distinct content, from the blob store that `xvm-profile compile` writes (`blobs/SHA256`). Each blob is checked against its name at load. A host's first write copies the file into its run-time layer. |
+| Vendor files | Files from a golden capture carry metadata and the captured SHA-256, never bytes (CLAUDE.md rule 1). `file.stat` reports `has_content: false`; reading them fails with `no_content` and is logged as a gap. |
+| Hashes | `file.stat` reports the captured `sha256`, or computes it from the bytes. |
+
+## Processes
+
+| Behaviour | Detail |
+| --- | --- |
+| Boot table | The profile's `processes` run from boot. Each starts at `os_info.last_boot` plus its `start_offset_s`. Without `last_boot`, a host boots when the engine loads it. |
+| PIDs | Assigned by the engine, deterministic per host name, so a host gets the same PIDs every start and hosts differ from each other. Windows PIDs are multiples of 4 from 8 up; Linux and macOS PIDs count up from 1. A profile may pin a PID, for example System at 4. A PID is not reused while unused ones remain. |
+| Run time | Personalities register the agent's real processes with `proc.start`, giving `native_pid`. Scenarios start and end processes the same way. Both go into the change journal. |
+| `reset` | Restores the boot table with the same PIDs. |
+| `resolved` | Shows the profile's process definitions. The running table is `proc.list`. |
 
 ## Tests
 
@@ -85,7 +123,8 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | --- | --- |
 | `tests/vectors.rs` | The layered view equals `xvm-profile resolve` on every case in `tests/vectors/`, including value and list order |
 | `tests/server.rs` | Socket round trips, errors, `hello` first, gap logging |
-| `tests/runtime.rs` | Every write op, rejected writes, the journal and lost entries, reset, hosts on one base staying separate, eight concurrent writers |
+| `tests/runtime.rs` | Every write op, rejected writes, the journal and lost entries, reset, hosts on one base staying separate, eight concurrent writers, implied parent keys surviving their last subkey |
+| `tests/files_procs.rs` | Profile files and removals, listings and implied directories, every file op and error, vendor reads logged as gaps, Linux case rules, blobs shared between hosts and refused when tampered, the boot process table, PID rules, start and exit |
 | CI | The same tests as a 32-bit (i686) build, since the Windows personality links the client |
 
 The vectors are generated by `tests/control/test_vectors.py`. After changing a case, run `XVM_UPDATE_VECTORS=1 pytest tests/control/test_vectors.py`.
@@ -95,6 +134,6 @@ Not yet:
 | Missing | Notes |
 | --- | --- |
 | Saving run-time changes | Changes are in memory and lost when the engine stops |
-| File and process state | Needed for FIM and process inventory |
+| Directory change notification | Personalities poll `changes` for file events, as for the registry |
 | Registry change notification | Personalities poll `changes`; a push channel may come later |
 | Response actions | Handled by the response recorders, not the engine (CLAUDE.md rule 7) |
