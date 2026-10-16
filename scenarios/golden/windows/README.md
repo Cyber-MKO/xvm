@@ -22,6 +22,7 @@ A one-time capture from a real Windows evaluation VM running the Wazuh agent. Em
 | 5 | Manager | Within the same day: `./manager-capture.sh xvm-golden-win /tmp/xvm-golden-manager` |
 | 6 | Workstation | Copy both folders to the repo checkout, then run `xvm-golden import-manager <capture-dir> --archives <manager-dir>/archives.json --alerts <manager-dir>/alerts.json` |
 | 7 | Workstation | `xvm-golden verify <capture-dir>` must print `ok`. |
+| 8 | Workstation | Move the folder to `scenarios/golden/windows/captures/<host>-<yyyymmdd>/` and commit it. Git LFS stores the `.evtx` and manager files (see `.gitattributes`). Run `git lfs install` once first. |
 
 If `capture.ps1` is blocked, run it with `powershell -ExecutionPolicy Bypass -File .\capture.ps1 -OutDir C:\xvm-golden-out`.
 

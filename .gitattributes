@@ -1,0 +1,4 @@
+# Golden captures: large binary and log files go to Git LFS (decided 2026-10-16).
+# Manifests, registry exports and host JSON stay in plain git so they diff.
+scenarios/golden/**/*.evtx filter=lfs diff=lfs merge=lfs -text
+scenarios/golden/**/manager/*.json filter=lfs diff=lfs merge=lfs -text

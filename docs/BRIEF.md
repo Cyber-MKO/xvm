@@ -45,6 +45,9 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Windows personality runs as a 32-bit Linux process | Decided | Wazuh's Windows binaries are all PE32 i386. Needs IA32 emulation in the host kernel. |
 | We provide `msvcrt.dll` ourselves, on top of host libc | Decided | Windows semantics added per function, from the census. |
 | A non-GUI `user32` subset is allowed | Decided | Only census functions, no window system. Consistent with rule 6. |
+| Host profiles are YAML, validated by a JSON Schema | Decided | Kasim, 2026-10-16. See `docs/host-profiles.md`. |
+| Host profiles are a base image plus per-host deltas | Decided | Kasim, 2026-10-16. Bases are built from golden captures. |
+| Golden captures are stored with Git LFS in this repo | Decided | Kasim, 2026-10-16. `.evtx` and manager logs go to LFS; manifests stay in plain git. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files

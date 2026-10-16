@@ -1,0 +1,47 @@
+# Example base image. The values are illustrative, not captured from a real host.
+# Real bases are built from a golden capture and live in control/profiles/bases/.
+schema: 1
+kind: base-image
+name: windows-example
+description: Illustrative Windows Server base for documentation and tests
+os: windows
+os_info:
+  product_name: Windows Server 2022 Standard Evaluation
+  edition: ServerStandardEval
+  version: "10.0"
+  build: "20348"
+  ubr: 1
+  display_version: 21H2
+  architecture: x86_64
+  install_date: "2026-01-01T00:00:00Z"
+  locale: en-US
+  timezone: UTC
+hardware:
+  cpu: {name: Example vCPU, vendor: GenuineIntel, cores: 2, logical_processors: 2, mhz: 2400}
+  memory_mb: 4096
+  system: {manufacturer: Example Systems, model: Virtual Machine}
+  bios: {vendor: Example BIOS, version: "1.0"}
+network:
+  interfaces:
+    - name: Ethernet0
+      description: Example virtual NIC
+      dhcp: true
+users:
+  - {name: Administrator, sid: S-1-5-21-1000000000-1000000000-1000000000-500, enabled: true, groups: [Administrators]}
+  - {name: Guest, sid: S-1-5-21-1000000000-1000000000-1000000000-501, enabled: false, groups: [Guests]}
+groups:
+  - {name: Administrators, sid: S-1-5-32-544}
+  - {name: Users, sid: S-1-5-32-545}
+  - {name: Guests, sid: S-1-5-32-546}
+services:
+  - {name: EventLog, display_name: Windows Event Log, state: running, start_mode: auto}
+  - {name: W32Time, display_name: Windows Time, state: running, start_mode: manual}
+registry:
+  keys:
+    HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion:
+      ProductName: {type: REG_SZ, data: Windows Server 2022 Standard Evaluation}
+      CurrentBuildNumber: {type: REG_SZ, data: "20348"}
+      CurrentMajorVersionNumber: {type: REG_DWORD, data: 10}
+      CurrentMinorVersionNumber: {type: REG_DWORD, data: 0}
+      UBR: {type: REG_DWORD, data: 1}
+      DisplayVersion: {type: REG_SZ, data: 21H2}
