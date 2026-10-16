@@ -4,8 +4,10 @@
 mod dir;
 mod errno;
 mod heap;
+mod locale;
 mod startup;
 mod string;
+mod wide;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     [
@@ -14,6 +16,8 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         string::exports(),
         dir::exports(),
         errno::exports(),
+        wide::exports(),
+        locale::exports(),
     ]
     .concat()
 }

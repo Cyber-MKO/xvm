@@ -42,9 +42,11 @@ fn loads_dependencies_first_and_records_gaps() {
     let p = process(dir, "importer.exe");
 
     let order: Vec<_> = p.modules().iter().map(|m| m.name.as_str()).collect();
-    assert_eq!(order.last(), Some(&"importer.exe"));
-    assert_eq!(order.len(), 3, "{order:?}");
-    assert!(order.contains(&"kernel32.dll") && order.contains(&"sample.dll"));
+    // ntdll.dll and kernel32.dll come first in every process, as on Windows.
+    assert_eq!(
+        order,
+        ["ntdll.dll", "kernel32.dll", "sample.dll", "importer.exe"]
+    );
 
     let kernel32 = p.module("KERNEL32.DLL").unwrap();
     assert!(kernel32.emulated && kernel32.path.is_none());
@@ -276,7 +278,8 @@ fn module_handles_and_proc_addresses_through_kernel32() {
     // Misses that Windows would answer are gaps; ordinary misses are not.
     let before = runtime.lock().gaps().len();
     assert_eq!(get_proc(k32_base, c"GetTickCount".as_ptr()), 0);
-    assert_eq!(get_module_a(c"ntdll.dll".as_ptr()), 0);
+    assert_ne!(get_module_a(c"ntdll.dll".as_ptr()), 0, "always loaded");
+    assert_eq!(get_module_a(c"kernelbase.dll".as_ptr()), 0);
     let p = runtime.lock();
     let new: Vec<_> = p.gaps()[before..]
         .iter()
@@ -287,7 +290,7 @@ fn module_handles_and_proc_addresses_through_kernel32() {
         "{new:?}"
     );
     assert!(
-        new.contains(&(GapKind::Module, "ntdll.dll", "*")),
+        new.contains(&(GapKind::Module, "kernelbase.dll", "*")),
         "{new:?}"
     );
     assert!(!new.iter().any(|g| g.2 == "missing"));
@@ -443,4 +446,44 @@ fn enum_process_modules_lists_the_executable_first() {
     list.sort();
     bases.sort();
     assert_eq!(list, bases);
+}
+
+#[test]
+fn module_file_names_come_from_drives_and_the_system_directory() {
+    use std::collections::BTreeMap;
+    use xvm_windows::paths::DriveMap;
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let mut p = process(dir, "modules.exe");
+    p.params.drives = DriveMap::new(&BTreeMap::from([("C".to_string(), dir.to_path_buf())]));
+    p.params.current_directory = r"C:\".into();
+    let runtime = Runtime::new(p);
+    let _thread = runtime.attach().unwrap();
+    let (address, psapi) = {
+        let p = runtime.lock();
+        let m = p.module("psapi.dll").unwrap();
+        (m.export_address("GetModuleFileNameExW").unwrap(), m.base())
+    };
+    // SAFETY: DWORD WINAPI GetModuleFileNameExW(HANDLE, HMODULE, LPWSTR, DWORD).
+    let f: extern "stdcall" fn(u32, u32, *mut u16, u32) -> u32 =
+        unsafe { std::mem::transmute(address as usize) };
+    let name = |module: u32, size: usize| {
+        let mut buf = vec![0xffffu16; size];
+        let n = f(u32::MAX, module, buf.as_mut_ptr(), size as u32);
+        assert_eq!(buf[n as usize], 0, "NUL-terminated");
+        String::from_utf16(&buf[..n as usize]).unwrap()
+    };
+
+    assert_eq!(name(0, 260), r"C:\modules.exe");
+    assert_eq!(name(0, 5), r"C:\m", "truncated to the buffer");
+
+    // Without a system module directory, emulated modules have no path.
+    let before = runtime.lock().gaps().len();
+    let mut buf = [0u16; 260];
+    assert_eq!(f(u32::MAX, psapi, buf.as_mut_ptr(), 260), 0);
+    assert_eq!(runtime.lock().gaps().len(), before + 1);
+
+    runtime.lock().params.system_module_directory = Some(r"C:\Windows\SysWOW64".into());
+    assert_eq!(name(psapi, 260), r"C:\Windows\SysWOW64\psapi.dll");
 }

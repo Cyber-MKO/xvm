@@ -84,6 +84,18 @@ impl Module {
         self.mapped.base()
     }
 
+    /// The module's full Windows path: through the drive table for an
+    /// image, in the profile's system module directory when emulated.
+    pub fn windows_path(&self, params: &ProcessParams) -> Option<String> {
+        match &self.path {
+            Some(host) => params.drives.to_windows(host),
+            None => {
+                let dir = params.system_module_directory.as_deref()?;
+                Some(format!("{}\\{}", dir.trim_end_matches('\\'), self.name))
+            }
+        }
+    }
+
     /// Address of an export inside this module (not a forwarder).
     pub fn export_address(&self, name: &str) -> Option<u32> {
         match self.exports.by_name(name)?.target {
@@ -160,6 +172,10 @@ pub struct ProcessParams {
     pub service: Option<String>,
     /// System certificate stores by upper-case name.
     pub cert_stores: BTreeMap<String, Vec<Certificate>>,
+    /// Where emulated system DLLs say they were loaded from.
+    pub system_module_directory: Option<String>,
+    /// Upper-case full Windows path to the SHA-256 of a trusted file.
+    pub trusted_files: BTreeMap<String, [u8; 32]>,
 }
 
 impl ProcessParams {
@@ -171,6 +187,15 @@ impl ProcessParams {
             drives: DriveMap::new(&windows.drives),
             service: windows.agent.service.clone(),
             cert_stores: windows.certificates.clone(),
+            system_module_directory: windows.system_module_directory.clone(),
+            trusted_files: windows
+                .trusted_files
+                .iter()
+                .filter_map(|(path, hash)| {
+                    let full = DriveMap::full_path(path, r"C:\").ok()?;
+                    Some((full.to_ascii_uppercase(), crate::sha256::parse_hex(hash)?))
+                })
+                .collect(),
         }
     }
 }
@@ -296,6 +321,14 @@ pub struct CryptState {
     pub next_handle: u32,
 }
 
+/// A callback from `LdrRegisterDllNotification`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DllNotification {
+    pub cookie: u32,
+    pub function: u32,
+    pub context: u32,
+}
+
 pub struct Process {
     search: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -311,6 +344,8 @@ pub struct Process {
     pub params: ProcessParams,
     pub services: ServiceState,
     pub crypt: CryptState,
+    /// Registered DLL load notifications, in registration order.
+    pub dll_notifications: Vec<DllNotification>,
 }
 
 impl Process {
@@ -330,6 +365,7 @@ impl Process {
             params: ProcessParams::default(),
             services: ServiceState::default(),
             crypt: CryptState::default(),
+            dll_notifications: Vec::new(),
         }
     }
 
@@ -422,6 +458,11 @@ impl Process {
 
     /// Load `path` and its imports. Returns the module's index.
     pub fn load(&mut self, path: &Path) -> Result<usize, LoadError> {
+        for dll in emu::ALWAYS_LOADED {
+            if self.index(dll).is_none() {
+                self.load_emulated(dll)?;
+            }
+        }
         let name = file_name(path);
         if let Some(i) = self.index(&name) {
             return Ok(i);

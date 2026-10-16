@@ -16,6 +16,8 @@ Profiles are where host facts live (CLAUDE.md rule 5). An example is in `control
 | `windows.agent.current_directory` | string | The agent's starting directory, as a Windows path |
 | `windows.agent.service` | string, optional | The service the Service Control Manager started the agent as. Without it, `StartServiceCtrlDispatcherA` fails as it does for a console process. |
 | `windows.cert_stores` | table, optional | System certificate store name (`ROOT`, `CA`, `MY`) to a list of DER certificate files, relative to the profile. Read and checked when the profile loads. Store names are compared ignoring case. |
+| `windows.system_module_directory` | string, optional | The directory emulated system DLLs report as their location, such as `C:\Windows\SysWOW64` for a 32-bit process on 64-bit Windows |
+| `windows.trusted_files` | table, optional | Windows path to the SHA-256 (64 hex digits) of a file whose signature is valid on this host. `WinVerifyTrust` answers from this list |
 | `windows.environment` | table | The agent's environment variables. The runtime sorts them by name, ignoring case, as Windows keeps its environment block. |
 
 Rules:

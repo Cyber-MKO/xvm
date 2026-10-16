@@ -22,6 +22,7 @@ pub mod process;
 pub mod profile;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod runtime;
+pub mod sha256;
 pub mod teb;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod thread;

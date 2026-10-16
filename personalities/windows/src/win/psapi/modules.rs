@@ -1,15 +1,83 @@
-//! Modules of a process: `EnumProcessModules`.
+//! Modules of a process: `EnumProcessModules`, `GetModuleFileNameExW`.
 //!
 //! Only the current process is supported. Another process is logged as a
 //! gap until the host-state engine provides other processes.
 
 use crate::gap::GapKind;
 use crate::runtime::with_current;
-use crate::win::kernel32::error::{ERROR_INVALID_HANDLE, set_last_error};
+use crate::win::kernel32::error::{
+    ERROR_INSUFFICIENT_BUFFER, ERROR_INVALID_HANDLE, ERROR_MOD_NOT_FOUND, set_last_error,
+};
 use crate::win::kernel32::process::CURRENT_PROCESS;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
-    vec![("EnumProcessModules", EnumProcessModules as *const () as u32)]
+    vec![
+        ("EnumProcessModules", EnumProcessModules as *const () as u32),
+        (
+            "GetModuleFileNameExW",
+            GetModuleFileNameExW as *const () as u32,
+        ),
+    ]
+}
+
+/// Copies the module's full Windows path (the main module for NULL) and
+/// returns the characters copied. A path longer than the buffer is
+/// truncated and NUL-terminated, as documented.
+#[allow(non_snake_case)]
+extern "stdcall" fn GetModuleFileNameExW(
+    process: u32,
+    module: u32,
+    out: *mut u16,
+    out_chars: u32,
+) -> u32 {
+    let path = with_current(|p| {
+        if process != CURRENT_PROCESS {
+            p.record_runtime_gap(
+                GapKind::Feature,
+                "psapi.dll",
+                "GetModuleFileNameExW of another process",
+            );
+            return Err(ERROR_INVALID_HANDLE);
+        }
+        let m = if module == 0 {
+            p.main_module()
+        } else {
+            p.module_at(module)
+        };
+        let Some(m) = m else {
+            return Err(ERROR_INVALID_HANDLE);
+        };
+        match m.windows_path(&p.params) {
+            Some(path) => Ok(path),
+            None => {
+                p.record_runtime_gap(
+                    GapKind::Feature,
+                    "psapi.dll",
+                    "GetModuleFileNameExW: no system_module_directory in the host profile",
+                );
+                Err(ERROR_MOD_NOT_FOUND)
+            }
+        }
+    });
+    let path = match path {
+        Ok(path) => path,
+        Err(code) => {
+            set_last_error(code);
+            return 0;
+        }
+    };
+    if out.is_null() || out_chars == 0 {
+        set_last_error(ERROR_INSUFFICIENT_BUFFER);
+        return 0;
+    }
+    let units: Vec<u16> = path.encode_utf16().collect();
+    let n = units.len().min(out_chars as usize - 1);
+    // SAFETY: out holds out_chars units (the API's contract).
+    unsafe {
+        std::ptr::copy_nonoverlapping(units.as_ptr(), out, n);
+        *out.add(n) = 0;
+    }
+    n as u32
 }
 
 /// Writes up to `size / 4` module handles, the executable first and then

@@ -6,6 +6,8 @@ use crate::teb::LAST_ERROR_VALUE;
 pub(crate) const ERROR_INVALID_HANDLE: u32 = 6;
 pub(crate) const ERROR_NOT_ENOUGH_MEMORY: u32 = 8;
 pub(crate) const ERROR_INVALID_PARAMETER: u32 = 87;
+pub(crate) const ERROR_INSUFFICIENT_BUFFER: u32 = 122;
+pub(crate) const ERROR_INVALID_NAME: u32 = 123;
 pub(crate) const ERROR_MOD_NOT_FOUND: u32 = 126;
 pub(crate) const ERROR_PROC_NOT_FOUND: u32 = 127;
 

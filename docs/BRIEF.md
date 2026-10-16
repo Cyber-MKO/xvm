@@ -53,6 +53,8 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Host profiles are TOML files; the runtime reads them until the state engine exists | Decided | Kasim (2026-10-16), option A. Format in `docs/host-profiles.md`. Each drive maps to a host directory; existing path components match without regard to case. |
 | The Service Control Manager is emulated inside the agent process | Decided | Kasim (2026-10-16), option A. The profile names the service the process was started as. The dispatcher runs `ServiceMain` on its own thread; the control plane sends control codes (SIGTERM becomes `SERVICE_CONTROL_STOP` for now). |
 | Certificate stores come from the host profile | Decided | Kasim (2026-10-16), option A. DER files per store; read with our own reader (X.690, RFC 5280) for only the fields the census needs. |
+| Signature verdicts come from a trusted-file list in the profile | Decided | Kasim (2026-10-16), option B. SHA-256 per file; emulated system DLLs count as signed. The profile also names the directory emulated system DLLs report. |
+| `ntdll.dll` and `kernel32.dll` are mapped into every process | Decided | As on Windows, whether imported or not. The agent looks up `ntdll!LdrRegisterDllNotification` at run time. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

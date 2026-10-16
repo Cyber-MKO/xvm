@@ -65,6 +65,14 @@ pub struct Windows {
     /// file's directory.
     #[serde(default)]
     pub cert_stores: BTreeMap<String, Vec<PathBuf>>,
+    /// The directory emulated system DLLs report as their location, such
+    /// as `C:\Windows\SysWOW64` for a 32-bit process on 64-bit Windows.
+    #[serde(default)]
+    pub system_module_directory: Option<String>,
+    /// Windows path to the SHA-256 (hex) of a file whose signature is
+    /// valid on this host.
+    #[serde(default)]
+    pub trusted_files: BTreeMap<String, String>,
     /// The certificates of `cert_stores`, read by `Profile::load`, keyed by
     /// upper-case store name.
     #[serde(skip)]
@@ -163,11 +171,20 @@ impl Profile {
                 &windows.agent.command_line,
                 &windows.agent.current_directory,
             ])
-            .chain(windows.agent.service.as_ref());
+            .chain(windows.agent.service.as_ref())
+            .chain(windows.system_module_directory.as_ref())
+            .chain(windows.trusted_files.keys());
         for s in strings {
             if !s.is_ascii() || s.contains('\0') {
                 return invalid(format!("{s:?} is not plain ASCII"));
             }
+        }
+        if let Some((path, _)) = windows
+            .trusted_files
+            .iter()
+            .find(|(_, hash)| crate::sha256::parse_hex(hash).is_none())
+        {
+            return invalid(format!("trusted file {path:?}: hash is not 64 hex digits"));
         }
         let mut stores: Vec<_> = windows
             .cert_stores
@@ -254,6 +271,10 @@ mod tests {
             "TEST-HOST\"\n        os = \"linux\""
         ));
         assert!(bad(r"windir = 'C:\Windows'", "windir = 'C:\\Wíndows'"));
+        assert!(bad(
+            "[windows.environment]",
+            "[windows.trusted_files]\n'C:\\a.exe' = 'abc'\n[windows.environment]"
+        ));
         assert!(bad(
             "[windows.environment]",
             "[windows.cert_stores]\nROOT = []\nroot = []\n[windows.environment]"

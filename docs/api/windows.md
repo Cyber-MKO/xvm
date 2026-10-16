@@ -4,6 +4,23 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `psapi.dll` | `GetModuleFileNameExW` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `tests/process.rs`, `module_file_names_come_from_drives_and_the_system_directory` | Current process only. Agent files map back through the drive table; emulated DLLs report `system_module_directory`. Truncates and NUL-terminates, as documented |
+| `wintrust.dll` | `WinVerifyTrust` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/wintrust/trust.rs` tests | Verdicts from the profile: emulated system DLLs valid; `trusted_files` valid while the SHA-256 matches, else `TRUST_E_BAD_DIGEST`; others `TRUST_E_NOSIGNATURE`. Generic verify action and file paths only; catalog checks never run for system DLLs |
+| `kernel32.dll` | `GetFullPathNameA` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/path.rs` tests | Against the emulated current directory; keeps a trailing separator; does not trim trailing dots and spaces. UNC is a logged gap |
+| `kernel32.dll` | `GetFullPathNameW` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/kernel32/path.rs` tests | As `GetFullPathNameA` |
+| `kernel32.dll` | `MultiByteToWideChar` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/kernel32/codepage.rs` tests | `CP_UTF8` complete. `CP_ACP` for ASCII only until the profile names the code page; the rest is a logged gap |
+| `kernel32.dll` | `WideCharToMultiByte` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/kernel32/codepage.rs` tests | As `MultiByteToWideChar` |
+| `msvcrt.dll` | `setlocale` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/locale.rs` tests | Only the "C" locale. Any other, including "", fails with NULL and is a logged gap |
+| `shlwapi.dll` | `PathIsUNCA` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/shlwapi/path.rs` tests | The documented examples, including `\\?\UNC\` |
+| `msvcrt.dll` | `wcslen` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcscpy` | Wazuh 4.14.2: 2 images, in `libstdc++-6.dll`, `libwazuhext.dll` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcsncpy` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcscat` | Wazuh 4.14.2: 1 image, in `libstdc++-6.dll` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcscmp` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcsncmp` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcsrchr` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `msvcrt.dll` | `wcsstr` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/wide.rs` tests | 16-bit `wchar_t`, written here; host libc uses 32 bits |
+| `ntdll.dll` | `LdrRegisterDllNotification` | Wazuh 4.14.2: not imported; `ntdll.dll` and this name are in the string census of `wazuh-agent.exe` and others, and the run-time gap log confirmed the lookup | `src/win/ntdll/loader.rs` tests | Records the callback. Nothing calls it until `LoadLibrary` exists |
 | `crypt32.dll` | `CertOpenSystemStoreA` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | Contents from `windows.cert_stores` in the profile. A store the profile does not list opens empty and is logged as a gap |
 | `crypt32.dll` | `CertEnumCertificatesInStore` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | `CERT_CONTEXT` with `CERT_INFO` version, serial, issuer, validity and subject. Algorithm, key, unique IDs and extensions are not filled |
 | `crypt32.dll` | `CertGetNameStringA` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | `CERT_NAME_SIMPLE_DISPLAY_TYPE` only (CN, OU, O, email), subject or issuer. Other types and the alternative-name fallback are logged gaps |

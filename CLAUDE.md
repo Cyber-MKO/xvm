@@ -62,8 +62,9 @@ Loader status:
 | Windows threads with attach and detach notifications (`Runtime::spawn`) | Done. `CreateThread` not started |
 | Service Control Manager, service side (`win/advapi32/service.rs`) | Done. SIGTERM stops a service |
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
-| Emulated functions | 56 of 617, plus 1 data export. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`, passes its DigiCert root check, reaches `loaded_modules_verification` (`psapi!GetModuleFileNameExW`) |
+| Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
+| Emulated functions | 74 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; passes the DigiCert root check and the loaded-module signature checks; registers its DLL-load hook. Next gap: `kernel32!CreateFileW` (file I/O) |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done. `LoadLibrary` not started |

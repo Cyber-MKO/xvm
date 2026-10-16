@@ -21,9 +21,10 @@ use crate::pe::{
     FILE_DLL, MACHINE_I386, OPTIONAL_MAGIC_PE32, SCN_MEM_EXECUTE, SCN_MEM_READ, SCN_MEM_WRITE,
 };
 
-/// The system DLLs the Wazuh 4.14.2 census found (docs/phase1-sizing.md).
+/// The system DLLs the Wazuh 4.14.2 census found (docs/phase1-sizing.md):
+/// the 19 it imports, plus `ntdll.dll`, which it looks up at run time.
 /// Imports from these resolve to emulated modules, never to files.
-pub const SYSTEM_DLLS: [&str; 19] = [
+pub const SYSTEM_DLLS: [&str; 20] = [
     "advapi32.dll",
     "comctl32.dll",
     "crypt32.dll",
@@ -32,6 +33,7 @@ pub const SYSTEM_DLLS: [&str; 19] = [
     "mpr.dll",
     "msvcrt.dll",
     "netapi32.dll",
+    "ntdll.dll",
     "ole32.dll",
     "oleaut32.dll",
     "psapi.dll",
@@ -44,6 +46,10 @@ pub const SYSTEM_DLLS: [&str; 19] = [
     "wsock32.dll",
     "wtsapi32.dll",
 ];
+
+/// Mapped into every Windows process before its executable, whether it
+/// imports them or not.
+pub const ALWAYS_LOADED: [&str; 2] = ["ntdll.dll", "kernel32.dll"];
 
 pub fn is_system_dll(name: &str) -> bool {
     SYSTEM_DLLS.iter().any(|d| d.eq_ignore_ascii_case(name))

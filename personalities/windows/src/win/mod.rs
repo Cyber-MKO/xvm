@@ -9,8 +9,11 @@ mod advapi32;
 mod crypt32;
 pub(crate) mod kernel32;
 mod msvcrt;
+mod ntdll;
 mod psapi;
+mod shlwapi;
 mod text;
+mod wintrust;
 
 /// What we implement for `dll`. System DLLs with nothing implemented yet
 /// return an empty list; their imports become gaps.
@@ -20,7 +23,10 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "crypt32.dll" => (crypt32::exports(), Vec::new()),
         "kernel32.dll" => (kernel32::exports(), Vec::new()),
         "msvcrt.dll" => (msvcrt::exports(), msvcrt::data()),
+        "ntdll.dll" => (ntdll::exports(), Vec::new()),
         "psapi.dll" => (psapi::exports(), Vec::new()),
+        "shlwapi.dll" => (shlwapi::exports(), Vec::new()),
+        "wintrust.dll" => (wintrust::exports(), Vec::new()),
         _ => (Vec::new(), Vec::new()),
     };
     let functions = functions.into_iter().map(|(n, a)| (n, EmuExport::Code(a)));
