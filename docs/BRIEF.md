@@ -3,7 +3,7 @@
 - Name: xvm
 - Owner: Kasim
 - As of: 2026-10-16
-- Status: pre-build
+- Status: Phase 1 (Windows loader)
 
 ## 1. What we are building
 
@@ -46,6 +46,8 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | We provide `msvcrt.dll` ourselves, on top of host libc | Decided | Windows semantics added per function, from the census. |
 | A non-GUI `user32` subset is allowed | Decided | Only census functions, no window system. Consistent with rule 6. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
+| Wazuh 4.14.2 census reviewed; Phase 1 starts | Decided | Kasim reviewed the census (2026-10-16). Golden baseline capture stays open. |
+| Loader fixtures are built from source too | Decided | Same approach as the census fixtures, built for `i686-pc-windows-msvc`. |
 
 ## 4. Core insight: emulate the API surface, not just the files
 

@@ -6,7 +6,7 @@ Start with [docs/BRIEF.md](docs/BRIEF.md). Rules for contributors and agents are
 
 ## Status
 
-Phase 0 (Foundations). The API census tool is in [census/](census/).
+Phase 1: the Windows personality's PE32 loader, in [personalities/windows/](personalities/windows/). The API census tool is in [census/](census/).
 
 ## Layout
 
@@ -31,5 +31,6 @@ Phase 0 (Foundations). The API census tool is in [census/](census/).
 | Python tests | `pytest` |
 | Rust lint | `cargo fmt --check && cargo clippy --all-targets -- -D warnings` |
 | Rust tests | `cargo test` |
+| Rust tests, 32-bit (runs PE code) | `rustup target add i686-unknown-linux-gnu && cargo test --target i686-unknown-linux-gnu` |
 
-System tools for the census and its tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm`. Tests that need a missing tool are skipped.
+System tools for the census, the loader and their tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm gcc-multilib`. Tests that need a missing tool are skipped. Set `XVM_REQUIRE_FIXTURES=1` to make the Rust loader tests fail instead.

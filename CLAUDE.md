@@ -40,19 +40,26 @@ control/         CLI and API, host profiles, Habeny provider
 tests/           T1 to T8, fidelity, resource and calibration harnesses
 ```
 
-## Current phase: Phase 0 (Foundations)
+## Current phase: Phase 1 (Windows personality, first boot)
 
-Start here, in order:
+Phase 0 is done: the census tool exists, and Kasim reviewed the Wazuh 4.14.2 census on 2026-10-16. The census report is `census/reports/wazuh-agent-4.14.2-windows.md`; the findings and the four Phase 1 decisions are in `docs/phase1-sizing.md`. The golden baseline capture from Phase 0 is still open.
 
-1. Scaffold the repo with the layout above, CI, linting and a test runner.
-2. Build the **API census tool** (`census/`):
-   - Unpack agent packages: MSI (msitools), PKG, DEB, RPM.
-   - Parse PE import tables, including delay-load imports (`pefile`), and later Mach-O load commands and imports.
-   - Flag dynamic loading (`LoadLibrary*`, `GetProcAddress`, `dlopen`) and strings that look like DLL or function names.
-   - Output per-DLL function lists per agent as JSON plus a Markdown summary in `census/reports/`.
-3. Run the census on the Wazuh Windows agent MSI and write the report. This sizes Phase 1.
+Phase 1 work lives in `personalities/windows/`. The exit check is in `docs/BRIEF.md` section 10.
 
-Do not start the Windows PE loader until the census report exists and Kasim has reviewed it.
+Loader status:
+
+| Part | Status |
+| --- | --- |
+| PE32 i386 header and section parsing | Done |
+| Layout, base relocations, exports, TLS directory | Done |
+| Import binding with gap records | Done |
+| Mapping into a 32-bit process and running code | Done |
+| TEB, `fs` segment, TLS slots and callbacks | Not started |
+| Process and thread start-up, DLL load order, `DllMain` | Not started |
+| Emulated DLLs (`kernel32`, `msvcrt` and the rest) | Not started |
+| MSI installer step | Not started |
+
+Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
 
 ## Working style
 

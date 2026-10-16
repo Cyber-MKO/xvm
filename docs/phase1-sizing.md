@@ -4,7 +4,7 @@
 - SHA-256: `e1eb434f1694283b89e07021cce1bded4ef25275d9efe6ca0edf2d514a7ea959`
 - Generated report: [census/reports/wazuh-agent-4.14.2-windows.md](../census/reports/wazuh-agent-4.14.2-windows.md)
 - Also censused: 4.14.9, the newest 4.x on 2026-10-16 ([report](../census/reports/wazuh-agent-4.14.9-windows.md)). See the version diff below.
-- Status: the four questions are answered (2026-10-16). See Decisions.
+- Status: the four questions are answered and Kasim reviewed the census (2026-10-16). See Decisions.
 
 ## Headline numbers
 

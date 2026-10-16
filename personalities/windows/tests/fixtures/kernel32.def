@@ -1,0 +1,5 @@
+LIBRARY kernel32.dll
+EXPORTS
+GetTickCount@0
+GetLastError@0
+ByOrdinal@0 @99 NONAME
