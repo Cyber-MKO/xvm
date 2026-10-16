@@ -487,3 +487,87 @@ fn module_file_names_come_from_drives_and_the_system_directory() {
     runtime.lock().params.system_module_directory = Some(r"C:\Windows\SysWOW64".into());
     assert_eq!(name(psapi, 260), r"C:\Windows\SysWOW64\psapi.dll");
 }
+
+static NOTICES: std::sync::Mutex<Vec<(u32, String, u32)>> = std::sync::Mutex::new(Vec::new());
+
+/// A DLL notification callback that records the reason, the full name as
+/// a C string, and the context.
+extern "stdcall" fn record_notice(reason: u32, data: *const u32, context: u32) {
+    // SAFETY: LDR_DLL_NOTIFICATION_DATA { Flags, FullDllName, ... } and a
+    // UNICODE_STRING { Length, MaximumLength, Buffer }, read as callers do.
+    let name = unsafe {
+        let full = *data.add(1) as *const u32;
+        let mut p = *full.add(1) as *const u16;
+        let mut units = Vec::new();
+        while *p != 0 {
+            units.push(*p);
+            p = p.add(1);
+        }
+        String::from_utf16(&units).unwrap()
+    };
+    NOTICES.lock().unwrap().push((reason, name, context));
+}
+
+#[test]
+fn load_library_maps_initialises_and_notifies() {
+    use std::collections::BTreeMap;
+    use std::ffi::c_char;
+    use xvm_windows::paths::DriveMap;
+    use xvm_windows::process::DllNotification;
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let mut p = process(dir, "importer.exe");
+    p.params.drives = DriveMap::new(&BTreeMap::from([("C".to_string(), dir.to_path_buf())]));
+    p.params.current_directory = r"C:\".into();
+    p.dll_notifications.push(DllNotification {
+        cookie: 1,
+        function: record_notice as *const () as u32,
+        context: 0x77,
+    });
+    let runtime = Runtime::new(p);
+    let thread = runtime.attach().unwrap();
+    runtime.initialize(&thread).unwrap();
+
+    let k32 = |n: &str| {
+        let p = runtime.lock();
+        p.module("kernel32.dll").unwrap().export_address(n).unwrap() as usize
+    };
+    // SAFETY: the emulated exports have these stdcall signatures.
+    let (load, get_proc, last_error) = unsafe {
+        (
+            std::mem::transmute::<usize, extern "stdcall" fn(*const c_char) -> u32>(k32(
+                "LoadLibraryA",
+            )),
+            std::mem::transmute::<usize, extern "stdcall" fn(u32, *const c_char) -> u32>(k32(
+                "GetProcAddress",
+            )),
+            std::mem::transmute::<usize, extern "stdcall" fn() -> u32>(k32("GetLastError")),
+        )
+    };
+
+    let base = load(c"INITDLL".as_ptr());
+    assert_ne!(base, 0);
+    let count = get_proc(base, c"dll_reason_count".as_ptr());
+    // SAFETY: int dll_reason_count(unsigned long), cdecl.
+    let count: extern "C" fn(u32) -> i32 = unsafe { std::mem::transmute(count as usize) };
+    assert_eq!(count(1), 1, "DllMain ran with DLL_PROCESS_ATTACH");
+    assert_eq!(load(c"initdll.dll".as_ptr()), base, "already loaded");
+    assert_eq!(count(1), 1, "and not initialised twice");
+    assert_eq!(runtime.lock().module("initdll.dll").unwrap().load_count, 2);
+
+    let notices = NOTICES.lock().unwrap().clone();
+    assert!(
+        notices.contains(&(1, r"C:\initdll.dll".to_string(), 0x77)),
+        "{notices:?}"
+    );
+
+    assert_eq!(load(c"missing.dll".as_ptr()), 0);
+    assert_eq!(last_error(), 126);
+    assert!(runtime.lock().gaps().iter().any(|g| g.dll == "missing.dll"));
+    let advapi = load(c"advapi32".as_ptr());
+    assert_eq!(
+        Some(advapi),
+        runtime.lock().module("advapi32.dll").map(|m| m.base())
+    );
+}

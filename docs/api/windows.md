@@ -4,6 +4,48 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `msvcrt.dll` | `_fdopen` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Modes `r`, `w`, `a`, `+`, `t`, `b` and the hints. Text or binary from the mode, the descriptor or `_fmode` |
+| `msvcrt.dll` | `fgets` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Text mode: CR LF to LF, CTRL+Z ends the file |
+| `msvcrt.dll` | `feof` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests |  |
+| `msvcrt.dll` | `ferror` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests |  |
+| `msvcrt.dll` | `fclose` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Also closes the descriptor and its OS handle |
+| `msvcrt.dll` | `_strdup` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/msstring.rs` tests |  |
+| `msvcrt.dll` | `_stricmp` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/msstring.rs` tests | ASCII folding to lower case, as the "C" locale does |
+| `msvcrt.dll` | `_strnicmp` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/msvcrt/msstring.rs` tests | As `_stricmp` |
+| `msvcrt.dll` | `strtol` | Wazuh 4.14.2: 11 images, including `wazuh-agent.exe` | `src/win/msvcrt/convert.rs` tests | Written here so overflow sets the CRT `errno` (ERANGE) |
+| `msvcrt.dll` | `strtoul` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/convert.rs` tests | As `strtol`; a minus sign negates |
+| `msvcrt.dll` | `atoi` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/convert.rs` tests | `strtol` in base 10 |
+| `msvcrt.dll` | `atol` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/convert.rs` tests | `strtol` in base 10 |
+| `msvcrt.dll` | `_lock` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/locks.rs` tests | Undocumented. 64 re-entrant locks; other numbers are a logged gap |
+| `msvcrt.dll` | `_unlock` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/locks.rs` tests | As `_lock` |
+| `kernel32.dll` | `LoadLibraryA` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `src/win/kernel32/library.rs` and `tests/process.rs` | Loaded modules, emulated system DLLs, application directory, current directory, or a path. Runs DLL notifications, then TLS callbacks and `DllMain`, outside the process lock |
+| `kernel32.dll` | `LoadLibraryW` | Wazuh 4.14.2: 2 images, in `libstdc++-6.dll`, `libwazuhext.dll` | `src/win/kernel32/library.rs` and `tests/process.rs` | As `LoadLibraryA` |
+| `kernel32.dll` | `LoadLibraryExA` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/kernel32/library.rs` and `tests/process.rs` | Flags other than 0 are a logged gap |
+| `kernel32.dll` | `FreeLibrary` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `src/win/kernel32/library.rs` and `tests/process.rs` | Counts only; modules are never unmapped |
+| `kernel32.dll` | `TlsAlloc` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/tls.rs` tests | 64 `TlsSlots`; zeroes the slot in every thread. Expansion slots are a logged gap |
+| `kernel32.dll` | `TlsGetValue` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/kernel32/tls.rs` tests | Clears the last error on success |
+| `kernel32.dll` | `TlsSetValue` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/tls.rs` tests |  |
+| `kernel32.dll` | `TlsFree` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/tls.rs` tests | Zeroes the slot in every thread |
+| `kernel32.dll` | `GetCurrentThreadId` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/process.rs` tests | Linux thread ID times 4 |
+| `kernel32.dll` | `GetCurrentThread` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/process.rs` tests | The documented pseudo-handle `(HANDLE)-2` |
+| `kernel32.dll` | `DuplicateHandle` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/handle.rs` tests | Current process only; the thread pseudo-handle becomes a real thread handle. Other processes are a logged gap |
+| `kernel32.dll` | `CreateEventA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | Manual and auto reset. A name is a logged gap |
+| `kernel32.dll` | `SetEvent` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests |  |
+| `kernel32.dll` | `ResetEvent` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests |  |
+| `kernel32.dll` | `WaitForSingleObject` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | Events and threads |
+| `kernel32.dll` | `WaitForSingleObjectEx` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | Alertable waits are a logged gap |
+| `msvcrt.dll` | `isalnum` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `isalpha` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `iscntrl` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `isgraph` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `islower` | Wazuh 4.14.2: 14 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `isprint` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `ispunct` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `isspace` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `isupper` | Wazuh 4.14.2: 14 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `isxdigit` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `tolower` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
+| `msvcrt.dll` | `toupper` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/ctype.rs` tests | "C" locale: ASCII rules |
 | `kernel32.dll` | `CreateFileW` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/file.rs` tests | All five dispositions, access and share rights, directories with `FILE_FLAG_BACKUP_SEMANTICS`, documented errors. Share modes checked within the process only. Overlapped, delete-on-close, security descriptors, inheritance and templates are logged gaps |
 | `kernel32.dll` | `CreateFileA` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/file.rs` tests | As `CreateFileW` |
 | `kernel32.dll` | `ReadFile` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/file.rs` tests | Synchronous; reads to the requested size or the end of the file. Overlapped reads are a logged gap |

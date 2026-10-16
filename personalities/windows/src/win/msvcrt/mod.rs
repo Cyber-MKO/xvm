@@ -1,12 +1,17 @@
 //! `msvcrt.dll`: our C runtime on top of host libc (docs/phase1-sizing.md,
 //! decision 2). All functions are cdecl.
 
+mod convert;
+mod ctype;
 mod dir;
 mod errno;
 mod heap;
 mod locale;
+mod locks;
 mod lowio;
+mod msstring;
 mod startup;
+pub(crate) mod stdio;
 mod string;
 mod wide;
 
@@ -20,6 +25,11 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         wide::exports(),
         locale::exports(),
         lowio::exports(),
+        stdio::exports(),
+        ctype::exports(),
+        convert::exports(),
+        msstring::exports(),
+        locks::exports(),
     ]
     .concat()
 }

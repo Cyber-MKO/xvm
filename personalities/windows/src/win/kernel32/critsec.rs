@@ -11,13 +11,15 @@
 //! | 12 | `OwningThread` | Owner's thread ID, 0 when free |
 //! | 20 | `SpinCount` | Stored, not used |
 //!
+//! All-zero memory is a valid, unlocked section.
+//!
 //! The lock is the classic three-state futex mutex. Re-entry by the owner
 //! only counts, as the EnterCriticalSection documentation requires.
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
 #[repr(C)]
-pub(super) struct CriticalSection {
+pub(crate) struct CriticalSection {
     debug_info: AtomicU32,
     lock: AtomicU32,
     recursion: AtomicU32,
@@ -91,7 +93,7 @@ extern "stdcall" fn InitializeCriticalSectionAndSpinCount(
 }
 
 #[allow(non_snake_case)]
-extern "stdcall" fn EnterCriticalSection(cs: *mut CriticalSection) {
+pub(crate) extern "stdcall" fn EnterCriticalSection(cs: *mut CriticalSection) {
     // SAFETY: the caller passes an initialised CRITICAL_SECTION.
     let cs = unsafe { &*cs };
     let me = thread_id();
@@ -141,7 +143,7 @@ extern "stdcall" fn TryEnterCriticalSection(cs: *mut CriticalSection) -> i32 {
 }
 
 #[allow(non_snake_case)]
-extern "stdcall" fn LeaveCriticalSection(cs: *mut CriticalSection) {
+pub(crate) extern "stdcall" fn LeaveCriticalSection(cs: *mut CriticalSection) {
     // SAFETY: the caller passes an initialised CRITICAL_SECTION it owns.
     let cs = unsafe { &*cs };
     if cs.recursion.fetch_sub(1, Ordering::Relaxed) > 1 {

@@ -64,9 +64,13 @@ pub struct Module {
     pub exports: Exports,
     /// TLS callbacks and `DllMain` have run (always true when emulated).
     pub initialized: bool,
+    /// `LoadLibrary` calls minus `FreeLibrary` calls. Modules are never
+    /// unmapped.
+    pub load_count: u32,
     /// `SizeOfStackReserve`: the default stack size of new threads, when
     /// this is the main module.
     pub stack_reserve: u32,
+    pub size_of_image: u32,
     mapped: Mapped,
 }
 
@@ -249,6 +253,11 @@ pub struct CrtState {
     pub onexit: Vec<u32>,
     /// Low-level I/O: file descriptor to its OS handle and `_O_*` flags.
     pub fds: Vec<Option<CrtFd>>,
+    /// Open `FILE *` streams.
+    pub streams: Vec<crate::win::msvcrt::stdio::Stream>,
+    /// The CRT's numbered internal locks, as `CRITICAL_SECTION`s (24 bytes
+    /// each). All zero is unlocked.
+    pub locks: Box<[[u32; 6]; 64]>,
 }
 
 /// One CRT file descriptor.
@@ -294,6 +303,8 @@ impl Default for CrtState {
             acmdln: None,
             onexit: Vec::new(),
             fds: Vec::new(),
+            streams: Vec::new(),
+            locks: Box::new([[0; 6]; 64]),
         }
     }
 }
@@ -380,6 +391,21 @@ pub struct Process {
     /// Registered DLL load notifications, in registration order.
     pub dll_notifications: Vec<DllNotification>,
     pub handles: HandleTable,
+    /// Set once a thread has a TEB: TLS slots of modules loaded later do
+    /// not reach existing threads.
+    pub threads_started: bool,
+    /// TEB addresses of the threads attached now.
+    pub tebs: Vec<u32>,
+    /// `TlsAlloc` slots in use (`TlsSlots`, 64 entries).
+    pub tls_slots: [bool; 64],
+}
+
+/// Why `Process::load_library` failed.
+#[derive(Debug)]
+pub enum LoadLibraryError {
+    /// No such DLL in the search path, the system DLLs or at the path.
+    NotFound,
+    Load(LoadError),
 }
 
 impl Process {
@@ -401,6 +427,9 @@ impl Process {
             crypt: CryptState::default(),
             dll_notifications: Vec::new(),
             handles: HandleTable::default(),
+            threads_started: false,
+            tebs: Vec::new(),
+            tls_slots: [false; 64],
         }
     }
 
@@ -538,12 +567,19 @@ impl Process {
         if let Some(e) = trap_error {
             return Err(LoadError::Map(name, e));
         }
-        tls.register(&mut image).map_err(pe)?;
+        let tls_index = tls.register(&mut image).map_err(pe)?;
         mapped
             .commit(&image)
             .map_err(|e| LoadError::Map(name.clone(), e))?;
 
         gaps.into_iter().for_each(|gap| self.record_gap(gap));
+        if tls_index.is_some() && self.threads_started {
+            self.record_runtime_gap(
+                GapKind::Feature,
+                &name,
+                "implicit TLS for a DLL loaded after threads started",
+            );
+        }
         if !image.headers.is_dll() && self.main.is_none() {
             self.main = Some(self.modules.len());
         }
@@ -551,7 +587,9 @@ impl Process {
             path: Some(path.to_path_buf()),
             emulated: false,
             initialized: false,
+            load_count: 0,
             stack_reserve: image.headers.stack_reserve,
+            size_of_image: image.headers.size_of_image,
             is_dll: image.headers.is_dll(),
             entry_point: image.entry_point(),
             exports: image
@@ -597,7 +635,9 @@ impl Process {
             path: None,
             emulated: true,
             initialized: true,
+            load_count: 0,
             stack_reserve: 0,
+            size_of_image: image.headers.size_of_image,
             is_dll: true,
             entry_point: None,
             exports: image
@@ -635,6 +675,10 @@ impl Process {
         self.modules.iter().find(|m| m.base() == base)
     }
 
+    pub fn module_at_mut(&mut self, base: u32) -> Option<&mut Module> {
+        self.modules.iter_mut().find(|m| m.base() == base)
+    }
+
     /// `GetProcAddress`: an export of the module at `base`, following
     /// forwarders.
     pub fn proc_address(&self, base: u32, symbol: &Symbol) -> Option<u32> {
@@ -642,20 +686,49 @@ impl Process {
     }
 
     /// Whether `name` is a DLL file the agent ships, loaded or not.
+    /// `LoadLibrary`: a loaded module by name, a system DLL, a DLL in the
+    /// application directory or the current directory, or one at a full
+    /// path. Returns the module's index; modules past the old length are
+    /// new and need initialising.
+    pub fn load_library(&mut self, name: &str) -> Result<usize, LoadLibraryError> {
+        let index = if name.contains(['\\', '/']) {
+            let params = &self.params;
+            let host = params
+                .drives
+                .to_host(name, &params.current_directory)
+                .map_err(|_| LoadLibraryError::NotFound)?;
+            if !host.is_file() {
+                return Err(LoadLibraryError::NotFound);
+            }
+            self.load(&host).map_err(LoadLibraryError::Load)?
+        } else if let Some(i) = self.index(name) {
+            i
+        } else if emu::is_system_dll(&normalize(name)) {
+            self.load_emulated(&normalize(name))
+                .map_err(LoadLibraryError::Load)?;
+            self.modules.len() - 1
+        } else {
+            let cwd = self
+                .params
+                .drives
+                .to_host(&self.params.current_directory, r"C:\")
+                .ok();
+            let path = self
+                .find_file(&normalize(name))
+                .or_else(|| cwd.and_then(|dir| find_in(&dir, &normalize(name))))
+                .ok_or(LoadLibraryError::NotFound)?;
+            self.load(&path).map_err(LoadLibraryError::Load)?
+        };
+        self.modules[index].load_count += 1;
+        Ok(index)
+    }
+
     pub fn is_bundled(&self, name: &str) -> bool {
         self.find_file(&normalize(name)).is_some()
     }
 
     fn find_file(&self, name: &str) -> Option<PathBuf> {
-        // Windows file names are case-insensitive; the host's are not.
-        self.search.iter().find_map(|dir| {
-            std::fs::read_dir(dir).ok()?.flatten().find_map(|entry| {
-                let file = entry.file_name();
-                file.to_str()?
-                    .eq_ignore_ascii_case(name)
-                    .then(|| entry.path())
-            })
-        })
+        self.search.iter().find_map(|dir| find_in(dir, name))
     }
 
     fn index(&self, name: &str) -> Option<usize> {
@@ -670,6 +743,17 @@ impl Resolver for ModuleResolver<'_> {
     fn resolve(&mut self, dll: &str, symbol: &Symbol) -> Option<u32> {
         find(self.0, dll)?.resolve(self.0, symbol, 0)
     }
+}
+
+/// A file in `dir` named `name`, ignoring case: Windows file names are
+/// case-insensitive and the host's are not.
+fn find_in(dir: &Path, name: &str) -> Option<PathBuf> {
+    std::fs::read_dir(dir).ok()?.flatten().find_map(|entry| {
+        let file = entry.file_name();
+        file.to_str()?
+            .eq_ignore_ascii_case(name)
+            .then(|| entry.path())
+    })
 }
 
 fn find<'a>(modules: &'a [Module], name: &str) -> Option<&'a Module> {

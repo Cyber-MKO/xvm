@@ -19,6 +19,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread::JoinHandle;
 
 use crate::process::{InitStep, Process};
+use crate::sync::{SyncHub, ThreadObject};
 use crate::thread::{DLL_PROCESS_ATTACH, DLL_THREAD_ATTACH, DLL_THREAD_DETACH, ThreadEnv};
 
 /// Smallest stack a new thread gets, whatever the image asks for.
@@ -51,6 +52,7 @@ impl std::error::Error for StartError {}
 pub struct Runtime {
     process: Arc<Mutex<Process>>,
     services: Arc<ServiceEvents>,
+    sync: Arc<SyncHub>,
 }
 
 /// What the service control dispatcher waits for.
@@ -75,16 +77,37 @@ struct ServiceEvents {
 pub struct Attached {
     env: ThreadEnv,
     previous: Option<Runtime>,
+    runtime: Runtime,
+    thread: Arc<ThreadObject>,
 }
 
 impl Attached {
     pub fn teb(&self) -> u32 {
         self.env.teb()
     }
+
+    /// The thread object other threads wait on.
+    pub fn thread(&self) -> &Arc<ThreadObject> {
+        &self.thread
+    }
+}
+
+thread_local! {
+    static THREAD: RefCell<Option<Arc<ThreadObject>>> = const { RefCell::new(None) };
+}
+
+/// The calling thread's object, while it is attached to a process.
+pub fn current_thread() -> Option<Arc<ThreadObject>> {
+    THREAD.with(|t| t.borrow().clone())
 }
 
 impl Drop for Attached {
     fn drop(&mut self) {
+        let teb = self.env.teb();
+        self.runtime.lock().tebs.retain(|&t| t != teb);
+        // A thread that ends without an exit code of its own exits with 0.
+        self.runtime.sync().finish_thread(&self.thread, 0);
+        THREAD.with(|t| *t.borrow_mut() = None);
         CURRENT.with(|c| *c.borrow_mut() = self.previous.take());
     }
 }
@@ -94,6 +117,7 @@ impl Runtime {
         Runtime {
             process: Arc::new(Mutex::new(process)),
             services: Arc::default(),
+            sync: Arc::default(),
         }
     }
 
@@ -101,12 +125,31 @@ impl Runtime {
         self.process.lock().unwrap()
     }
 
+    /// The process's waitable-object hub.
+    pub fn sync(&self) -> &SyncHub {
+        &self.sync
+    }
+
     /// Give the calling thread a TEB with this process's TLS and make the
     /// process current for emulated calls on it.
     pub fn attach(&self) -> io::Result<Attached> {
-        let env = ThreadEnv::install(self.lock().tls())?;
+        let env = {
+            let mut process = self.lock();
+            process.threads_started = true;
+            let env = ThreadEnv::install(process.tls())?;
+            process.tebs.push(env.teb());
+            env
+        };
         let previous = CURRENT.with(|c| c.borrow_mut().replace(self.clone()));
-        Ok(Attached { env, previous })
+        // SAFETY: gettid has no preconditions. IDs match GetCurrentThreadId.
+        let thread = Arc::new(ThreadObject::new((unsafe { libc::gettid() } as u32) << 2));
+        THREAD.with(|t| *t.borrow_mut() = Some(thread.clone()));
+        Ok(Attached {
+            env,
+            previous,
+            runtime: self.clone(),
+            thread,
+        })
     }
 
     /// Hand a control code to the process's service, as the Service Control
@@ -159,6 +202,9 @@ impl Runtime {
                     // SAFETY: as above.
                     unsafe { notify(step, DLL_THREAD_DETACH) };
                 }
+                // Signaled only after the detach notifications, as on
+                // Windows.
+                runtime.sync().finish_thread(thread.thread(), code);
                 drop(thread);
                 code
             })
@@ -209,7 +255,7 @@ pub fn with_current<R>(f: impl FnOnce(&mut Process) -> R) -> R {
 ///
 /// The module must be committed with its imports bound, and the calling
 /// thread must have a TEB.
-unsafe fn run_init(step: &InitStep) -> Result<(), StartError> {
+pub(crate) unsafe fn run_init(step: &InitStep) -> Result<(), StartError> {
     // SAFETY: the caller's contract.
     match unsafe { notify(step, DLL_PROCESS_ATTACH) } {
         0 => Err(StartError::DllMainFailed(step.module.clone())),

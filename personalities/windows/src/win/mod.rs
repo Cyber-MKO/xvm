@@ -8,7 +8,7 @@ use crate::emu::EmuExport;
 mod advapi32;
 mod crypt32;
 pub(crate) mod kernel32;
-mod msvcrt;
+pub(crate) mod msvcrt;
 mod ntdll;
 mod psapi;
 mod shlwapi;

@@ -28,8 +28,6 @@ use crate::runtime::with_current;
 use crate::win::text::{ansi, wide};
 
 pub(crate) const INVALID_HANDLE_VALUE: u32 = 0xffff_ffff;
-/// `GetCurrentThread()`.
-const CURRENT_THREAD: u32 = 0xffff_fffe;
 
 const GENERIC_READ: u32 = 0x8000_0000;
 const GENERIC_WRITE: u32 = 0x4000_0000;
@@ -276,7 +274,7 @@ extern "stdcall" fn CreateFileA(
 pub(crate) fn file_of(handle: u32) -> Result<(Arc<File>, bool, bool, bool), u32> {
     with_current(|p| match p.handles.get(handle) {
         Some(Object::File(f)) => Ok((f.file.clone(), f.can_read, f.can_write, f.is_directory)),
-        None => Err(ERROR_INVALID_HANDLE),
+        _ => Err(ERROR_INVALID_HANDLE),
     })
 }
 
@@ -339,7 +337,7 @@ extern "stdcall" fn ReadFile(
 /// closing and always succeed.
 #[allow(non_snake_case)]
 extern "stdcall" fn CloseHandle(handle: u32) -> i32 {
-    if handle == super::process::CURRENT_PROCESS || handle == CURRENT_THREAD {
+    if handle == super::process::CURRENT_PROCESS || handle == super::process::CURRENT_THREAD {
         return 1;
     }
     match with_current(|p| p.handles.remove(handle)) {

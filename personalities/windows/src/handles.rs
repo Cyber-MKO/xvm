@@ -7,8 +7,10 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::sync::{EventObject, ThreadObject, Waitable};
+
 /// An open file or directory.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileObject {
     /// Shared so I/O can run without the process lock.
     pub file: Arc<std::fs::File>,
@@ -23,9 +25,22 @@ pub struct FileObject {
     pub is_directory: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Object {
     File(FileObject),
+    Event(Arc<EventObject>),
+    Thread(Arc<ThreadObject>),
+}
+
+impl Object {
+    /// What a wait on this handle waits for, if it can be waited on.
+    pub fn waitable(&self) -> Option<Waitable> {
+        match self {
+            Object::Event(e) => Some(Waitable::Event(e.clone())),
+            Object::Thread(t) => Some(Waitable::Thread(t.clone())),
+            Object::File(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -59,8 +74,9 @@ impl HandleTable {
     }
 
     pub fn files(&self) -> impl Iterator<Item = &FileObject> {
-        self.objects.values().map(|o| match o {
-            Object::File(f) => f,
+        self.objects.values().filter_map(|o| match o {
+            Object::File(f) => Some(f),
+            _ => None,
         })
     }
 }

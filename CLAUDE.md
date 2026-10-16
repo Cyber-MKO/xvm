@@ -64,8 +64,11 @@ Loader status:
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
 | Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
 | Kernel handle table, file I/O (`handles.rs`, `win/kernel32/file.rs`) | Started: open, read, close |
-| Emulated functions | 79 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; passes its signature checks; opens `local_internal_options.conf`. Next gap: `msvcrt!_fdopen` (C stdio streams) |
+| C streams (`win/msvcrt/stdio.rs`) | Started: `_fdopen`, `fgets`, `fclose` |
+| `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
+| Waitable objects (`sync.rs`): events, threads; dynamic TLS slots | Done for events and threads |
+| Emulated functions | 119 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its options; loads `sysinfo.dll` and its bundled DLLs, whose `DllMain`s run. Next gap: `kernel32!GetThreadPriority` |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done. `LoadLibrary` not started |
