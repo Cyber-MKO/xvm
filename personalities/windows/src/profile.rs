@@ -12,6 +12,8 @@ use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
+use crate::x509::Certificate;
+
 pub const SCHEMA: u32 = 1;
 
 #[derive(Debug)]
@@ -58,6 +60,15 @@ pub struct Windows {
     /// The agent process's environment block.
     #[serde(default)]
     pub environment: BTreeMap<String, String>,
+    /// System certificate store name (`ROOT`, `CA`, `MY`) to DER
+    /// certificate files. Relative files are resolved against the profile
+    /// file's directory.
+    #[serde(default)]
+    pub cert_stores: BTreeMap<String, Vec<PathBuf>>,
+    /// The certificates of `cert_stores`, read by `Profile::load`, keyed by
+    /// upper-case store name.
+    #[serde(skip)]
+    pub certificates: BTreeMap<String, Vec<Certificate>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -86,6 +97,22 @@ impl Profile {
                 if dir.is_relative() {
                     *dir = base.join(&*dir);
                 }
+            }
+            for (store, files) in &mut windows.cert_stores {
+                let mut certs = Vec::new();
+                for file in files {
+                    if file.is_relative() {
+                        *file = base.join(&*file);
+                    }
+                    let der =
+                        std::fs::read(&*file).map_err(|e| ProfileError::Io(file.clone(), e))?;
+                    let cert = Certificate::parse(&der)
+                        .map_err(|e| ProfileError::Invalid(format!("{}: {e}", file.display())))?;
+                    certs.push(cert);
+                }
+                windows
+                    .certificates
+                    .insert(store.to_ascii_uppercase(), certs);
             }
         }
         Ok(profile)
@@ -141,6 +168,18 @@ impl Profile {
             if !s.is_ascii() || s.contains('\0') {
                 return invalid(format!("{s:?} is not plain ASCII"));
             }
+        }
+        let mut stores: Vec<_> = windows
+            .cert_stores
+            .keys()
+            .map(|k| k.to_ascii_uppercase())
+            .collect();
+        stores.sort();
+        if stores.windows(2).any(|w| w[0] == w[1]) {
+            return invalid("certificate store names must differ ignoring case".into());
+        }
+        if stores.iter().any(|s| s.is_empty() || !s.is_ascii()) {
+            return invalid("certificate store names must be non-empty ASCII".into());
         }
         if windows
             .environment
@@ -215,6 +254,10 @@ mod tests {
             "TEST-HOST\"\n        os = \"linux\""
         ));
         assert!(bad(r"windir = 'C:\Windows'", "windir = 'C:\\Wíndows'"));
+        assert!(bad(
+            "[windows.environment]",
+            "[windows.cert_stores]\nROOT = []\nroot = []\n[windows.environment]"
+        ));
     }
 
     #[test]
@@ -225,6 +268,11 @@ mod tests {
         let w = p.windows().unwrap();
         assert!(w.agent.command_line.contains("wazuh-agent.exe"));
         assert!(w.drives["C"].ends_with("example-windows/c"));
+        let root = &w.certificates["ROOT"];
+        assert_eq!(
+            root[0].subject.first(crate::x509::OID_COMMON_NAME),
+            Some("DigiCert Assured ID Root CA")
+        );
     }
 
     #[test]

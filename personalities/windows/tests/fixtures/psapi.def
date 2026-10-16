@@ -1,0 +1,3 @@
+LIBRARY psapi.dll
+EXPORTS
+EnumProcessModules@16

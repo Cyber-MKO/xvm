@@ -4,6 +4,7 @@ mod critsec;
 pub(crate) mod error;
 mod exception;
 mod module;
+pub(crate) mod process;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     [
@@ -11,6 +12,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         critsec::exports(),
         exception::exports(),
         module::exports(),
+        process::exports(),
     ]
     .concat()
 }

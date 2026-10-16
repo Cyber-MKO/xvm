@@ -4,6 +4,12 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `crypt32.dll` | `CertOpenSystemStoreA` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | Contents from `windows.cert_stores` in the profile. A store the profile does not list opens empty and is logged as a gap |
+| `crypt32.dll` | `CertEnumCertificatesInStore` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | `CERT_CONTEXT` with `CERT_INFO` version, serial, issuer, validity and subject. Algorithm, key, unique IDs and extensions are not filled |
+| `crypt32.dll` | `CertGetNameStringA` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | `CERT_NAME_SIMPLE_DISPLAY_TYPE` only (CN, OU, O, email), subject or issuer. Other types and the alternative-name fallback are logged gaps |
+| `crypt32.dll` | `CertCloseStore` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/crypt32/store.rs` tests | Certificates stay valid after closing |
+| `kernel32.dll` | `GetCurrentProcess` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/process.rs` tests | The documented pseudo-handle `(HANDLE)-1` |
+| `psapi.dll` | `EnumProcessModules` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `tests/process.rs`, `enum_process_modules_lists_the_executable_first` | Current process only: executable first, then load order. Another process is a logged gap |
 | `advapi32.dll` | `StartServiceCtrlDispatcherA` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` | `tests/process.rs`, `service_dispatcher_*`; `tests/run.rs` | Own-process services only. Runs `ServiceMain` on a new thread, delivers controls on the calling thread, returns after `SERVICE_STOPPED`. Fails with 1063 unless the profile names a service |
 | `advapi32.dll` | `RegisterServiceCtrlHandlerA` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` | `tests/process.rs`, `service_dispatcher_*`; `tests/run.rs` | Records the handler; held controls go out once it is registered |
 | `advapi32.dll` | `SetServiceStatus` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` | `tests/process.rs`, `service_dispatcher_*`; `tests/run.rs` | Records the status and logs each state change to stderr |

@@ -6,8 +6,10 @@
 use crate::emu::EmuExport;
 
 mod advapi32;
+mod crypt32;
 pub(crate) mod kernel32;
 mod msvcrt;
+mod psapi;
 mod text;
 
 /// What we implement for `dll`. System DLLs with nothing implemented yet
@@ -15,8 +17,10 @@ mod text;
 pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
     let (functions, data) = match dll.to_ascii_lowercase().as_str() {
         "advapi32.dll" => (advapi32::exports(), Vec::new()),
+        "crypt32.dll" => (crypt32::exports(), Vec::new()),
         "kernel32.dll" => (kernel32::exports(), Vec::new()),
         "msvcrt.dll" => (msvcrt::exports(), msvcrt::data()),
+        "psapi.dll" => (psapi::exports(), Vec::new()),
         _ => (Vec::new(), Vec::new()),
     };
     let functions = functions.into_iter().map(|(n, a)| (n, EmuExport::Code(a)));

@@ -30,6 +30,7 @@ pub mod tls;
 pub mod trap;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 mod win;
+pub mod x509;
 
 /// Personality identifier used by the control plane.
 pub const PERSONALITY: &str = "windows";

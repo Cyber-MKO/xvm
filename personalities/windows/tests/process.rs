@@ -407,3 +407,40 @@ fn new_threads_send_thread_attach_and_detach() {
     assert_ne!(teb, thread.teb());
     assert_eq!((count(1), count(2), count(3)), (1, 1, 1));
 }
+
+#[test]
+fn enum_process_modules_lists_the_executable_first() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "modules.exe"));
+    let _thread = runtime.attach().unwrap();
+    let (address, mut bases, exe) = {
+        let p = runtime.lock();
+        let psapi = p.module("psapi.dll").unwrap();
+        let address = psapi.export_address("EnumProcessModules").unwrap();
+        let bases: Vec<u32> = p.modules().iter().map(|m| m.base()).collect();
+        (address, bases, p.module("modules.exe").unwrap().base())
+    };
+    // SAFETY: BOOL WINAPI EnumProcessModules(HANDLE, HMODULE*, DWORD, LPDWORD).
+    let f: extern "stdcall" fn(u32, *mut u32, u32, *mut u32) -> i32 =
+        unsafe { std::mem::transmute(address as usize) };
+    let mut needed = 0;
+    assert_eq!(f(u32::MAX, std::ptr::null_mut(), 0, &mut needed), 1);
+    assert_eq!(needed as usize, bases.len() * 4);
+
+    let mut short = [0u32; 1];
+    assert_eq!(
+        f(u32::MAX, short.as_mut_ptr(), 4, &mut needed),
+        1,
+        "TRUE even when short"
+    );
+    assert_eq!(short[0], exe);
+
+    let mut list = vec![0u32; bases.len()];
+    assert_eq!(f(u32::MAX, list.as_mut_ptr(), needed, &mut needed), 1);
+    assert_eq!(list[0], exe);
+    list.sort();
+    bases.sort();
+    assert_eq!(list, bases);
+}

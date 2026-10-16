@@ -9,6 +9,7 @@
 //! Loading runs no agent code. `runtime::Runtime` runs TLS callbacks,
 //! `DllMain` and the entry point afterwards.
 
+use std::collections::BTreeMap;
 use std::ffi::{CString, c_char};
 use std::fmt;
 use std::io;
@@ -24,6 +25,7 @@ use crate::profile;
 use crate::tls::ProcessTls;
 use crate::trap::Traps;
 use crate::win;
+use crate::x509::Certificate;
 
 /// Forwarders can chain; real chains are one or two links long.
 const MAX_FORWARDS: usize = 8;
@@ -156,6 +158,8 @@ pub struct ProcessParams {
     /// The service the Service Control Manager started this process as,
     /// or `None` for a process started any other way.
     pub service: Option<String>,
+    /// System certificate stores by upper-case name.
+    pub cert_stores: BTreeMap<String, Vec<Certificate>>,
 }
 
 impl ProcessParams {
@@ -166,6 +170,7 @@ impl ProcessParams {
             current_directory: windows.agent.current_directory.clone(),
             drives: DriveMap::new(&windows.drives),
             service: windows.agent.service.clone(),
+            cert_stores: windows.certificates.clone(),
         }
     }
 }
@@ -262,6 +267,35 @@ pub struct ServiceState {
     pub argv: Option<MainArgs>,
 }
 
+/// One certificate as CryptoAPI hands it out: a `CERT_CONTEXT` and the
+/// `CERT_INFO` and buffers it points to. Boxed, so agent pointers into it
+/// stay valid; kept for the life of the process.
+pub struct CertEntry {
+    pub cert: Certificate,
+    pub context: Box<[u32; 5]>,
+    pub info: Box<[u32; 28]>,
+    pub buffers: Vec<Box<[u8]>>,
+}
+
+// SAFETY: the raw addresses inside point into the entry's own boxes.
+unsafe impl Send for CertEntry {}
+// SAFETY: as for Send; nothing changes after the entry is built.
+unsafe impl Sync for CertEntry {}
+
+/// An open certificate store.
+pub struct CertStore {
+    pub name: String,
+    pub entries: Vec<CertEntry>,
+    pub open: bool,
+}
+
+/// `crypt32.dll` state: open stores by handle.
+#[derive(Default)]
+pub struct CryptState {
+    pub stores: Vec<(u32, CertStore)>,
+    pub next_handle: u32,
+}
+
 pub struct Process {
     search: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -276,6 +310,7 @@ pub struct Process {
     pub crt: CrtState,
     pub params: ProcessParams,
     pub services: ServiceState,
+    pub crypt: CryptState,
 }
 
 impl Process {
@@ -294,6 +329,7 @@ impl Process {
             crt: CrtState::default(),
             params: ProcessParams::default(),
             services: ServiceState::default(),
+            crypt: CryptState::default(),
         }
     }
 

@@ -20,6 +20,11 @@ current_directory = 'C:\Windows\system32'
 # The Service Control Manager starts the agent as this service.
 service = 'WazuhSvc'
 
+# System certificate stores, as DER files relative to this file. A real
+# host's ROOT store holds many more; capture them from the golden VM.
+[windows.cert_stores]
+ROOT = ["example-windows/certs/digicert-assured-id-root-ca.der"]
+
 # The environment of a 32-bit service running as LocalSystem on 64-bit
 # Windows. WOW64 changes the PROCESSOR_ARCHITECTURE and ProgramFiles values.
 [windows.environment]
