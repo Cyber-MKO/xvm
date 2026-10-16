@@ -45,6 +45,8 @@ impl From<crate::registry::RegistryError> for StoreError {
 #[derive(Debug)]
 pub struct Base {
     pub name: String,
+    /// SHA-256 of the compiled document. Changes when the base image changes.
+    pub digest: String,
     /// The document without its registry and files, which have their own layers.
     doc: Map<String, Value>,
     registry: BaseRegistry,
@@ -57,6 +59,9 @@ pub struct Base {
 pub struct Host {
     pub name: String,
     pub base: Arc<Base>,
+    /// SHA-256 over the base's digest and the compiled host profile. Saved
+    /// run-time state is only reused while this stays the same.
+    pub digest: String,
     delta: Map<String, Value>,
     registry: RegistryDelta,
     files: FileDelta,
@@ -102,6 +107,7 @@ impl Base {
     }
 
     pub fn from_value_with(v: Value, blobs: &dyn Blobs) -> Result<Self, StoreError> {
+        let digest = crate::files::sha256_hex(&serde_json::to_vec(&v).unwrap_or_default());
         let mut doc = object(v, "base image")?;
         kind_is(&doc, "base-image", "base image")?;
         let name = text(&doc, "name", "base image")?;
@@ -113,6 +119,7 @@ impl Base {
         doc.remove("files");
         Ok(Base {
             name,
+            digest,
             doc,
             registry,
             files,
@@ -134,6 +141,10 @@ impl Host {
         blobs: &dyn Blobs,
         boot_fallback: &str,
     ) -> Result<Self, StoreError> {
+        let mut bytes = base.digest.clone().into_bytes();
+        bytes.push(b'\n');
+        bytes.extend(serde_json::to_vec(&v).unwrap_or_default());
+        let digest = crate::files::sha256_hex(&bytes);
         let mut delta = object(v, "host profile")?;
         kind_is(&delta, "host-profile", "host profile")?;
         let name = text(&delta, "name", "host profile")?;
@@ -184,6 +195,7 @@ impl Host {
         Ok(Host {
             name,
             base,
+            digest,
             delta,
             registry,
             files,

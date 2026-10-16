@@ -52,7 +52,7 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | The engine layers base images and host deltas itself | Decided | Kasim, 2026-10-16. Bases are held once and shared. Test vectors check it against `xvm-profile resolve`. |
 | Personalities reach the engine over a Unix socket | Decided | Kasim, 2026-10-16. One daemon for all hosts, one connection per host, length-prefixed JSON. |
 | `xvm-profile` is the only YAML parser; the engine reads compiled JSON | Decided | 2026-10-16. Avoids YAML 1.1 and 1.2 disagreements between Python and Rust. Unquoted timestamps are rejected. |
-| Run-time changes live in a third engine layer above the profile | Proposed | 2026-10-16. In memory only; `reset` returns to the profile. Saving changes across restarts is not built yet. |
+| Run-time changes live in a third engine layer above the profile | Proposed | 2026-10-16. `reset` returns to the profile. Saved across restarts with `--state`. |
 | Personality and control connections may both write | Proposed | 2026-10-16. The agent's own registry writes and scenario events go through the same ops and one journal. |
 | Scenarios pass their own clock on each write | Proposed | 2026-10-16. Optional `time` parameter, so hosts can run on jittered clocks (section 8). |
 | A host's name cannot change at run time | Proposed | 2026-10-16. `identity.hostname` is refused by `section.update`, since every component knows the host by name. |
@@ -60,6 +60,9 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Base images carry captured file metadata, no vendor bytes | Decided | Kasim, 2026-10-16. Paths, sizes, times and SHA-256 from the golden VM. Reading such a file is a logged gap (rules 1 and 4). |
 | Processes come from the profile at boot plus live registration | Decided | Kasim, 2026-10-16. The engine assigns Windows-style PIDs, deterministic per host. Personalities register the agent's real processes. |
 | Implied directories and registry keys outlive their contents | Decided | 2026-10-16. Deleting the last file under an implied folder keeps the folder, as on a real system. |
+| Run-time changes persist through a change log plus snapshots | Decided | Kasim, 2026-10-16. Per-host append-only log, periodic snapshots, replay on start through the same code path as live writes. |
+| Persistence flushes in batches | Decided | Kasim, 2026-10-16. fsync every 200 ms by default; a power loss can drop the last batch. |
+| A changed profile discards that host's saved state | Decided | Kasim, 2026-10-16. The state moves to `discarded/`, never deleted, with a warning. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files

@@ -248,12 +248,47 @@ impl FileEntry {
     /// The entry as `xvm-profile resolve` writes it. The profile's own path string is kept.
     pub fn resolved(&self) -> Value {
         let mut out = self.doc.clone();
-        if let Content::Owned(v) = &self.content {
+        // Bytes written at run time (now, or before a restart) have no profile `content`.
+        let written = matches!(self.content, Content::Owned(_)) || !out.contains_key("content");
+        if written && let Some(b) = self.content.bytes() {
             out.remove("size");
             out.remove("sha256");
-            out.insert("content".into(), json!({ "base64": B64.encode(v) }));
+            out.insert("content".into(), json!({ "base64": B64.encode(b) }));
         }
         Value::Object(out)
+    }
+}
+
+impl FileEntry {
+    /// The entry for a snapshot: bytes go to the blob store through `put`.
+    pub fn to_snapshot(
+        &self,
+        put: &mut dyn FnMut(&[u8]) -> std::io::Result<String>,
+    ) -> std::io::Result<Value> {
+        let content = match self.content.bytes() {
+            Some(b) => json!({ "blob": put(b)? }),
+            None => Value::Null,
+        };
+        Ok(json!({"path": self.path, "doc": self.doc, "content": content}))
+    }
+
+    pub fn from_snapshot(v: &Value, blobs: &dyn Blobs) -> Result<Self, String> {
+        let path = v["path"]
+            .as_str()
+            .ok_or("snapshot file entry needs a path")?;
+        let doc = v["doc"]
+            .as_object()
+            .ok_or("snapshot file entry needs a doc")?
+            .clone();
+        let content = match v["content"].get("blob").and_then(Value::as_str) {
+            Some(sha) => Content::Shared(blobs.get(sha)?),
+            None => Content::None,
+        };
+        Ok(FileEntry {
+            path: path.to_string(),
+            doc,
+            content,
+        })
     }
 }
 

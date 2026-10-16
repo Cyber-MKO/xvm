@@ -329,6 +329,97 @@ impl Live<'_> {
     }
 }
 
+// ---------------------------------------------------------------- snapshots
+
+impl Runtime {
+    /// Everything in the run-time layer, as JSON. File bytes go to the blob store through `put`.
+    pub fn to_snapshot(
+        &self,
+        put: &mut dyn FnMut(&[u8]) -> std::io::Result<String>,
+    ) -> std::io::Result<Value> {
+        let reg: Map<String, Value> = self
+            .reg
+            .iter()
+            .map(|(k, v)| {
+                let entry = match v {
+                    None => Value::Null,
+                    Some(key) => json!({
+                        "path": key.path,
+                        "values": key.values.iter().map(|(n, x)| json!([n, x])).collect::<Vec<_>>(),
+                    }),
+                };
+                (k.clone(), entry)
+            })
+            .collect();
+        let mut files = Map::new();
+        for (k, v) in &self.files.map {
+            let entry = match v {
+                None => Value::Null,
+                Some(e) => e.to_snapshot(put)?,
+            };
+            files.insert(k.clone(), entry);
+        }
+        Ok(json!({
+            "reg": reg,
+            "last_write": self.last_write,
+            "lists": self.lists,
+            "sections": self.sections,
+            "files": files,
+            "procs": self.procs.to_snapshot(),
+            "journal": self.journal,
+            "next_seq": self.next_seq,
+        }))
+    }
+
+    pub fn from_snapshot(v: &Value, blobs: &dyn crate::files::Blobs) -> Result<Self, String> {
+        let bad = |what: &str| format!("snapshot: malformed {what}");
+        let obj = |name: &str| v[name].as_object().ok_or_else(|| bad(name));
+        let mut rt = Runtime::default();
+        for (k, e) in obj("reg")? {
+            let entry = if e.is_null() {
+                None
+            } else {
+                let path = e["path"].as_str().ok_or_else(|| bad("reg"))?.to_string();
+                let mut values = Vec::new();
+                for pair in e["values"].as_array().ok_or_else(|| bad("reg"))? {
+                    let name = pair[0].as_str().ok_or_else(|| bad("reg"))?;
+                    values.push((name.to_string(), pair[1].clone()));
+                }
+                Some(RtKey { path, values })
+            };
+            rt.reg.insert(k.clone(), entry);
+        }
+        for (k, t) in obj("last_write")? {
+            rt.last_write.insert(
+                k.clone(),
+                t.as_str().ok_or_else(|| bad("last_write"))?.into(),
+            );
+        }
+        for (k, l) in obj("lists")? {
+            rt.lists
+                .insert(k.clone(), l.as_array().ok_or_else(|| bad("lists"))?.clone());
+        }
+        rt.sections = obj("sections")?.clone();
+        for (k, e) in obj("files")? {
+            let entry = if e.is_null() {
+                None
+            } else {
+                Some(crate::files::FileEntry::from_snapshot(e, blobs)?)
+            };
+            rt.files.map.insert(k.clone(), entry);
+        }
+        rt.procs = crate::procs::ProcTable::from_snapshot(&v["procs"])?;
+        rt.journal = v["journal"]
+            .as_array()
+            .ok_or_else(|| bad("journal"))?
+            .iter()
+            .cloned()
+            .collect();
+        rt.next_seq = v["next_seq"].as_u64().ok_or_else(|| bad("next_seq"))?;
+        Ok(rt)
+    }
+}
+
 // ---------------------------------------------------------------- changes
 
 impl Runtime {

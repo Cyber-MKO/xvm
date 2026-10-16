@@ -85,6 +85,8 @@ pub mod code {
     /// The file exists but its bytes were never captured. Also a logged gap.
     pub const NO_CONTENT: &str = "no_content";
     pub const UNSUPPORTED: &str = "unsupported";
+    /// The change was applied but could not be written to the state folder.
+    pub const NOT_SAVED: &str = "not_saved";
 }
 
 pub fn write_message<W: Write, T: Serialize>(w: &mut W, msg: &T) -> io::Result<()> {

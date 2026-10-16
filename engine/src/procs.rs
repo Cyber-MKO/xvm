@@ -323,6 +323,66 @@ impl ProcTable {
     }
 }
 
+impl ProcTable {
+    pub fn to_snapshot(&self) -> Value {
+        let live: Vec<Value> = self
+            .live
+            .values()
+            .map(|p| {
+                serde_json::json!({
+                    "pid": p.pid, "ppid": p.ppid, "image": p.image, "fields": p.fields,
+                    "start_time": p.start_time, "profile_id": p.profile_id,
+                })
+            })
+            .collect();
+        serde_json::json!({
+            "live": live,
+            "pids": {
+                "windows": self.pids.windows,
+                "state": self.pids.state.to_string(),
+                "next_seq": self.pids.next_seq,
+                "used": self.pids.used.iter().collect::<Vec<_>>(),
+            },
+        })
+    }
+
+    pub fn from_snapshot(v: &Value) -> Result<Self, String> {
+        let bad = || "malformed process table in snapshot".to_string();
+        let mut live = BTreeMap::new();
+        for p in v["live"].as_array().ok_or_else(bad)? {
+            let pid = p["pid"].as_u64().ok_or_else(bad)?;
+            live.insert(
+                pid,
+                Process {
+                    pid,
+                    ppid: p["ppid"].as_u64().ok_or_else(bad)?,
+                    image: p["image"].as_str().ok_or_else(bad)?.to_string(),
+                    fields: p["fields"].as_object().cloned().unwrap_or_default(),
+                    start_time: p["start_time"].as_str().unwrap_or_default().to_string(),
+                    profile_id: p["profile_id"].as_str().map(str::to_string),
+                },
+            );
+        }
+        let g = &v["pids"];
+        let pids = PidGen {
+            windows: g["windows"].as_bool().ok_or_else(bad)?,
+            // A string: JSON numbers lose precision past 2^53.
+            state: g["state"]
+                .as_str()
+                .and_then(|s| s.parse().ok())
+                .ok_or_else(bad)?,
+            next_seq: g["next_seq"].as_u64().ok_or_else(bad)?,
+            used: g["used"]
+                .as_array()
+                .ok_or_else(bad)?
+                .iter()
+                .filter_map(Value::as_u64)
+                .collect(),
+        };
+        Ok(ProcTable { live, pids })
+    }
+}
+
 /// Make a process-table change into a journal entry.
 pub fn journal_entry(op: &str, p: &Process, exit_code: Option<i64>) -> Map<String, Value> {
     let mut c = Map::new();

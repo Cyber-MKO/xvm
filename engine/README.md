@@ -7,7 +7,7 @@ The host-state engine (brief section 6, component 1). One process serves the fac
 | Step | Tool | Output |
 | --- | --- | --- |
 | 1 | `xvm-profile compile --bases DIR --hosts DIR --out DIR` | Validated JSON: `compiled.json`, `bases/*.json`, `hosts/*.json` |
-| 2 | `xvm-engined --compiled DIR --socket PATH [--gap-log FILE]` | A daemon on a Unix socket |
+| 2 | `xvm-engined --compiled DIR --socket PATH [--gap-log FILE] [--state DIR]` | A daemon on a Unix socket. With `--state`, run-time changes survive restarts. |
 | 3 | A personality runtime, using `xvm_engine::client::Client` | Answers for one host per connection |
 
 `xvm-profile` is the only YAML parser and validator. The engine reads its JSON, so Python and Rust never disagree on YAML. The engine does the layering itself:
@@ -117,6 +117,27 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | `reset` | Restores the boot table with the same PIDs. |
 | `resolved` | Shows the profile's process definitions. The running table is `proc.list`. |
 
+## Persistence
+
+With `--state DIR`, every run-time change is saved and restored on the next start.
+
+| Path in the state folder | Holds |
+| --- | --- |
+| `hosts/NAME/snapshot.json` | The host's run-time layer, the profile digest it was made against, and the journal |
+| `hosts/NAME/log.jsonl` | One line per change since that snapshot: the op and its parameters, with the time filled in |
+| `blobs/SHA256` | Bytes of files written at run time, stored once. The log names the blob, not the bytes. |
+| `discarded/NAME-TIME/` | A host's state moved aside after its profile or base changed |
+
+| Behaviour | Detail |
+| --- | --- |
+| Writing | A change is applied, then appended to its host's log under the same lock, so the log order is the order of changes. A change that is rejected is not logged. |
+| Durability | A flusher thread fsyncs new blobs, then the logs that name them, every `--flush-ms` (default 200). A power loss can drop the last batch. If saving fails, the request answers `not_saved` and the daemon prints the error. |
+| Snapshots | After `--snapshot-every` changes (default 1000), the host gets a new snapshot and its log is emptied. Lines still buffered are discarded, not written into the new log. |
+| Start | Each host's snapshot is loaded and its log replayed through the same code the server uses, so a replayed change takes the path the original did. Then the host is compacted: a new snapshot, an empty log. The socket opens only after every host is restored. |
+| Damage | A torn last line, a missing blob, or a change that no longer applies ends the replay at that line, keeping everything before it. The daemon prints a warning naming the host and the line. |
+| Profile drift | A snapshot records a digest of the host's compiled profile and base. If either changed, the saved changes were made against a different host: the state moves to `discarded/` and the host starts from its new profile, with a warning. |
+| Other | PID allocation and the change journal are part of the snapshot, so PIDs and `seq` numbers continue where they stopped. State for a host that is no longer loaded is kept and reported. |
+
 ## Tests
 
 | Test | Checks |
@@ -124,6 +145,7 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | `tests/vectors.rs` | The layered view equals `xvm-profile resolve` on every case in `tests/vectors/`, including value and list order |
 | `tests/server.rs` | Socket round trips, errors, `hello` first, gap logging |
 | `tests/runtime.rs` | Every write op, rejected writes, the journal and lost entries, reset, hosts on one base staying separate, eight concurrent writers, implied parent keys surviving their last subkey |
+| `tests/persist.rs` | A restart through log replay and through snapshots gives the same observable host, PIDs continue, blobs stored once, rejected writes not logged, torn lines, missing blobs, profile drift, reset saved |
 | `tests/files_procs.rs` | Profile files and removals, listings and implied directories, every file op and error, vendor reads logged as gaps, Linux case rules, blobs shared between hosts and refused when tampered, the boot process table, PID rules, start and exit |
 | CI | The same tests as a 32-bit (i686) build, since the Windows personality links the client |
 
@@ -133,7 +155,6 @@ Not yet:
 
 | Missing | Notes |
 | --- | --- |
-| Saving run-time changes | Changes are in memory and lost when the engine stops |
 | Directory change notification | Personalities poll `changes` for file events, as for the registry |
 | Registry change notification | Personalities poll `changes`; a push channel may come later |
 | Response actions | Handled by the response recorders, not the engine (CLAUDE.md rule 7) |

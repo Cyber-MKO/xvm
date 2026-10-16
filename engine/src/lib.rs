@@ -5,9 +5,11 @@
 //! held once and shared; each host stores only its delta. Profiles come from
 //! `xvm-profile compile`, which is the single YAML parser and validator.
 
+pub mod apply;
 pub mod client;
 pub mod files;
 pub mod merge;
+pub mod persist;
 pub mod procs;
 pub mod protocol;
 pub mod registry;
