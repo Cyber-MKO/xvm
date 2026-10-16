@@ -3,9 +3,16 @@
 use crate::teb::LAST_ERROR_VALUE;
 
 // From "System Error Codes" on Microsoft Learn.
+pub(crate) const ERROR_FILE_NOT_FOUND: u32 = 2;
+pub(crate) const ERROR_PATH_NOT_FOUND: u32 = 3;
+pub(crate) const ERROR_ACCESS_DENIED: u32 = 5;
 pub(crate) const ERROR_INVALID_HANDLE: u32 = 6;
 pub(crate) const ERROR_NOT_ENOUGH_MEMORY: u32 = 8;
+pub(crate) const ERROR_SHARING_VIOLATION: u32 = 32;
+pub(crate) const ERROR_FILE_EXISTS: u32 = 80;
 pub(crate) const ERROR_INVALID_PARAMETER: u32 = 87;
+pub(crate) const ERROR_BAD_PATHNAME: u32 = 161;
+pub(crate) const ERROR_ALREADY_EXISTS: u32 = 183;
 pub(crate) const ERROR_INSUFFICIENT_BUFFER: u32 = 122;
 pub(crate) const ERROR_INVALID_NAME: u32 = 123;
 pub(crate) const ERROR_MOD_NOT_FOUND: u32 = 126;

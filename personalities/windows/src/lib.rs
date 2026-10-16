@@ -12,6 +12,7 @@
 pub mod cmdline;
 pub mod emu;
 pub mod gap;
+pub mod handles;
 pub mod image;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod map;

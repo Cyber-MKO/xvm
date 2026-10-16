@@ -4,6 +4,8 @@
 use std::cell::Cell;
 
 pub(super) const ENOENT: i32 = 2;
+pub(super) const EBADF: i32 = 9;
+pub(super) const EMFILE: i32 = 24;
 pub(super) const ENOTDIR: i32 = 20;
 pub(super) const EINVAL: i32 = 22;
 pub(super) const ERANGE: i32 = 34;

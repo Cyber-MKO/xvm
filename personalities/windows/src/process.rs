@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 
 use crate::emu;
 use crate::gap::{Gap, GapKind};
+use crate::handles::HandleTable;
 use crate::image::{ExportTarget, Exports, Image, Resolver, Symbol};
 use crate::map::{self, MapError, Mapped};
 use crate::paths::DriveMap;
@@ -246,6 +247,37 @@ pub struct CrtState {
     /// Functions registered with `_onexit`, in registration order. `exit`
     /// calls them last first.
     pub onexit: Vec<u32>,
+    /// Low-level I/O: file descriptor to its OS handle and `_O_*` flags.
+    pub fds: Vec<Option<CrtFd>>,
+}
+
+/// One CRT file descriptor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CrtFd {
+    pub handle: u32,
+    pub flags: i32,
+}
+
+impl CrtState {
+    /// Give `fd` the lowest free descriptor, as `msvcrt` does.
+    pub fn insert_fd(&mut self, fd: CrtFd) -> i32 {
+        match self.fds.iter().position(Option::is_none) {
+            Some(i) => {
+                self.fds[i] = Some(fd);
+                i as i32
+            }
+            None => {
+                self.fds.push(Some(fd));
+                self.fds.len() as i32 - 1
+            }
+        }
+    }
+
+    pub fn fd(&self, fd: i32) -> Option<CrtFd> {
+        usize::try_from(fd)
+            .ok()
+            .and_then(|i| self.fds.get(i).copied().flatten())
+    }
 }
 
 /// `_O_TEXT` from fcntl.h, the documented default for `_fmode`.
@@ -261,6 +293,7 @@ impl Default for CrtState {
             main_args: None,
             acmdln: None,
             onexit: Vec::new(),
+            fds: Vec::new(),
         }
     }
 }
@@ -346,6 +379,7 @@ pub struct Process {
     pub crypt: CryptState,
     /// Registered DLL load notifications, in registration order.
     pub dll_notifications: Vec<DllNotification>,
+    pub handles: HandleTable,
 }
 
 impl Process {
@@ -366,6 +400,7 @@ impl Process {
             services: ServiceState::default(),
             crypt: CryptState::default(),
             dll_notifications: Vec::new(),
+            handles: HandleTable::default(),
         }
     }
 

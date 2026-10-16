@@ -4,6 +4,11 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `kernel32.dll` | `CreateFileW` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/file.rs` tests | All five dispositions, access and share rights, directories with `FILE_FLAG_BACKUP_SEMANTICS`, documented errors. Share modes checked within the process only. Overlapped, delete-on-close, security descriptors, inheritance and templates are logged gaps |
+| `kernel32.dll` | `CreateFileA` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/file.rs` tests | As `CreateFileW` |
+| `kernel32.dll` | `ReadFile` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/file.rs` tests | Synchronous; reads to the requested size or the end of the file. Overlapped reads are a logged gap |
+| `kernel32.dll` | `CloseHandle` | Wazuh 4.14.2: 12 images, including `wazuh-agent.exe` | `src/win/kernel32/file.rs` tests | Any handle in the process table; the process and thread pseudo-handles always succeed |
+| `msvcrt.dll` | `_open_osfhandle` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/lowio.rs` tests | Lowest free descriptor, as `msvcrt` does. A service has no standard handles, so 0 can be returned |
 | `psapi.dll` | `GetModuleFileNameExW` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `tests/process.rs`, `module_file_names_come_from_drives_and_the_system_directory` | Current process only. Agent files map back through the drive table; emulated DLLs report `system_module_directory`. Truncates and NUL-terminates, as documented |
 | `wintrust.dll` | `WinVerifyTrust` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/wintrust/trust.rs` tests | Verdicts from the profile: emulated system DLLs valid; `trusted_files` valid while the SHA-256 matches, else `TRUST_E_BAD_DIGEST`; others `TRUST_E_NOSIGNATURE`. Generic verify action and file paths only; catalog checks never run for system DLLs |
 | `kernel32.dll` | `GetFullPathNameA` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/path.rs` tests | Against the emulated current directory; keeps a trailing separator; does not trim trailing dots and spaces. UNC is a logged gap |

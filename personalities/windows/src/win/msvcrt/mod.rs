@@ -5,6 +5,7 @@ mod dir;
 mod errno;
 mod heap;
 mod locale;
+mod lowio;
 mod startup;
 mod string;
 mod wide;
@@ -18,6 +19,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         errno::exports(),
         wide::exports(),
         locale::exports(),
+        lowio::exports(),
     ]
     .concat()
 }
