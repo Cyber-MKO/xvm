@@ -6,7 +6,8 @@
 //! the TEB and implicit TLS that agent code reaches through `fs`. `emu`
 //! builds the images of emulated system DLLs, `win` holds their functions,
 //! `trap` reports calls to functions we lack, and `process` ties it all
-//! into a module table.
+//! into a module table. `runtime` runs start-up: TLS callbacks, `DllMain`
+//! and the entry point.
 
 pub mod emu;
 pub mod gap;
@@ -16,6 +17,8 @@ pub mod map;
 pub mod pe;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod process;
+#[cfg(all(target_arch = "x86", target_os = "linux"))]
+pub mod runtime;
 pub mod teb;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod thread;

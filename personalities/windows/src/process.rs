@@ -6,7 +6,8 @@
 //! hold the agent's own bundled DLLs. Dependencies are always placed before
 //! the modules that import them.
 //!
-//! Entry points and `DllMain` are not called yet.
+//! Loading runs no agent code. `runtime::Runtime` runs TLS callbacks,
+//! `DllMain` and the entry point afterwards.
 
 use std::fmt;
 use std::io;
@@ -55,7 +56,19 @@ pub struct Module {
     pub is_dll: bool,
     pub entry_point: Option<u32>,
     pub exports: Exports,
+    /// TLS callbacks and `DllMain` have run (always true when emulated).
+    pub initialized: bool,
     mapped: Mapped,
+}
+
+/// What `Runtime` must run, in order, to initialise one module.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InitStep {
+    pub module: String,
+    pub base: u32,
+    pub tls_callbacks: Vec<u32>,
+    /// `DllMain`, for DLLs with an entry point.
+    pub dll_main: Option<u32>,
 }
 
 impl Module {
@@ -83,6 +96,65 @@ impl Module {
     }
 }
 
+/// Vectored exception handlers, in call order. Registered by
+/// `AddVectoredExceptionHandler`; nothing dispatches to them yet.
+#[derive(Debug, Default)]
+pub struct VectoredHandlers {
+    /// (handle, handler address)
+    entries: Vec<(u32, u32)>,
+    next_handle: u32,
+}
+
+impl VectoredHandlers {
+    /// Add a handler, first or last in call order. Returns its handle.
+    pub fn add(&mut self, handler: u32, first: bool) -> u32 {
+        self.next_handle += 1;
+        let handle = self.next_handle;
+        if first {
+            self.entries.insert(0, (handle, handler));
+        } else {
+            self.entries.push((handle, handler));
+        }
+        handle
+    }
+
+    pub fn remove(&mut self, handle: u32) -> bool {
+        let before = self.entries.len();
+        self.entries.retain(|&(h, _)| h != handle);
+        self.entries.len() != before
+    }
+
+    /// Handler addresses in call order.
+    pub fn handlers(&self) -> Vec<u32> {
+        self.entries.iter().map(|&(_, f)| f).collect()
+    }
+}
+
+/// `msvcrt.dll` state that belongs to the process. Globals that agent code
+/// reaches through pointers are boxed, so their addresses never move.
+#[derive(Debug)]
+pub struct CrtState {
+    /// From `__set_app_type`: 1 console, 2 GUI.
+    pub app_type: u32,
+    /// `_fmode`: default translation mode for new files.
+    pub fmode: Box<i32>,
+    /// `_commode`: default commit mode for new streams.
+    pub commode: Box<i32>,
+}
+
+/// `_O_TEXT` from fcntl.h, the documented default for `_fmode`.
+pub const O_TEXT: i32 = 0x4000;
+
+impl Default for CrtState {
+    fn default() -> Self {
+        CrtState {
+            app_type: 0,
+            fmode: Box::new(O_TEXT),
+            commode: Box::new(0),
+        }
+    }
+}
+
 pub struct Process {
     search: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -90,6 +162,9 @@ pub struct Process {
     traps: Traps,
     gaps: Vec<Gap>,
     loading: Vec<String>,
+    main: Option<usize>,
+    pub vectored_handlers: VectoredHandlers,
+    pub crt: CrtState,
 }
 
 impl Process {
@@ -102,7 +177,45 @@ impl Process {
             traps: Traps::new(),
             gaps: Vec::new(),
             loading: Vec::new(),
+            main: None,
+            vectored_handlers: VectoredHandlers::default(),
+            crt: CrtState::default(),
         }
+    }
+
+    /// The first executable loaded: the process image.
+    pub fn main_module(&self) -> Option<&Module> {
+        self.modules.get(self.main?)
+    }
+
+    /// Record a gap and log it on stderr (CLAUDE.md rule 4).
+    pub fn record_gap(&mut self, gap: Gap) {
+        eprintln!("{gap}");
+        self.gaps.push(gap);
+    }
+
+    /// Modules not initialised yet, dependencies first, marked as
+    /// initialised. The caller runs the steps outside any lock, since
+    /// agent code may call back into the process.
+    pub fn take_pending_init(&mut self) -> Vec<InitStep> {
+        let mut steps = Vec::new();
+        for m in self.modules.iter_mut().filter(|m| !m.initialized) {
+            m.initialized = true;
+            let tls_callbacks = self
+                .tls
+                .templates()
+                .iter()
+                .filter(|t| t.module == m.name)
+                .flat_map(|t| t.callbacks.iter().copied())
+                .collect();
+            steps.push(InitStep {
+                module: m.name.clone(),
+                base: m.base(),
+                tls_callbacks,
+                dll_main: m.entry_point.filter(|_| m.is_dll),
+            });
+        }
+        steps
     }
 
     pub fn modules(&self) -> &[Module] {
@@ -169,10 +282,14 @@ impl Process {
             .commit(&image)
             .map_err(|e| LoadError::Map(name.clone(), e))?;
 
-        self.gaps.extend(gaps);
+        gaps.into_iter().for_each(|gap| self.record_gap(gap));
+        if !image.headers.is_dll() && self.main.is_none() {
+            self.main = Some(self.modules.len());
+        }
         self.modules.push(Module {
             path: Some(path.to_path_buf()),
             emulated: false,
+            initialized: false,
             is_dll: image.headers.is_dll(),
             entry_point: image.entry_point(),
             exports: image
@@ -217,6 +334,7 @@ impl Process {
             name: name.to_string(),
             path: None,
             emulated: true,
+            initialized: true,
             is_dll: true,
             entry_point: None,
             exports: image

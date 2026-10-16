@@ -1,4 +1,4 @@
-//! `kernel32.dll`.
+//! Last-error code: `GetLastError`, `SetLastError`.
 
 use crate::teb::LAST_ERROR_VALUE;
 

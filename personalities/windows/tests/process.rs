@@ -180,3 +180,31 @@ fn calling_a_gap_reports_it_and_aborts() {
         "{stderr}"
     );
 }
+
+#[test]
+fn start_up_runs_dll_main_before_the_entry_point() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "startup.exe"));
+    let thread = runtime.attach().unwrap();
+    // The exit code is DllMain's reason * 10 + how often it ran.
+    assert_eq!(runtime.run_main(&thread).unwrap(), 11);
+    assert!(runtime.lock().modules().iter().all(|m| m.initialized));
+    // Initialising again runs nothing twice.
+    runtime.initialize(&thread).unwrap();
+    assert_eq!(runtime.run_main(&thread).unwrap(), 11);
+}
+
+#[test]
+fn start_up_stops_when_dll_main_fails() {
+    use xvm_windows::runtime::{Runtime, StartError};
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "failing.exe"));
+    let thread = runtime.attach().unwrap();
+    assert_eq!(
+        runtime.run_main(&thread),
+        Err(StartError::DllMainFailed("faildll.dll".into()))
+    );
+}

@@ -16,5 +16,13 @@ $CC "$SRC/tls.c" -o tls.obj
 $LINK /dll /noentry /out:tls.dll /base:0x30000000 tls.obj
 $CC "$SRC/calls.c" -o calls.obj
 $LINK /dll /noentry /out:calls.dll calls.obj kernel32.lib
+for d in initdll faildll; do
+    $CC "$SRC/$d.c" -o $d.obj
+    $LINK /dll /entry:DllMain /out:$d.dll /implib:$d.lib $d.obj
+done
+$CC "$SRC/startup.c" -o startup.obj
+$LINK /entry:start /subsystem:console /out:startup.exe startup.obj initdll.lib
+$CC "$SRC/failing.c" -o failing.obj
+$LINK /entry:start /subsystem:console /out:failing.exe failing.obj faildll.lib
 $CC "$SRC/importer.c" -o importer.obj
 $LINK /entry:start /subsystem:console /out:importer.exe importer.obj kernel32.lib sample.lib

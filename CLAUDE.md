@@ -57,8 +57,12 @@ Loader status:
 | TEB, `fs` segment, implicit TLS, TLS callbacks | Done (fields in `docs/api/windows.md`) |
 | Module table: dependency order, bundled DLLs from the agent directory, forwarders | Done (`process.rs`) |
 | Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`) |
-| Emulated functions | 2 of 617: `GetLastError`, `SetLastError`. Table in `docs/api/windows.md` |
-| Process and thread start-up, `DllMain`, `LoadLibrary` and `GetProcAddress` | Not started |
+| Start-up: TLS callbacks, `DllMain`, entry point (`runtime.rs`, `xvm-windows-run`) | Done |
+| Emulated functions | 15 of 617. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs to `msvcrt!__getmainargs`, which needs the command line and environment |
+| Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
+| TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
+| `LoadLibrary`, `GetProcAddress`, `GetModuleHandle` | Not started |
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.

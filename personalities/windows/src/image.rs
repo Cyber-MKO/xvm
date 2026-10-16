@@ -168,12 +168,14 @@ impl Image {
         if delta == 0 {
             return Ok(());
         }
-        let dir = self.headers.directory(DIR_BASERELOC);
-        if self.headers.relocs_stripped() || !dir.is_present() {
+        if self.headers.relocs_stripped() {
             return Err(PeError::Unsupported(
                 "rebasing an image without relocations",
             ));
         }
+        // An image that keeps its relocations but has none (no absolute
+        // addresses at all) moves without fixups; the loop below is empty.
+        let dir = self.headers.directory(DIR_BASERELOC);
         let mut block = dir.rva as usize;
         let end = block + dir.size as usize;
         while block + 8 <= end {

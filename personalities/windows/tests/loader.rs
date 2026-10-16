@@ -289,3 +289,15 @@ fn code_reaches_teb_and_tls_through_fs() {
     assert_eq!(f("teb_self")(), env.teb());
     assert_eq!(f("bump_tls")(), 8);
 }
+
+#[test]
+fn rebases_an_image_with_no_fixups() {
+    let Some(mut dll) = load("faildll.dll") else {
+        return;
+    };
+    assert!(!dll.headers.relocs_stripped());
+    let before = dll.memory.clone();
+    dll.rebase(0x2000_0000).unwrap();
+    assert_eq!(dll.base, 0x2000_0000);
+    assert_eq!(dll.memory, before);
+}

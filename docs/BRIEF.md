@@ -49,7 +49,7 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Wazuh 4.14.2 census reviewed; Phase 1 starts | Decided | Kasim reviewed the census (2026-10-16). Golden baseline capture stays open. |
 | Loader fixtures are built from source too | Decided | Same approach as the census fixtures, built for `i686-pc-windows-msvc`. |
 | Emulated DLLs are Rust functions with a minimal in-memory PE header | Decided | Kasim (2026-10-16), option C. The resolver hands out Rust `extern "stdcall"` and `extern "C"` addresses. Each emulated module also gets a small PE header and export table so `GetModuleHandle`, `GetProcAddress` and header walks find a real image. No second toolchain. |
-| A call to an unimplemented import aborts the process | Proposed | Each gap gets its own trap stub. A call prints the DLL, function, calling module and return address, then aborts. The alternative is to fail the call with an error code and carry on. Kasim to confirm. |
+| A call to an unimplemented import aborts the process | Decided | Kasim (2026-10-16). Each gap gets its own trap stub. A call prints the DLL, function, calling module and return address, then aborts. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

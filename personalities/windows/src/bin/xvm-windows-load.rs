@@ -1,5 +1,5 @@
 //! Load a Windows executable or DLL with its imports and report the module
-//! table and every import gap. Runs no agent code.
+//! table. Import gaps go to stderr as they are found. Runs no agent code.
 //!
 //! Usage: xvm-windows-load IMAGE [SEARCH_DIR...]
 //! The image's own directory is always searched first.
@@ -26,9 +26,6 @@ fn main() -> std::process::ExitCode {
     for m in process.modules() {
         let kind = if m.emulated { "emulated" } else { "image" };
         println!("module 0x{:08x} {kind:8} {}", m.base(), m.name);
-    }
-    for gap in process.gaps() {
-        println!("{gap}");
     }
     let emulated = process.modules().iter().filter(|m| m.emulated).count();
     println!(

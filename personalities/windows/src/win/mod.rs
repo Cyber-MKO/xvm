@@ -4,6 +4,7 @@
 //! row in docs/api/windows.md (CLAUDE.md rule 3).
 
 mod kernel32;
+mod msvcrt;
 
 /// The functions we implement for `dll`, as (export name, address) pairs.
 /// System DLLs with nothing implemented yet return an empty list; their
@@ -11,6 +12,7 @@ mod kernel32;
 pub fn exports(dll: &str) -> Vec<(&'static str, u32)> {
     match dll.to_ascii_lowercase().as_str() {
         "kernel32.dll" => kernel32::exports(),
+        "msvcrt.dll" => msvcrt::exports(),
         _ => Vec::new(),
     }
 }
