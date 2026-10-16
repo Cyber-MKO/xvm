@@ -2,6 +2,11 @@
 
 use crate::teb::LAST_ERROR_VALUE;
 
+// From "System Error Codes" on Microsoft Learn.
+pub(crate) const ERROR_INVALID_HANDLE: u32 = 6;
+pub(crate) const ERROR_MOD_NOT_FOUND: u32 = 126;
+pub(crate) const ERROR_PROC_NOT_FOUND: u32 = 127;
+
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("GetLastError", GetLastError as *const () as u32),
@@ -24,6 +29,11 @@ extern "stdcall" fn GetLastError() -> u32 {
         )
     };
     value
+}
+
+/// For emulated functions that fail.
+pub(crate) fn set_last_error(code: u32) {
+    SetLastError(code);
 }
 
 /// Sets the calling thread's last-error code.

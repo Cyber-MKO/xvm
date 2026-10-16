@@ -1,0 +1,48 @@
+# Example host profile for a Windows host running the Wazuh agent.
+# Format: docs/host-profiles.md. Values are examples, not captured from a
+# real host. Replace them with values from the golden baseline VM.
+
+schema = 1
+
+[host]
+name = "WIN-XVM-EXAMPLE"
+os = "windows"
+
+[windows]
+# Host directory behind each drive, relative to this file.
+drives = { C = "example-windows/c" }
+
+[windows.agent]
+# The service's command line, as the Service Control Manager starts it.
+command_line = '"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe"'
+# Services start in the system directory.
+current_directory = 'C:\Windows\system32'
+
+# The environment of a 32-bit service running as LocalSystem on 64-bit
+# Windows. WOW64 changes the PROCESSOR_ARCHITECTURE and ProgramFiles values.
+[windows.environment]
+ALLUSERSPROFILE = 'C:\ProgramData'
+APPDATA = 'C:\Windows\system32\config\systemprofile\AppData\Roaming'
+CommonProgramFiles = 'C:\Program Files (x86)\Common Files'
+CommonProgramW6432 = 'C:\Program Files\Common Files'
+COMPUTERNAME = 'WIN-XVM-EXAMPLE'
+ComSpec = 'C:\Windows\system32\cmd.exe'
+LOCALAPPDATA = 'C:\Windows\system32\config\systemprofile\AppData\Local'
+NUMBER_OF_PROCESSORS = '2'
+OS = 'Windows_NT'
+Path = 'C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\'
+PATHEXT = '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC'
+PROCESSOR_ARCHITECTURE = 'x86'
+PROCESSOR_ARCHITEW6432 = 'AMD64'
+ProgramData = 'C:\ProgramData'
+ProgramFiles = 'C:\Program Files (x86)'
+ProgramW6432 = 'C:\Program Files'
+PUBLIC = 'C:\Users\Public'
+SystemDrive = 'C:'
+SystemRoot = 'C:\Windows'
+TEMP = 'C:\Windows\TEMP'
+TMP = 'C:\Windows\TEMP'
+USERDOMAIN = 'WORKGROUP'
+USERNAME = 'WIN-XVM-EXAMPLE$'
+USERPROFILE = 'C:\Windows\system32\config\systemprofile'
+windir = 'C:\Windows'

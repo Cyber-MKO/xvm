@@ -9,14 +9,17 @@
 //! into a module table. `runtime` runs start-up: TLS callbacks, `DllMain`
 //! and the entry point.
 
+pub mod cmdline;
 pub mod emu;
 pub mod gap;
 pub mod image;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod map;
+pub mod paths;
 pub mod pe;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod process;
+pub mod profile;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod runtime;
 pub mod teb;

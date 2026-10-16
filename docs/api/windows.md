@@ -19,6 +19,39 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `msvcrt.dll` | `__p__fmode` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | Per-process `_fmode`, default `_O_TEXT` |
 | `msvcrt.dll` | `__p__commode` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | Per-process `_commode`, default 0 |
 | `msvcrt.dll` | `__lconv_init` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | Undocumented. Nothing to prepare: `localeconv` will build its data on demand |
+| `kernel32.dll` | `SetUnhandledExceptionFilter` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/kernel32/exception.rs` tests | Stores the filter, returns the previous one. Not called yet: no dispatch |
+| `kernel32.dll` | `GetModuleHandleA` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `tests/process.rs`, `module_handles_and_proc_addresses_through_kernel32` | NULL gives the main module. Name or full path, ignoring case; `.dll` added when no extension. A miss for a DLL we do not provide is a gap |
+| `kernel32.dll` | `GetModuleHandleW` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `tests/process.rs`, `module_handles_and_proc_addresses_through_kernel32` | As `GetModuleHandleA` |
+| `kernel32.dll` | `GetProcAddress` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `tests/process.rs`, `module_handles_and_proc_addresses_through_kernel32` | By name or ordinal; follows forwarders. A miss in an emulated DLL is a gap |
+| `msvcrt.dll` | `__getmainargs` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | `argv` split by the documented rules; `envp` from the profile. Wildcard expansion is a logged gap |
+| `msvcrt.dll` | `__initenv` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | Variable (data export) in the emulated image. MinGW stores `envp` in it |
+| `msvcrt.dll` | `__p__acmdln` | Wazuh 4.14.2: 7 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | Address of `_acmdln`, which points at the command line |
+| `msvcrt.dll` | `_onexit` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | Kept per process for `exit` |
+| `msvcrt.dll` | `_chdir` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/dir.rs` tests | Changes the emulated current directory only. ENOENT or ENOTDIR on failure |
+| `msvcrt.dll` | `_getcwd` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/dir.rs` tests | NULL buffer: `malloc`s at least `maxlen` bytes. ERANGE if too small |
+| `msvcrt.dll` | `_errno` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `src/win/msvcrt/errno.rs` tests | Per-thread `errno` with Microsoft values |
+| `msvcrt.dll` | `malloc` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/heap.rs` tests | Host libc heap |
+| `msvcrt.dll` | `calloc` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/heap.rs` tests | Host libc heap |
+| `msvcrt.dll` | `realloc` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/heap.rs` tests | `realloc(p, 0)` frees and returns NULL, as documented |
+| `msvcrt.dll` | `free` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/heap.rs` tests | Host libc heap |
+| `msvcrt.dll` | `strlen` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `memcpy` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `memmove` | Wazuh 4.14.2: 16 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `memset` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `memcmp` | Wazuh 4.14.2: 7 images, in `dbsync.dll`, `libfimdb.dll`, `libstdc++-6.dll`, `libwazuhext.dll`, `rsync.dll`, `syscollector.dll`, `sysinfo.dll` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `memchr` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strcmp` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strncmp` | Wazuh 4.14.2: all 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strcpy` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strncpy` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strcat` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strncat` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strchr` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strrchr` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strstr` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strspn` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strcspn` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
+| `msvcrt.dll` | `strpbrk` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
 
 Every other census function is a gap. The loader logs it once per module when it binds imports. If agent code calls it, a trap prints `gap call DLL!Function from MODULE at ADDRESS` and the process aborts. To list the gaps for an image, run `cargo run --target i686-unknown-linux-gnu --bin xvm-windows-load -- IMAGE`.
 

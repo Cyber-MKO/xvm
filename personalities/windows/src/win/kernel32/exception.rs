@@ -1,4 +1,5 @@
-//! Exception handler registration.
+//! Exception handler registration: vectored handlers and the top-level
+//! unhandled-exception filter.
 //!
 //! Handlers are recorded on the process in call order. Dispatch is not
 //! implemented: `RaiseException` is still a gap, and a hardware fault stops
@@ -16,7 +17,18 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
             "RemoveVectoredExceptionHandler",
             RemoveVectoredExceptionHandler as *const () as u32,
         ),
+        (
+            "SetUnhandledExceptionFilter",
+            SetUnhandledExceptionFilter as *const () as u32,
+        ),
     ]
+}
+
+/// Installs the process's top-level exception filter and returns the one
+/// it replaces (NULL if none).
+#[allow(non_snake_case)]
+extern "stdcall" fn SetUnhandledExceptionFilter(filter: u32) -> u32 {
+    with_current(|p| std::mem::replace(&mut p.unhandled_exception_filter, filter))
 }
 
 /// Returns a handle for `RemoveVectoredExceptionHandler`, never NULL.
@@ -36,6 +48,15 @@ mod tests {
     use super::*;
     use crate::process::Process;
     use crate::runtime::Runtime;
+
+    #[test]
+    fn unhandled_filter_returns_the_previous_one() {
+        let runtime = Runtime::new(Process::new(Vec::new()));
+        let _thread = runtime.attach().unwrap();
+        assert_eq!(SetUnhandledExceptionFilter(0x4000), 0);
+        assert_eq!(SetUnhandledExceptionFilter(0x5000), 0x4000);
+        assert_eq!(runtime.lock().unhandled_exception_filter, 0x5000);
+    }
 
     #[test]
     fn handlers_keep_call_order_and_remove_by_handle() {

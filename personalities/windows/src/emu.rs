@@ -11,10 +11,15 @@
 //! FF E0       jmp eax
 //! ```
 //!
+//! Data exports (variables such as `msvcrt!__initenv`) get a zeroed slot in
+//! the image's writable `.data`, which the agent and our Rust code share.
+//!
 //! The thunks hold absolute targets and the export table holds RVAs, so the
 //! image needs no relocations. It is built for the base it will be mapped at.
 
-use crate::pe::{FILE_DLL, MACHINE_I386, OPTIONAL_MAGIC_PE32, SCN_MEM_EXECUTE, SCN_MEM_READ};
+use crate::pe::{
+    FILE_DLL, MACHINE_I386, OPTIONAL_MAGIC_PE32, SCN_MEM_EXECUTE, SCN_MEM_READ, SCN_MEM_WRITE,
+};
 
 /// The system DLLs the Wazuh 4.14.2 census found (docs/phase1-sizing.md).
 /// Imports from these resolve to emulated modules, never to files.
@@ -54,20 +59,49 @@ const FILE_32BIT_MACHINE: u16 = 0x0100;
 const SCN_CNT_CODE: u32 = 0x0000_0020;
 const SCN_CNT_INITIALIZED_DATA: u32 = 0x0000_0040;
 
+/// What an emulated DLL exports under one name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EmuExport {
+    /// A function: the address of its Rust implementation.
+    Code(u32),
+    /// A variable of this many bytes, placed in the image's `.data`.
+    /// Rust code reaches it through the export's address.
+    Data(u32),
+}
+
+const DATA_ALIGN: u32 = 8;
+
 /// The bytes of an emulated DLL laid out for `base`. File offsets equal
 /// RVAs (FileAlignment is the page size), so the result is both the file
-/// form and the memory form.
-///
-/// `exports` pairs each name with the address of its Rust function.
-pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, u32)]) -> Vec<u8> {
+/// form and the memory form. Sections: `.text` (thunks), `.data` (data
+/// exports, zeroed) and `.edata`.
+pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, EmuExport)]) -> Vec<u8> {
     let mut sorted: Vec<_> = exports.to_vec();
     // The export name table must be in ascending order (PE format).
     sorted.sort_by(|a, b| a.0.cmp(b.0));
     let count = sorted.len() as u32;
 
+    // Where each export lives: a thunk in .text or a slot in .data.
     let text_rva = PAGE;
-    let text_size = (count * THUNK_SIZE).max(1);
-    let edata_rva = text_rva + round_up(text_size, PAGE);
+    let mut text_size = 0;
+    let mut data_size = 0;
+    let mut placed = Vec::new();
+    for (_, export) in &sorted {
+        match export {
+            EmuExport::Code(_) => {
+                placed.push(text_size);
+                text_size += THUNK_SIZE;
+            }
+            EmuExport::Data(size) => {
+                placed.push(data_size);
+                data_size = round_up(data_size + size, DATA_ALIGN);
+            }
+        }
+    }
+    let text_size = text_size.max(1);
+    let data_size = data_size.max(1);
+    let data_rva = text_rva + round_up(text_size, PAGE);
+    let edata_rva = data_rva + round_up(data_size, PAGE);
 
     // .edata: directory, function table, name table, ordinal table, strings.
     let functions = edata_rva + 40;
@@ -94,7 +128,7 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, u32)]) -> Vec<u8
     w.bytes(PE_OFFSET, b"PE\0\0");
     let coff = PE_OFFSET + 4;
     w.u16(coff, MACHINE_I386);
-    w.u16(coff + 2, 2);
+    w.u16(coff + 2, 3);
     w.u16(coff + 16, OPTIONAL_SIZE);
     w.u16(
         coff + 18,
@@ -104,12 +138,9 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, u32)]) -> Vec<u8
     let opt = coff + 20;
     w.u16(opt, OPTIONAL_MAGIC_PE32);
     w.u32(opt + 4, text_size);
-    w.u32(
-        opt + 8,
-        size_of_image - text_rva - round_up(text_size, PAGE),
-    );
+    w.u32(opt + 8, size_of_image - data_rva);
     w.u32(opt + 20, text_rva);
-    w.u32(opt + 24, edata_rva);
+    w.u32(opt + 24, data_rva);
     w.u32(opt + 28, base);
     w.u32(opt + 32, PAGE);
     w.u32(opt + 36, PAGE);
@@ -132,6 +163,13 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, u32)]) -> Vec<u8
     );
     w.section(
         sections + 40,
+        b".data",
+        data_rva,
+        data_size,
+        SCN_CNT_INITIALIZED_DATA | SCN_MEM_READ | SCN_MEM_WRITE,
+    );
+    w.section(
+        sections + 80,
         b".edata",
         edata_rva,
         edata_size,
@@ -148,13 +186,19 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, u32)]) -> Vec<u8
     w.u32(d + 36, ordinals);
     w.bytes(dll_name_rva as usize, dll_name.as_bytes());
 
-    for (i, (name, target)) in sorted.iter().enumerate() {
+    for (i, ((name, export), offset)) in sorted.iter().zip(placed).enumerate() {
         let i = i as u32;
-        let thunk = text_rva + i * THUNK_SIZE;
-        w.bytes(thunk as usize, &[0xb8]);
-        w.u32(thunk as usize + 1, *target);
-        w.bytes(thunk as usize + 5, &[0xff, 0xe0, 0xcc]);
-        w.u32((functions + 4 * i) as usize, thunk);
+        let rva = match export {
+            EmuExport::Code(target) => {
+                let thunk = text_rva + offset;
+                w.bytes(thunk as usize, &[0xb8]);
+                w.u32(thunk as usize + 1, *target);
+                w.bytes(thunk as usize + 5, &[0xff, 0xe0, 0xcc]);
+                thunk
+            }
+            EmuExport::Data(_) => data_rva + offset,
+        };
+        w.u32((functions + 4 * i) as usize, rva);
         w.u32((names + 4 * i) as usize, name_rvas[i as usize]);
         w.u16((ordinals + 2 * i) as usize, i as u16);
         w.bytes(name_rvas[i as usize] as usize, name.as_bytes());
@@ -199,7 +243,12 @@ mod tests {
         let bytes = build_image(
             "kernel32.dll",
             base,
-            &[("SetLastError", 0x1234_5678), ("GetLastError", 0x0abc_def0)],
+            &[
+                ("SetLastError", EmuExport::Code(0x1234_5678)),
+                ("GetLastError", EmuExport::Code(0x0abc_def0)),
+                ("_iob", EmuExport::Data(96)),
+                ("__initenv", EmuExport::Data(4)),
+            ],
         );
         let image = Image::layout("kernel32.dll", &bytes).unwrap();
         assert!(image.headers.is_dll());
@@ -213,7 +262,7 @@ mod tests {
             .iter()
             .map(|e| e.name.clone().unwrap())
             .collect();
-        assert_eq!(names, ["GetLastError", "SetLastError"]);
+        assert_eq!(names, ["GetLastError", "SetLastError", "__initenv", "_iob"]);
 
         let text = &image.headers.sections[0];
         assert!(text.protection().execute);
@@ -230,6 +279,22 @@ mod tests {
             assert_eq!(u32::from_le_bytes(thunk[1..5].try_into().unwrap()), target);
             assert_eq!(&thunk[5..], [0xff, 0xe0]);
         }
+
+        let data = &image.headers.sections[1];
+        assert_eq!(data.name, ".data");
+        assert!(data.protection().write && !data.protection().execute);
+        let slot = |name| match exports.by_name(name).unwrap().target {
+            ExportTarget::Rva(rva) => rva,
+            ref other => panic!("{other:?}"),
+        };
+        let (initenv, iob) = (slot("__initenv"), slot("_iob"));
+        assert_eq!(initenv, data.virtual_address);
+        assert_eq!(
+            iob,
+            initenv + 8,
+            "slots are 8-byte aligned and do not overlap"
+        );
+        assert!(iob + 96 <= data.virtual_address + data.virtual_size);
     }
 
     #[test]

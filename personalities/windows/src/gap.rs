@@ -9,8 +9,13 @@ use std::fmt;
 pub enum GapKind {
     /// A static import the resolver could not bind.
     Import,
-    /// A `GetProcAddress` lookup that found nothing.
+    /// A `GetProcAddress` lookup in an emulated DLL that found nothing.
     ProcAddress,
+    /// A DLL the agent asked for by name that we do not provide.
+    Module,
+    /// Part of an implemented function's documented behaviour that we do
+    /// not provide, such as wildcard expansion in `__getmainargs`.
+    Feature,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -26,6 +31,8 @@ impl fmt::Display for Gap {
         let kind = match self.kind {
             GapKind::Import => "import",
             GapKind::ProcAddress => "GetProcAddress",
+            GapKind::Module => "module",
+            GapKind::Feature => "feature",
         };
         write!(
             f,

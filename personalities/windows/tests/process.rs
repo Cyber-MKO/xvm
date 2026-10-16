@@ -208,3 +208,87 @@ fn start_up_stops_when_dll_main_fails() {
         Err(StartError::DllMainFailed("faildll.dll".into()))
     );
 }
+
+#[test]
+fn module_handles_and_proc_addresses_through_kernel32() {
+    use std::collections::BTreeMap;
+    use std::ffi::c_char;
+    use xvm_windows::paths::DriveMap;
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let mut p = process(dir, "importer.exe");
+    p.params.drives = DriveMap::new(&BTreeMap::from([("C".to_string(), dir.to_path_buf())]));
+    p.params.current_directory = r"C:\".into();
+    let runtime = Runtime::new(p);
+    let _thread = runtime.attach().unwrap();
+
+    let (k32, exe, sample) = {
+        let p = runtime.lock();
+        let base = |n: &str| p.module(n).unwrap().base();
+        let k32 = p.module("kernel32.dll").unwrap();
+        let f = |n: &str| k32.export_address(n).unwrap() as usize;
+        (
+            [
+                f("GetModuleHandleA"),
+                f("GetProcAddress"),
+                f("GetLastError"),
+                f("GetModuleHandleW"),
+            ],
+            base("importer.exe"),
+            base("sample.dll"),
+        )
+    };
+    // SAFETY: the emulated exports have these stdcall signatures.
+    let (get_module_a, get_proc, get_last_error, get_module_w) = unsafe {
+        (
+            std::mem::transmute::<usize, extern "stdcall" fn(*const c_char) -> u32>(k32[0]),
+            std::mem::transmute::<usize, extern "stdcall" fn(u32, *const c_char) -> u32>(k32[1]),
+            std::mem::transmute::<usize, extern "stdcall" fn() -> u32>(k32[2]),
+            std::mem::transmute::<usize, extern "stdcall" fn(*const u16) -> u32>(k32[3]),
+        )
+    };
+
+    assert_eq!(get_module_a(std::ptr::null()), exe);
+    assert_eq!(get_module_a(c"SAMPLE".as_ptr()), sample);
+    let wide: Vec<u16> = "Sample.DLL\0".encode_utf16().collect();
+    assert_eq!(get_module_w(wide.as_ptr()), sample);
+    assert_eq!(get_module_a(c"c:\\IMPORTER.EXE".as_ptr()), exe);
+    // A trailing dot means "no extension".
+    assert_eq!(get_module_a(c"sample.".as_ptr()), 0);
+    assert_eq!(get_last_error(), 126);
+
+    let add = runtime
+        .lock()
+        .module("sample.dll")
+        .unwrap()
+        .export_address("add")
+        .unwrap();
+    assert_eq!(get_proc(sample, c"add".as_ptr()), add);
+    // Ordinal 7 is exported without a name.
+    assert_ne!(get_proc(sample, 7 as *const c_char), 0);
+    assert_eq!(get_proc(sample, c"missing".as_ptr()), 0);
+    assert_eq!(get_last_error(), 127);
+    let k32_base = runtime.lock().module("kernel32.dll").unwrap().base();
+    assert_eq!(get_proc(k32_base, c"GetLastError".as_ptr()), k32[2] as u32);
+    assert_eq!(get_proc(0x1234, c"add".as_ptr()), 0);
+
+    // Misses that Windows would answer are gaps; ordinary misses are not.
+    let before = runtime.lock().gaps().len();
+    assert_eq!(get_proc(k32_base, c"GetTickCount".as_ptr()), 0);
+    assert_eq!(get_module_a(c"ntdll.dll".as_ptr()), 0);
+    let p = runtime.lock();
+    let new: Vec<_> = p.gaps()[before..]
+        .iter()
+        .map(|g| (g.kind, g.dll.as_str(), g.symbol.as_str()))
+        .collect();
+    assert!(
+        new.contains(&(GapKind::ProcAddress, "kernel32.dll", "GetTickCount")),
+        "{new:?}"
+    );
+    assert!(
+        new.contains(&(GapKind::Module, "ntdll.dll", "*")),
+        "{new:?}"
+    );
+    assert!(!new.iter().any(|g| g.2 == "missing"));
+}

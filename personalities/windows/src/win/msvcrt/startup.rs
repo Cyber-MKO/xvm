@@ -1,15 +1,110 @@
 //! Start-up support called by the MinGW CRT start-up code.
 
+use std::ffi::{CString, c_char};
+
+use crate::cmdline;
+use crate::gap::GapKind;
+use crate::process::{AnsiCommandLine, MainArgs};
 use crate::runtime::with_current;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
+        ("__getmainargs", __getmainargs as *const () as u32),
+        ("__p__acmdln", __p__acmdln as *const () as u32),
+        ("_onexit", _onexit as *const () as u32),
         ("_initterm", _initterm as *const () as u32),
         ("__set_app_type", __set_app_type as *const () as u32),
         ("__p__fmode", __p__fmode as *const () as u32),
         ("__p__commode", __p__commode as *const () as u32),
         ("__lconv_init", __lconv_init as *const () as u32),
     ]
+}
+
+/// Exported variables, as (name, size in bytes).
+pub(super) fn data() -> Vec<(&'static str, u32)> {
+    // char **__initenv: the initial environment. The MinGW start-up code
+    // stores envp from __getmainargs here.
+    vec![("__initenv", 4)]
+}
+
+/// Splits the process command line into `argv` and gives the environment
+/// as `envp`, both NULL-terminated, and sets `_newmode` from `start_info`.
+/// Every call returns the same arrays. Returns 0.
+extern "C" fn __getmainargs(
+    argc: *mut i32,
+    argv: *mut *mut *mut c_char,
+    envp: *mut *mut *mut c_char,
+    do_wildcard: i32,
+    start_info: *const i32,
+) -> i32 {
+    with_current(|p| {
+        if do_wildcard != 0 {
+            p.record_runtime_gap(
+                GapKind::Feature,
+                "msvcrt.dll",
+                "__getmainargs wildcard expansion",
+            );
+        }
+        if !start_info.is_null() {
+            // SAFETY: _startupinfo is { int newmode; }.
+            p.crt.newmode = unsafe { *start_info };
+        }
+        let params = &p.params;
+        let args = p.crt.main_args.get_or_insert_with(|| {
+            main_args(&cmdline::split(&params.command_line), &params.environment)
+        });
+        // SAFETY: the caller passes writable out-pointers.
+        unsafe {
+            *argc = (args.argv.len() - 1) as i32;
+            *argv = args.argv.as_mut_ptr();
+            *envp = args.envp.as_mut_ptr();
+        }
+    });
+    0
+}
+
+/// Address of `_acmdln`, which points at the process command line.
+#[allow(non_snake_case)]
+extern "C" fn __p__acmdln() -> *mut *mut c_char {
+    with_current(|p| {
+        let command_line = &p.params.command_line;
+        let acmdln = p.crt.acmdln.get_or_insert_with(|| {
+            let string = CString::new(command_line.as_str()).expect("validated profile string");
+            let variable = Box::new(string.as_ptr().cast_mut());
+            AnsiCommandLine { string, variable }
+        });
+        &mut *acmdln.variable as *mut *mut c_char
+    })
+}
+
+/// Registers `function` to be called at normal process exit, after
+/// functions registered later. Returns `function`.
+extern "C" fn _onexit(function: u32) -> u32 {
+    if function != 0 {
+        with_current(|p| p.crt.onexit.push(function));
+    }
+    function
+}
+
+fn main_args(argv: &[String], environment: &[String]) -> MainArgs {
+    // The profile only holds ASCII without NULs (profile::validate).
+    let mut strings: Vec<CString> = argv
+        .iter()
+        .chain(environment)
+        .map(|s| CString::new(s.as_str()).expect("validated profile string"))
+        .collect();
+    let mut pointers: Vec<*mut c_char> =
+        strings.iter_mut().map(|s| s.as_ptr().cast_mut()).collect();
+    let env_pointers = pointers.split_off(argv.len());
+    let terminate = |mut v: Vec<*mut c_char>| {
+        v.push(std::ptr::null_mut());
+        v
+    };
+    MainArgs {
+        strings,
+        argv: terminate(pointers),
+        envp: terminate(env_pointers),
+    }
 }
 
 /// Undocumented. Prepares the data `localeconv` returns. Ours builds that
@@ -66,6 +161,90 @@ mod tests {
         let _thread = runtime.attach().unwrap();
         __set_app_type(1);
         assert_eq!(runtime.lock().crt.app_type, 1);
+    }
+
+    fn attached_with(command_line: &str, env: &[&str]) -> (Runtime, crate::runtime::Attached) {
+        let mut process = Process::new(Vec::new());
+        process.params.command_line = command_line.into();
+        process.params.environment = env.iter().map(|s| s.to_string()).collect();
+        let runtime = Runtime::new(process);
+        let thread = runtime.attach().unwrap();
+        (runtime, thread)
+    }
+
+    fn strings(mut p: *mut *mut c_char) -> Vec<String> {
+        let mut out = Vec::new();
+        // SAFETY: a NULL-terminated array of C strings.
+        unsafe {
+            while !(*p).is_null() {
+                out.push(std::ffi::CStr::from_ptr(*p).to_str().unwrap().to_string());
+                p = p.add(1);
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn getmainargs_splits_the_command_line_and_passes_the_environment() {
+        let (runtime, _thread) = attached_with(
+            r#""C:\Program Files (x86)\ossec-agent\wazuh-agent.exe" -f "a b""#,
+            &["A=1", r"Path=C:\Windows"],
+        );
+        let (mut argc, mut argv, mut envp) = (0, std::ptr::null_mut(), std::ptr::null_mut());
+        let newmode = 1i32;
+        assert_eq!(
+            __getmainargs(&mut argc, &mut argv, &mut envp, 0, &newmode),
+            0
+        );
+        assert_eq!(argc, 3);
+        assert_eq!(
+            strings(argv),
+            [
+                r"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe",
+                "-f",
+                "a b"
+            ]
+        );
+        assert_eq!(strings(envp), ["A=1", r"Path=C:\Windows"]);
+        assert_eq!(runtime.lock().crt.newmode, 1);
+
+        // A second call hands out the same arrays.
+        let (mut argc2, mut argv2, mut envp2) = (0, std::ptr::null_mut(), std::ptr::null_mut());
+        __getmainargs(&mut argc2, &mut argv2, &mut envp2, 0, std::ptr::null());
+        assert_eq!((argc2, argv2, envp2), (argc, argv, envp));
+        assert!(runtime.lock().gaps().is_empty());
+    }
+
+    #[test]
+    fn getmainargs_logs_wildcard_expansion_as_a_gap_once() {
+        let (runtime, _thread) = attached_with("prog *.log", &[]);
+        let (mut argc, mut argv, mut envp) = (0, std::ptr::null_mut(), std::ptr::null_mut());
+        for _ in 0..2 {
+            __getmainargs(&mut argc, &mut argv, &mut envp, 1, std::ptr::null());
+        }
+        assert_eq!(strings(argv), ["prog", "*.log"]);
+        let gaps = runtime.lock().gaps().to_vec();
+        assert_eq!(gaps.len(), 1);
+        assert_eq!(gaps[0].kind, GapKind::Feature);
+    }
+
+    #[test]
+    fn acmdln_points_at_the_whole_command_line() {
+        let line = r#""C:\a b\x.exe" -f  "q""#;
+        let (_runtime, _thread) = attached_with(line, &[]);
+        let variable = __p__acmdln();
+        // SAFETY: points at the process's _acmdln, which points at a C string.
+        let text = unsafe { std::ffi::CStr::from_ptr(*variable) };
+        assert_eq!(text.to_str().unwrap(), line);
+        assert_eq!(__p__acmdln(), variable);
+    }
+
+    #[test]
+    fn onexit_registers_in_order() {
+        let (runtime, _thread) = attached_with("prog", &[]);
+        assert_eq!(_onexit(0x1000), 0x1000);
+        assert_eq!(_onexit(0x2000), 0x2000);
+        assert_eq!(runtime.lock().crt.onexit, [0x1000, 0x2000]);
     }
 
     #[test]

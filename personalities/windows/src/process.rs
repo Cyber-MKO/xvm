@@ -9,15 +9,18 @@
 //! Loading runs no agent code. `runtime::Runtime` runs TLS callbacks,
 //! `DllMain` and the entry point afterwards.
 
+use std::ffi::{CString, c_char};
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::emu;
-use crate::gap::Gap;
+use crate::gap::{Gap, GapKind};
 use crate::image::{ExportTarget, Exports, Image, Resolver, Symbol};
 use crate::map::{self, MapError, Mapped};
+use crate::paths::DriveMap;
 use crate::pe::PeError;
+use crate::profile;
 use crate::tls::ProcessTls;
 use crate::trap::Traps;
 use crate::win;
@@ -76,6 +79,14 @@ impl Module {
         self.mapped.base()
     }
 
+    /// Address of an export inside this module (not a forwarder).
+    pub fn export_address(&self, name: &str) -> Option<u32> {
+        match self.exports.by_name(name)?.target {
+            ExportTarget::Rva(rva) => Some(self.base().wrapping_add(rva)),
+            ExportTarget::Forwarder(_) => None,
+        }
+    }
+
     /// Address of an export, following forwarders inside `modules`.
     fn resolve(&self, modules: &[Module], symbol: &Symbol, depth: usize) -> Option<u32> {
         match &self.exports.lookup(symbol)?.target {
@@ -130,6 +141,57 @@ impl VectoredHandlers {
     }
 }
 
+/// What the process is started with: from the host profile today, from
+/// the host-state engine later.
+#[derive(Debug, Clone, Default)]
+pub struct ProcessParams {
+    pub command_line: String,
+    /// `NAME=value` strings in environment block order.
+    pub environment: Vec<String>,
+    pub current_directory: String,
+    pub drives: DriveMap,
+}
+
+impl ProcessParams {
+    pub fn from_profile(windows: &profile::Windows) -> ProcessParams {
+        ProcessParams {
+            command_line: windows.agent.command_line.clone(),
+            environment: windows.environment_block(),
+            current_directory: windows.agent.current_directory.clone(),
+            drives: DriveMap::new(&windows.drives),
+        }
+    }
+}
+
+/// `argv` and `envp` as built by `__getmainargs`. The vectors own the
+/// strings; agent code holds pointers into them, so they never change.
+#[derive(Debug)]
+pub struct MainArgs {
+    pub strings: Vec<CString>,
+    /// NULL-terminated `argv`.
+    pub argv: Vec<*mut c_char>,
+    /// NULL-terminated `envp`.
+    pub envp: Vec<*mut c_char>,
+}
+
+// SAFETY: the pointers point into `strings`, which the struct owns. Neither changes after it is built.
+unsafe impl Send for MainArgs {}
+// SAFETY: as for Send.
+unsafe impl Sync for MainArgs {}
+
+/// `_acmdln`: a pointer to the command line, behind `__p__acmdln`.
+#[derive(Debug)]
+pub struct AnsiCommandLine {
+    pub string: CString,
+    /// The `_acmdln` variable itself; boxed so its address never moves.
+    pub variable: Box<*mut c_char>,
+}
+
+// SAFETY: `variable` points into `string`, which the struct owns. Neither changes after it is built.
+unsafe impl Send for AnsiCommandLine {}
+// SAFETY: as for Send.
+unsafe impl Sync for AnsiCommandLine {}
+
 /// `msvcrt.dll` state that belongs to the process. Globals that agent code
 /// reaches through pointers are boxed, so their addresses never move.
 #[derive(Debug)]
@@ -140,6 +202,13 @@ pub struct CrtState {
     pub fmode: Box<i32>,
     /// `_commode`: default commit mode for new streams.
     pub commode: Box<i32>,
+    /// `_newmode` from `__getmainargs`' start-up info.
+    pub newmode: i32,
+    pub main_args: Option<MainArgs>,
+    pub acmdln: Option<AnsiCommandLine>,
+    /// Functions registered with `_onexit`, in registration order. `exit`
+    /// calls them last first.
+    pub onexit: Vec<u32>,
 }
 
 /// `_O_TEXT` from fcntl.h, the documented default for `_fmode`.
@@ -151,6 +220,10 @@ impl Default for CrtState {
             app_type: 0,
             fmode: Box::new(O_TEXT),
             commode: Box::new(0),
+            newmode: 0,
+            main_args: None,
+            acmdln: None,
+            onexit: Vec::new(),
         }
     }
 }
@@ -164,7 +237,10 @@ pub struct Process {
     loading: Vec<String>,
     main: Option<usize>,
     pub vectored_handlers: VectoredHandlers,
+    /// From `SetUnhandledExceptionFilter`; 0 for none.
+    pub unhandled_exception_filter: u32,
     pub crt: CrtState,
+    pub params: ProcessParams,
 }
 
 impl Process {
@@ -179,7 +255,9 @@ impl Process {
             loading: Vec::new(),
             main: None,
             vectored_handlers: VectoredHandlers::default(),
+            unhandled_exception_filter: 0,
             crt: CrtState::default(),
+            params: ProcessParams::default(),
         }
     }
 
@@ -192,6 +270,23 @@ impl Process {
     pub fn record_gap(&mut self, gap: Gap) {
         eprintln!("{gap}");
         self.gaps.push(gap);
+    }
+
+    /// Record a gap found at run time, once however often it recurs.
+    /// Run-time gaps name the main module: the caller is not tracked yet.
+    pub fn record_runtime_gap(&mut self, kind: GapKind, dll: &str, symbol: &str) {
+        let gap = Gap {
+            module: self
+                .main_module()
+                .map(|m| m.name.clone())
+                .unwrap_or_default(),
+            kind,
+            dll: dll.to_string(),
+            symbol: symbol.to_string(),
+        };
+        if !self.gaps.contains(&gap) {
+            self.record_gap(gap);
+        }
     }
 
     /// Modules not initialised yet, dependencies first, marked as
@@ -346,6 +441,43 @@ impl Process {
         Ok(())
     }
 
+    /// `GetModuleHandle`: the base of a loaded module, by file name or by
+    /// full Windows path. `None` asks for the main module.
+    pub fn module_handle(&self, name: Option<&str>) -> Option<u32> {
+        let Some(name) = name else {
+            return self.main_module().map(Module::base);
+        };
+        if !name.contains(['\\', '/']) {
+            return self.module(name).map(Module::base);
+        }
+        let params = &self.params;
+        let wanted = DriveMap::full_path(name, &params.current_directory).ok()?;
+        self.modules
+            .iter()
+            .find(|m| {
+                m.path
+                    .as_deref()
+                    .and_then(|p| params.drives.to_windows(p))
+                    .is_some_and(|p| p.eq_ignore_ascii_case(&wanted))
+            })
+            .map(Module::base)
+    }
+
+    pub fn module_at(&self, base: u32) -> Option<&Module> {
+        self.modules.iter().find(|m| m.base() == base)
+    }
+
+    /// `GetProcAddress`: an export of the module at `base`, following
+    /// forwarders.
+    pub fn proc_address(&self, base: u32, symbol: &Symbol) -> Option<u32> {
+        self.module_at(base)?.resolve(&self.modules, symbol, 0)
+    }
+
+    /// Whether `name` is a DLL file the agent ships, loaded or not.
+    pub fn is_bundled(&self, name: &str) -> bool {
+        self.find_file(&normalize(name)).is_some()
+    }
+
     fn find_file(&self, name: &str) -> Option<PathBuf> {
         // Windows file names are case-insensitive; the host's are not.
         self.search.iter().find_map(|dir| {
@@ -377,11 +509,14 @@ fn find<'a>(modules: &'a [Module], name: &str) -> Option<&'a Module> {
     modules.iter().find(|m| m.name == name)
 }
 
-/// Lower case, with `.dll` added when there is no extension, as the
-/// LoadLibrary documentation describes for module names.
+/// Lower case, with `.dll` added when there is no extension. A trailing
+/// dot means "no extension" and is dropped. Both rules are from the
+/// GetModuleHandle and LoadLibrary documentation.
 fn normalize(name: &str) -> String {
     let lower = name.to_ascii_lowercase();
-    if lower.contains('.') {
+    if let Some(bare) = lower.strip_suffix('.') {
+        bare.to_string()
+    } else if lower.contains('.') {
         lower
     } else {
         lower + ".dll"
