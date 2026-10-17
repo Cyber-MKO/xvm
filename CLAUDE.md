@@ -23,12 +23,12 @@ A container-like platform that runs many lightweight emulated hosts (Windows, ma
 - Python for the API census tool, control plane, scenario engine and test harness.
 - Phase 1 decisions (target version, CRT, `user32` subset) are in `docs/phase1-sizing.md`.
 
-## Proposed repo layout
+## Repo layout
 
 ```
 docs/            BRIEF.md, architecture notes, API tables per personality
 census/          API census tool and generated reports
-engine/          host-state engine (base images, per-host deltas)
+engine/          host-state engine (Rust): base images, per-host deltas, run-time state
 personalities/
   windows/       PE loader, NT and Win32 subset, registry, Event Log, services
   macos/         Mach-O loader, libSystem subset, sysctl, log command
@@ -40,19 +40,37 @@ control/         CLI and API, host profiles, Habeny provider
 tests/           T1 to T8, fidelity, resource and calibration harnesses
 ```
 
-## Current phase: Phase 0 (Foundations)
+## Status (2026-10-17)
 
-Start here, in order:
+### Phase 0 (Foundations): one exit item open
 
-1. Scaffold the repo with the layout above, CI, linting and a test runner.
-2. Build the **API census tool** (`census/`):
-   - Unpack agent packages: MSI (msitools), PKG, DEB, RPM.
-   - Parse PE import tables, including delay-load imports (`pefile`), and later Mach-O load commands and imports.
-   - Flag dynamic loading (`LoadLibrary*`, `GetProcAddress`, `dlopen`) and strings that look like DLL or function names.
-   - Output per-DLL function lists per agent as JSON plus a Markdown summary in `census/reports/`.
-3. Run the census on the Wazuh Windows agent MSI and write the report. This sizes Phase 1.
+| Item | State |
+| --- | --- |
+| Repo, CI, lint, tests | Done |
+| API census tool (`census/`) | Done |
+| Wazuh Windows census | Done: 4.14.2 (the target) and 4.14.9, in `census/reports/` |
+| Golden baseline | **Open.** Kasim runs the kit in `scenarios/golden/windows/` on a Windows evaluation VM |
 
-Do not start the Windows PE loader until the census report exists and Kasim has reviewed it.
+### Phase 1 (Windows personality): may start
+
+Kasim reviewed the census, accepted the four decisions in `docs/phase1-sizing.md`, and asked for the PE loader to start (2026-10-16).
+
+| Decision | Detail |
+| --- | --- |
+| Target | Wazuh agent 4.14.2, PE32 i386 |
+| Runtime | The Windows personality is a 32-bit Linux process (`i686-unknown-linux-gnu`) |
+| CRT | We provide `msvcrt.dll` on top of host libc, function by function from the census |
+| `user32` | Only the census functions, no window system |
+
+### Built so far
+
+| Component | Where | Notes |
+| --- | --- | --- |
+| Host profiles | `control/`, `docs/host-profiles.md` | YAML base images plus per-host deltas; `xvm-profile validate`, `resolve`, `compile`, `base-from-golden` |
+| Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes; run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
+| Golden capture kit | `scenarios/golden/windows/` | `capture.ps1`, `manager-capture.sh`, `xvm-golden` |
+
+Every host fact a personality reports must come from the engine (rule 5). Every write it makes goes through the engine's ops.
 
 ## Working style
 
