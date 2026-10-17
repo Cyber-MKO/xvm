@@ -21,6 +21,7 @@ from pathlib import Path
 
 import yaml
 
+from . import corpus
 from .clock import format_time
 from .engine import EngineError
 
@@ -117,6 +118,14 @@ class HostContext:
             if p["image"].lower() == image.lower():
                 return p["pid"]
         return None
+
+    def host_identity(self) -> corpus.Identity:
+        """This host's computer name, machine SID and process table."""
+        return corpus.Identity(
+            self.computer_short(),
+            corpus.machine_sid(u.get("sid") for u in self.users()),
+            {p["pid"]: p["image"] for p in self.call("proc.list")},
+        )
 
     def logon_id(self, *parts: str) -> str:
         """A repeatable logon ID for a session, unique enough per host."""
@@ -502,3 +511,18 @@ def registry_delete_key(h: HostContext, p: dict, time: datetime) -> None:
 def raw_event(h: HostContext, p: dict, time: datetime) -> None:
     """Any event, written as given. For events no named action covers yet."""
     h.call("evt.write", channel=p["channel"], event=p["event"], time=format_time(time))
+
+
+@action("replay.event", required=("event", "source"))
+def replay_event(h: HostContext, p: dict, time: datetime) -> None:
+    """A captured event, rewritten to name this host instead of the capture VM.
+    `source` is the capture's identity (`corpus.Identity.to_json`)."""
+    event = dict(p["event"])
+    channel = event.pop("channel", None)
+    if not channel:
+        raise ScenarioError("replayed event has no channel")
+    event.pop("time", None)
+    out, notes = corpus.rewrite(event, corpus.Identity.from_json(p["source"]), h.host_identity())
+    for n in notes:
+        h.gap(n)
+    h.call("evt.write", channel=channel, event=out, time=format_time(time))

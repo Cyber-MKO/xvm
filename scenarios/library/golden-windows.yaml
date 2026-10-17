@@ -20,12 +20,12 @@ steps:
      params: {user: xvmgolden, group: S-1-5-32-544}}
   - {at: 50s, name: user_delete, action: user.delete, params: {name: xvmgolden}}
   - {at: 60s, name: service_restart, action: service.restart, params: {name: W32Time}}
-  - {at: 70s, name: fim_folder, action: file.mkdir,
+  - {at: 70s, name: fim_change, action: file.mkdir,
      params: {path: 'C:\xvm-golden-fim', exist_ok: true}}
-  - {at: 70s, name: fim_create, action: file.write,
+  - {at: 70s, name: fim_change, action: file.write,
      params: {path: 'C:\xvm-golden-fim\golden.txt', text: "xvm golden v1\r\n"}}
-  - {at: 73s, name: fim_modify, action: file.append,
+  - {at: 73s, name: fim_change, action: file.append,
      params: {path: 'C:\xvm-golden-fim\golden.txt', text: "xvm golden v2\r\n"}}
-  - {at: 76s, name: fim_delete, action: file.delete, params: {path: 'C:\xvm-golden-fim\golden.txt'}}
+  - {at: 76s, name: fim_change, action: file.delete, params: {path: 'C:\xvm-golden-fim\golden.txt'}}
   - {at: 86s, name: marker_end, action: marker,
      params: {event_id: 901, source: xvm-golden, description: xvm golden scenario end}}
