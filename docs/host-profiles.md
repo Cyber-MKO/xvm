@@ -86,6 +86,7 @@ Windows keeps these in the registry, so the profile does too. The capture kit ex
 | Time zone names | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\KEY` | `Std`, `Dlt`. `StandardName` in `TimeZoneInformation` is often a resource reference (`@tzres.dll,-NNN`), so the names come from here. |
 | Code pages | `HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage` | `ACP` (ANSI), `OEMCP` (OEM), as `REG_SZ` |
 | Product type | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` | `InstallationType` (`Server`, `Client`) |
+| The 32-bit view | `HKLM\SOFTWARE\WOW6432Node\...` | A 32-bit process on 64-bit Windows reads `HKLM\SOFTWARE` here. The capture kit exports `WOW6432Node\Microsoft\Windows NT\CurrentVersion`. Keys missing from the 32-bit view fall back to the 64-bit one in the personality, as a logged gap. |
 
 Where the agent's files live on the real disk (the drive mapping) is not part of the profile. It is a launch setting, so a profile describes the emulated host on any machine.
 

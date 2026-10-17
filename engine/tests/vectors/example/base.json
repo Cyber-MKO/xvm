@@ -121,6 +121,36 @@
      "data": "21H2"
     }
    },
+   "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows NT\\CurrentVersion": {
+    "ProductName": {
+     "type": "REG_SZ",
+     "data": "Windows Server 2022 Standard Evaluation"
+    },
+    "InstallationType": {
+     "type": "REG_SZ",
+     "data": "Server"
+    },
+    "CurrentBuildNumber": {
+     "type": "REG_SZ",
+     "data": "20348"
+    },
+    "CurrentMajorVersionNumber": {
+     "type": "REG_DWORD",
+     "data": 10
+    },
+    "CurrentMinorVersionNumber": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "UBR": {
+     "type": "REG_DWORD",
+     "data": 1
+    },
+    "DisplayVersion": {
+     "type": "REG_SZ",
+     "data": "21H2"
+    }
+   },
    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation": {
     "Bias": {
      "type": "REG_DWORD",

@@ -217,3 +217,92 @@ fn unsupported_ops_are_logged_as_gaps() {
                "agent": {"product": "wazuh", "version": "4.14.2"}})
     );
 }
+
+fn security_event() -> serde_json::Value {
+    json!({"provider": "Microsoft-Windows-Security-Auditing", "event_id": 4625})
+}
+
+/// Start an `evt.wait` on its own connection and thread.
+fn wait_in_thread(
+    socket: &Path,
+    channel: &'static str,
+    after: u64,
+    timeout_ms: u64,
+) -> thread::JoinHandle<(serde_json::Value, std::time::Duration)> {
+    let socket = socket.to_path_buf();
+    thread::spawn(move || {
+        let mut c = Client::connect(&socket, "edge-host").unwrap();
+        let t0 = std::time::Instant::now();
+        let r = c.evt_wait(channel, after, timeout_ms).unwrap();
+        (r, t0.elapsed())
+    })
+}
+
+#[test]
+fn evt_wait_wakes_on_a_write_without_blocking_others() {
+    let (socket, _) = start();
+    let a = wait_in_thread(&socket, "Security", 0, 20_000);
+    let b = wait_in_thread(&socket, "security", 0, 20_000);
+    let other = wait_in_thread(&socket, "System", 0, 300);
+    thread::sleep(std::time::Duration::from_millis(150));
+    // Other connections carry on while the waits block.
+    let mut c = Client::connect(&socket, "edge-host").unwrap();
+    assert_eq!(c.section("identity").unwrap()["hostname"], "EDGE-01");
+    assert_eq!(c.evt_write("Security", &security_event()).unwrap(), 1);
+    for h in [a, b] {
+        let (r, took) = h.join().unwrap();
+        assert_eq!(
+            r,
+            json!({"newest_record_id": 1, "reset": false, "timed_out": false})
+        );
+        assert!(took < std::time::Duration::from_secs(10), "{took:?}");
+    }
+    // A write to Security does not answer a wait on System.
+    let (r, took) = other.join().unwrap();
+    assert_eq!(
+        r,
+        json!({"newest_record_id": 0, "reset": false, "timed_out": true})
+    );
+    assert!(took >= std::time::Duration::from_millis(300), "{took:?}");
+    // A record already after `after` answers at once; timeout 0 is a plain check.
+    assert_eq!(c.evt_wait("Security", 0, 0).unwrap()["newest_record_id"], 1);
+    assert_eq!(c.evt_wait("Security", 1, 0).unwrap()["timed_out"], true);
+}
+
+#[test]
+fn evt_wait_reports_resets() {
+    let (socket, _) = start();
+    let mut c = Client::connect(&socket, "edge-host").unwrap();
+    c.evt_write("Security", &security_event()).unwrap();
+    c.evt_write("Security", &security_event()).unwrap();
+    // Caught up at record 2, waiting for more; then the logs are reset.
+    let caught_up = wait_in_thread(&socket, "Security", 2, 20_000);
+    // Nothing written yet on System; a reset still wakes the wait.
+    let empty = wait_in_thread(&socket, "System", 0, 20_000);
+    thread::sleep(std::time::Duration::from_millis(150));
+    c.call("reset", json!({})).unwrap();
+    for (h, newest) in [(caught_up, 0), (empty, 0)] {
+        let (r, took) = h.join().unwrap();
+        assert_eq!(
+            r,
+            json!({"newest_record_id": newest, "reset": true, "timed_out": false})
+        );
+        assert!(took < std::time::Duration::from_secs(10));
+    }
+    // A reader whose position is beyond the log learns of the reset at once.
+    assert_eq!(c.evt_wait("Security", 7, 5_000).unwrap()["reset"], true);
+}
+
+#[test]
+fn evt_wait_errors() {
+    let (socket, _) = start();
+    let mut c = Client::connect(&socket, "edge-host").unwrap();
+    assert_eq!(
+        engine_code(c.evt_wait("Security", 0, 60_001).unwrap_err()),
+        "bad_request"
+    );
+    assert_eq!(
+        engine_code(c.evt_wait("Nope", 0, 10).unwrap_err()),
+        "not_found"
+    );
+}

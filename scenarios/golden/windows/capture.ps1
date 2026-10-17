@@ -52,6 +52,8 @@ $MarkerSource = 'xvm-golden'
 # (CurrentBuildNumber, ReleaseId, DisplayVersion, ProfileImagePath) live here.
 $RegistryKeys = [ordered]@{
     'os-currentversion'   = 'HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+    # The 32-bit view, which a 32-bit agent such as Wazuh's reads on 64-bit Windows.
+    'os-currentversion-wow64' = 'HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion'
     'computername'        = 'HKLM\SYSTEM\CurrentControlSet\Control\ComputerName'
     'tcpip-parameters'    = 'HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters'
     'uninstall'           = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'

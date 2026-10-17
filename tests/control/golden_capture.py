@@ -158,6 +158,11 @@ def files() -> dict[str, bytes]:
             r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\TimeZoneInformation]",
             '"TimeZoneKeyName"="UTC"',
         ),
+        "registry/os-currentversion-wow64.reg": _reg(
+            r"[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion]",
+            '"ProductName"="Windows Server 2022 Standard Evaluation"',
+            '"CurrentBuildNumber"="20348"',
+        ),
         "registry/codepage.reg": _reg(
             r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Nls\CodePage]",
             '"ACP"="1252"',

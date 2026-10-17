@@ -92,6 +92,8 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Time zone and code pages come from registry keys | Decided | Kasim (2026-10-17). `TimeZoneInformation`, `Time Zones\KEY` and `Nls\CodePage`, as Windows keeps them. The capture kit exports them. |
 | The drive mapping is a launch setting, not a profile field | Decided | Kasim (2026-10-17). A profile describes the emulated host on any machine. |
 | The agent's launch settings live in the profile's `agent` section | Decided | Kasim (2026-10-17). `pid`, `command_line`, `current_directory`, `service`, `environment`. Certificate stores, trusted files and the system module directory go in a `windows` section. |
+| The capture kit exports the 32-bit registry view | Decided | Kasim (2026-10-17). `WOW6432Node\Microsoft\Windows NT\CurrentVersion`, which the 32-bit Wazuh agent reads on 64-bit Windows. The base keeps it as its own key. |
+| New events reach a subscription through a blocking wait in the engine | Decided | Kasim (2026-10-17), replacing "polling first" the same day. `evt.wait` returns as soon as a channel has a record after `after`, or on a reset or timeout; the personality then reads with `evt.query`. Idle hosts cost nothing. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files
