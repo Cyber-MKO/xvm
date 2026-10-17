@@ -5,9 +5,34 @@ Scenario engine and golden corpora. See docs/BRIEF.md.
 | Path | Contents |
 | --- | --- |
 | `golden/windows/` | Capture kit for the Windows golden baseline (Phase 0) |
-| `xvm_golden/` | `xvm-golden` tool: verify a baseline, import manager events |
+| `xvm_golden/` | `xvm-golden` tool: verify a baseline, import manager events, manager-side checks (fidelity, T5, T6) |
 | `xvm_scenario/` | `xvm-scenario` tool: check scenarios and play them on emulated hosts |
 | `library/` | Ready-made scenarios |
+
+## Manager-side checks
+
+These compare what the Wazuh manager received from an emulated host with the golden run. Copy the emulated agent's events with `golden/windows/manager-capture.sh`, as for the golden VM.
+
+| Command | Checks |
+| --- | --- |
+| `xvm-golden diff-manager GOLDEN --archives A --alerts L --run-log R [--agent NAME]` | The fidelity test, T6 and T5 together |
+| `xvm-golden delivery --archives A --run-log R [--agent NAME]` | T5 only, for any run (a scenario or a corpus replay) |
+
+| Check | Pass condition | How |
+| --- | --- | --- |
+| Fidelity | Only host-identity fields differ | Windows events in `archives.json` pair by log, provider and ID, in order, and compare field by field. Identity becomes `{computer}` and `{machine_sid}` on both sides. Skipped: `timestamp`, `id`, `agent.*`, `manager.name`, `full_log`, and `systemTime`, `eventRecordID`, `computer`, `processID`, `threadID` under `data.win.system`. Logon IDs, ports and GUIDs compare by shape. |
+| T6 detection parity | Same rule IDs, same counts | `rule.id` counts in `alerts.json` |
+| T5 event delivery | Every injected event arrives exactly once | Each event the run log wrote (log and record ID) appears once in `archives.json` |
+
+| Finding | Severity |
+| --- | --- |
+| A field differs, is missing or is extra on a paired Windows event | error |
+| More Windows events of a kind than the golden run | error |
+| Fewer Windows events of a kind, or a different count of other agent output (FIM, inventory) | warning |
+| A rule fires a different number of times | error |
+| An event missing or arriving more than once | error |
+
+Field names follow Wazuh's `windows_eventchannel` output (`data.win.system`, `data.win.eventdata`) as Wazuh documents it. The golden run is the authority. Both commands exit 1 on any error and take `--json` for a report file.
 
 ## Scenario runner
 
