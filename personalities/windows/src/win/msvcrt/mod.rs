@@ -14,6 +14,7 @@ mod startup;
 mod stat;
 pub(crate) mod stdio;
 mod string;
+mod time;
 mod wide;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
@@ -32,6 +33,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         msstring::exports(),
         locks::exports(),
         stat::exports(),
+        time::exports(),
     ]
     .concat()
 }
