@@ -60,10 +60,7 @@ fn loads_dependencies_first_and_records_gaps() {
     gaps.sort_by(|a, b| a.symbol.cmp(&b.symbol));
     assert_eq!(
         gaps,
-        [
-            gap("importer.exe", "#99"),
-            gap("importer.exe", "Beep")
-        ]
+        [gap("importer.exe", "#99"), gap("importer.exe", "Beep")]
     );
 
     // The IAT, read back from the mapped executable.
@@ -93,10 +90,7 @@ fn loads_dependencies_first_and_records_gaps() {
         export(kernel32, "GetLastError")
     );
     assert_ne!(slot("kernel32.dll", "Beep"), 0);
-    assert_ne!(
-        slot("kernel32.dll", "Beep"),
-        slot("kernel32.dll", "#99")
-    );
+    assert_ne!(slot("kernel32.dll", "Beep"), slot("kernel32.dll", "#99"));
 }
 
 #[test]
