@@ -46,6 +46,15 @@ registry:
       CurrentMinorVersionNumber: {type: REG_DWORD, data: 0}
       UBR: {type: REG_DWORD, data: 1}
       DisplayVersion: {type: REG_SZ, data: 21H2}
+    # The 32-bit view of the same key, which a 32-bit agent reads on 64-bit Windows.
+    HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion:
+      ProductName: {type: REG_SZ, data: Windows Server 2022 Standard Evaluation}
+      InstallationType: {type: REG_SZ, data: Server}
+      CurrentBuildNumber: {type: REG_SZ, data: "20348"}
+      CurrentMajorVersionNumber: {type: REG_DWORD, data: 10}
+      CurrentMinorVersionNumber: {type: REG_DWORD, data: 0}
+      UBR: {type: REG_DWORD, data: 1}
+      DisplayVersion: {type: REG_SZ, data: 21H2}
     # Time zone as Windows stores it. The personality reads the rules here and
     # the names from Time Zones\KEY (Std, Dlt). Bias values are signed minutes
     # stored as DWORDs (UTC = local + bias).

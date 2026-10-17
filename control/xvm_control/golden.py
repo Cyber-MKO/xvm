@@ -36,6 +36,7 @@ from . import evtmsg, profile, regfile
 # converted into structured sections or dropped.
 REGISTRY_EXPORTS = (
     "os-currentversion",
+    "os-currentversion-wow64",
     "computername",
     "tcpip-parameters",
     "profilelist",

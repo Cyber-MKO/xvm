@@ -125,6 +125,7 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | XML | Rendered in the Windows event schema, as `EvtRender` returns it, with `TimeCreated` to seven fractional digits |
 | Queries | The XPath subset subscribers use, as a bare expression or a `QueryList`. See `src/evtquery.rs` for the supported forms. Anything else is `bad_query`. |
 | Messages | An event's own `message` (golden corpus replay) wins. Otherwise the host's `event_messages` template for `ID/VERSION`, then `ID`, filled with the data values (`%1`, `%2`...). No template is `no_message`. |
+| Subscriptions | Personalities poll: `evt.query` with `after` set to the last record ID they delivered. A blocking wait op is planned before scale tests (Phase 4). |
 | Bookmarks | Not stored by the engine. A bookmark is a channel and record ID, which the personality renders for `EvtCreateBookmark` and `EvtRender`; Wazuh saves it itself. |
 | Persistence | Per-channel segment files under `hosts/NAME/events/` in the state folder, outside the change log and snapshots. See Persistence. |
 | `reset` | Empties every channel; record IDs start again at 1. |

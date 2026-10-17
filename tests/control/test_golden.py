@@ -49,6 +49,9 @@ def test_identity_is_left_out(tmp_path):
     assert keys[COMPUTERNAME] == {"Other": {"type": "REG_SZ", "data": "kept"}}
     assert set(keys[TCPIP]) == {"SearchList"}
     assert not any("Interfaces" in k for k in keys)
+    # The 32-bit view, which the 32-bit agent reads on 64-bit Windows.
+    wow = keys["HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows NT\\CurrentVersion"]
+    assert wow["CurrentBuildNumber"]["data"] == "20348"
     # The personality reads the code pages from the registry, as Windows keeps them.
     codepage = keys["HKLM\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage"]
     assert (codepage["ACP"]["data"], codepage["OEMCP"]["data"]) == ("1252", "437")
