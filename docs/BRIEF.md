@@ -45,6 +45,27 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Windows personality runs as a 32-bit Linux process | Decided | Wazuh's Windows binaries are all PE32 i386. Needs IA32 emulation in the host kernel. |
 | We provide `msvcrt.dll` ourselves, on top of host libc | Decided | Windows semantics added per function, from the census. |
 | A non-GUI `user32` subset is allowed | Decided | Only census functions, no window system. Consistent with rule 6. |
+| Host profiles are YAML, validated by a JSON Schema | Decided | Kasim, 2026-10-16. See `docs/host-profiles.md`. |
+| Host profiles are a base image plus per-host deltas | Decided | Kasim, 2026-10-16. Bases are built from golden captures. |
+| Golden captures are stored with Git LFS in this repo | Decided | Kasim, 2026-10-16. `.evtx` and manager logs go to LFS; manifests stay in plain git. |
+| Host-state engine is written in Rust | Decided | Kasim, 2026-10-16. Crate `engine/` (`xvm-engine`, daemon `xvm-engined`). |
+| The engine layers base images and host deltas itself | Decided | Kasim, 2026-10-16. Bases are held once and shared. Test vectors check it against `xvm-profile resolve`. |
+| Personalities reach the engine over a Unix socket | Decided | Kasim, 2026-10-16. One daemon for all hosts, one connection per host, length-prefixed JSON. |
+| `xvm-profile` is the only YAML parser; the engine reads compiled JSON | Decided | 2026-10-16. Avoids YAML 1.1 and 1.2 disagreements between Python and Rust. Unquoted timestamps are rejected. |
+| Run-time changes live in a third engine layer above the profile | Proposed | 2026-10-16. `reset` returns to the profile. Saved across restarts with `--state`. |
+| Personality and control connections may both write | Proposed | 2026-10-16. The agent's own registry writes and scenario events go through the same ops and one journal. |
+| Scenarios pass their own clock on each write | Proposed | 2026-10-16. Optional `time` parameter, so hosts can run on jittered clocks (section 8). |
+| A host's name cannot change at run time | Proposed | 2026-10-16. `identity.hostname` is refused by `section.update`, since every component knows the host by name. |
+| Engine holds file metadata; bytes live in a content-addressed blob store | Decided | Kasim, 2026-10-16. Identical files are stored once across all hosts. A host's writes get their own copy. |
+| Base images carry captured file metadata, no vendor bytes | Decided | Kasim, 2026-10-16. Paths, sizes, times and SHA-256 from the golden VM. Reading such a file is a logged gap (rules 1 and 4). |
+| Processes come from the profile at boot plus live registration | Decided | Kasim, 2026-10-16. The engine assigns Windows-style PIDs, deterministic per host. Personalities register the agent's real processes. |
+| Implied directories and registry keys outlive their contents | Decided | 2026-10-16. Deleting the last file under an implied folder keeps the folder, as on a real system. |
+| Run-time changes persist through a change log plus snapshots | Decided | Kasim, 2026-10-16. Per-host append-only log, periodic snapshots, replay on start through the same code path as live writes. |
+| Persistence flushes in batches | Decided | Kasim, 2026-10-16. fsync every 200 ms by default; a power loss can drop the last batch. |
+| A changed profile discards that host's saved state | Decided | Kasim, 2026-10-16. The state moves to `discarded/`, never deleted, with a warning. |
+| Event message templates come from the golden capture, as data | Decided | Kasim, 2026-10-17. One template per provider and event ID, from the capture's rendered events; provenance in `docs/LICENSES.md`. A missing template is a logged gap. |
+| Event logs are stored in per-channel segment files | Decided | Kasim, 2026-10-17. Kept out of the change log and snapshots; same batched fsync. |
+| Full event channels overwrite the oldest events, sized by the registry's MaxSize | Decided | Kasim, 2026-10-17. Record IDs keep counting, as on Windows. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 | Wazuh 4.14.2 census reviewed; Phase 1 starts | Decided | Kasim reviewed the census (2026-10-16). Golden baseline capture stays open. |
 | Loader fixtures are built from source too | Decided | Same approach as the census fixtures, built for `i686-pc-windows-msvc`. |
@@ -58,6 +79,10 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | The agent's process ID comes from the host profile | Decided | Kasim (2026-10-17), option A. `windows.agent.pid`, a non-zero multiple of 4. The state engine's process list will include it. |
 | The time zone comes from the host profile as Windows rules | Decided | Kasim (2026-10-17), option A. `windows.time_zone` holds the `TIME_ZONE_INFORMATION` fields. Local time is computed from them, not from the host's zone. |
 | ANSI and OEM code pages come from the host profile | Decided | Kasim (2026-10-17), option A. `windows.ansi_code_page` and `windows.oem_code_page`; tables generated from Unicode's published Microsoft mapping files. |
+| One branch owns integration: the engine branch is merged into the loader branch | Decided | Kasim (2026-10-17), option A. The loader's TOML profile stays working until Kasim decides where its loader-only settings go (YAML sections served by the engine, or TOML for now). |
+| The loader asks the engine for the agent's PID | Decided | Kasim (2026-10-17), option A. The loader registers the agent with `proc.start` and requests the profile's PID; the engine records it instead of assigning one. |
+| The manager address reaches `ossec.conf` through our MSI installer step | Decided | Kasim (2026-10-17), option A. Install properties (such as `WAZUH_MANAGER`) come from the host profile; the step writes them into the configuration as the real installer does. |
+| Name resolution: the host's `hosts` file, then the real resolver | Decided | Kasim (2026-10-17), option B. `getaddrinfo` reads the emulated host's `C:\Windows\System32\drivers\etc\hosts` first, as Windows does, then asks the real machine's resolver. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

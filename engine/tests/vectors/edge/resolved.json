@@ -1,0 +1,246 @@
+{
+ "schema": 1,
+ "kind": "resolved-host",
+ "name": "edge-host",
+ "base": "edge-base",
+ "source": {
+  "golden_capture": "synthetic"
+ },
+ "os": "windows",
+ "os_info": {
+  "product_name": "Edge OS",
+  "build": "100",
+  "architecture": "x86_64",
+  "last_boot": "2026-10-16T08:00:00Z"
+ },
+ "hardware": {
+  "cpu": {
+   "name": "Base CPU",
+   "cores": 8,
+   "logical_processors": 4
+  },
+  "memory_mb": 2048
+ },
+ "network": {
+  "dns_suffix": "base.example.invalid",
+  "interfaces": [
+   {
+    "name": "Ethernet0",
+    "description": "NIC zero",
+    "dhcp": false,
+    "ipv4": [
+     "192.0.2.5/24"
+    ]
+   },
+   {
+    "name": "Ethernet2",
+    "description": "NIC two"
+   }
+  ]
+ },
+ "users": [
+  {
+   "name": "Administrator",
+   "enabled": true,
+   "groups": [
+    "Administrators"
+   ]
+  },
+  {
+   "name": "Operator",
+   "enabled": false,
+   "groups": [
+    "Users"
+   ]
+  },
+  {
+   "name": "svc-backup",
+   "enabled": true
+  }
+ ],
+ "groups": [
+  {
+   "name": "Administrators",
+   "sid": "S-1-5-32-544"
+  }
+ ],
+ "services": [
+  {
+   "name": "Alpha",
+   "state": "running",
+   "start_mode": "auto"
+  },
+  {
+   "name": "Beta",
+   "state": "stopped",
+   "start_mode": "manual"
+  },
+  {
+   "name": "Gamma",
+   "state": "running"
+  }
+ ],
+ "registry": {
+  "keys": {
+   "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WINEVT\\Channels\\Microsoft-Windows-Sysmon/Operational": {
+    "MaxSize": {
+     "type": "REG_DWORD",
+     "data": 67108864
+    }
+   },
+   "HKLM\\SOFTWARE\\Other": {
+    "Fresh": {
+     "type": "REG_SZ",
+     "data": "re-added"
+    }
+   },
+   "HKLM\\SOFTWARE\\Vendor\\App": {
+    "Version": {
+     "type": "REG_SZ",
+     "data": "2.0"
+    },
+    "Path": {
+     "type": "REG_EXPAND_SZ",
+     "data": "%ProgramFiles%\\App"
+    },
+    "NewValue": {
+     "type": "REG_QWORD",
+     "data": 5
+    }
+   },
+   "HKLM\\SOFTWARE\\Vendor\\App\\Plugins\\One": {
+    "Enabled": {
+     "type": "REG_DWORD",
+     "data": 1
+    }
+   },
+   "HKLM\\SOFTWARE\\Vendor\\App\\Plugins\\Three": {
+    "Enabled": {
+     "type": "REG_DWORD",
+     "data": 1
+    }
+   },
+   "HKLM\\SOFTWARE\\Vendor\\App\\Plugins\\Two": {
+    "Enabled": {
+     "type": "REG_DWORD",
+     "data": 0
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application": {},
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Security": {
+    "MaxSize": {
+     "type": "REG_DWORD",
+     "data": 4096
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\System": {
+    "MaxSize": {
+     "type": "REG_DWORD",
+     "data": 20971520
+    }
+   }
+  }
+ },
+ "event_messages": {
+  "Microsoft-Windows-Security-Auditing": {
+   "4625": "Logon failure for %1 (type %2).",
+   "4624": "An account was successfully logged on (v0).\r\n\tAccount Name:\t%1",
+   "4624/2": "An account was successfully logged on.\r\n\tAccount Name:\t%1\r\n\tLogon Type:\t%2"
+  },
+  "Service Control Manager": {
+   "7036": "The %1 service entered the %2 state."
+  }
+ },
+ "files": [
+  {
+   "path": "C:\\ProgramData\\Vendor\\config.ini",
+   "content": {
+    "text": "[main]\nlevel=1\n"
+   }
+  },
+  {
+   "path": "C:\\Users\\svc-backup\\notes.txt",
+   "content": {
+    "text": "backup at 02:00"
+   },
+   "owner": "S-1-5-21-1-2-3-1001"
+  },
+  {
+   "path": "C:\\Windows",
+   "type": "dir",
+   "attributes": [
+    "system"
+   ]
+  },
+  {
+   "path": "C:\\Windows\\System32\\drivers\\etc\\hosts",
+   "content": {
+    "text": "# edge hosts\r\n192.0.2.1 gateway\r\n"
+   },
+   "modified": "2026-01-01T00:00:00Z"
+  },
+  {
+   "path": "C:\\Windows\\System32\\kernel32.dll",
+   "size": 787456,
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+   "modified": "2026-01-01T00:00:00Z",
+   "attributes": [
+    "archive"
+   ]
+  }
+ ],
+ "processes": [
+  {
+   "id": "system",
+   "image": "System",
+   "pid": 4,
+   "user": "NT AUTHORITY\\SYSTEM",
+   "start_offset_s": 0
+  },
+  {
+   "id": "smss",
+   "image": "smss.exe",
+   "path": "C:\\Windows\\System32\\smss.exe",
+   "parent": "system",
+   "start_offset_s": 1
+  },
+  {
+   "id": "svchost-1",
+   "image": "svchost.exe",
+   "path": "C:\\Windows\\System32\\svchost.exe",
+   "command_line": "svchost.exe -k DcomLaunch",
+   "parent": "smss",
+   "start_offset_s": 5
+  },
+  {
+   "id": "svchost-2",
+   "image": "svchost.exe",
+   "path": "C:\\Windows\\System32\\svchost.exe",
+   "command_line": "svchost.exe -k netsvcs -p",
+   "parent": "smss",
+   "start_offset_s": 6
+  },
+  {
+   "id": "backup",
+   "image": "backup.exe",
+   "path": "C:\\Program Files\\Backup\\backup.exe",
+   "parent": "svchost-1",
+   "user": "EDGE-01\\svc-backup",
+   "session": 0,
+   "start_offset_s": 30
+  }
+ ],
+ "identity": {
+  "hostname": "EDGE-01"
+ },
+ "agent": {
+  "product": "wazuh",
+  "version": "4.14.2"
+ },
+ "software": [
+  {
+   "name": "Added Tool",
+   "version": "3.0"
+  }
+ ]
+}

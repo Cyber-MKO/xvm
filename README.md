@@ -6,7 +6,7 @@ Start with [docs/BRIEF.md](docs/BRIEF.md). Rules for contributors and agents are
 
 ## Status
 
-Phase 1: the Windows personality's PE32 loader, in [personalities/windows/](personalities/windows/). The API census tool is in [census/](census/).
+Phase 1: the Windows personality's PE32 loader, in [personalities/windows/](personalities/windows/). The API census tool is in [census/](census/). The golden baseline capture kit is in [scenarios/golden/windows/](scenarios/golden/windows/). Host profiles are described in [docs/host-profiles.md](docs/host-profiles.md). The host-state engine is in [engine/](engine/).
 
 ## Layout
 
@@ -35,4 +35,4 @@ Phase 1: the Windows personality's PE32 loader, in [personalities/windows/](pers
 | Run a host profile's agent until its first gap | `cargo run --target i686-unknown-linux-gnu --bin xvm-windows-run -- PROFILE` (see `docs/host-profiles.md`) |
 | Rust tests, 32-bit (runs PE code) | `rustup target add i686-unknown-linux-gnu && cargo test --target i686-unknown-linux-gnu` |
 
-System tools for the census, the loader and their tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm gcc-multilib`. Tests that need a missing tool are skipped. Set `XVM_REQUIRE_FIXTURES=1` to make the Rust loader tests fail instead.
+System tools for the census, the loader and their tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm gcc-multilib jq`. Tests that need a missing tool are skipped. Set `XVM_REQUIRE_FIXTURES=1` to make the Rust loader tests fail instead.

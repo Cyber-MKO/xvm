@@ -1,0 +1,65 @@
+# Edge cases for the engine's layered view. Values are illustrative.
+schema: 1
+kind: base-image
+name: edge-base
+os: windows
+source: {golden_capture: synthetic}
+os_info: {product_name: Edge OS, build: "100", architecture: x86_64, last_boot: "2026-10-16T08:00:00Z"}
+hardware:
+  cpu: {name: Base CPU, cores: 2, logical_processors: 4}
+  memory_mb: 2048
+network:
+  dns_suffix: base.example.invalid
+  interfaces:
+    - {name: Ethernet0, description: NIC zero, dhcp: true}
+    - {name: Ethernet1, description: NIC one, dhcp: true}
+users:
+  - {name: Administrator, enabled: true, groups: [Administrators]}
+  - {name: Guest, enabled: false}
+  - {name: Operator, enabled: true}
+groups:
+  - {name: Administrators, sid: S-1-5-32-544}
+services:
+  - {name: Alpha, state: running, start_mode: auto}
+  - {name: Beta, state: running, start_mode: manual}
+registry:
+  keys:
+    HKLM\SOFTWARE\Vendor\App:
+      Version: {type: REG_SZ, data: "1.0"}
+      Path: {type: REG_EXPAND_SZ, data: "%ProgramFiles%\\App"}
+      Flags: {type: REG_DWORD, data: 1}
+    HKLM\SOFTWARE\Vendor\App\Plugins\One:
+      Enabled: {type: REG_DWORD, data: 1}
+    HKLM\SOFTWARE\Vendor\App\Plugins\Two:
+      Enabled: {type: REG_DWORD, data: 0}
+    HKLM\SOFTWARE\Vendor\Legacy:
+      Old: {type: REG_SZ, data: gone}
+    HKLM\SOFTWARE\Vendor\Legacy\Child:
+      X: {type: REG_SZ, data: gone}
+    HKLM\SOFTWARE\Other:
+      Keep: {type: REG_MULTI_SZ, data: [a, b]}
+    HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Security:
+      MaxSize: {type: REG_DWORD, data: 4096}
+    HKLM\SYSTEM\CurrentControlSet\Services\EventLog\System:
+      MaxSize: {type: REG_DWORD, data: 20971520}
+    HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Application: {}
+    HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WINEVT\Channels\Microsoft-Windows-Sysmon/Operational:
+      MaxSize: {type: REG_DWORD, data: 67108864}
+event_messages:
+  Microsoft-Windows-Security-Auditing:
+    "4625": "An account failed to log on.\r\n\r\nAccount Name:\t\t%1\r\nLogon Type:\t\t%2"
+    "4624": "An account was successfully logged on (v0).\r\n\tAccount Name:\t%1"
+    "4624/2": "An account was successfully logged on.\r\n\tAccount Name:\t%1\r\n\tLogon Type:\t%2"
+files:
+  - {path: C:\Windows, type: dir, attributes: [system]}
+  - {path: C:\Windows\System32\kernel32.dll, size: 787456, sha256: "0000000000000000000000000000000000000000000000000000000000000001", modified: "2026-01-01T00:00:00Z", attributes: [archive]}
+  - {path: C:\Windows\System32\drivers\etc\hosts, content: {text: "# xvm hosts file\r\n127.0.0.1 localhost\r\n"}, modified: "2026-01-01T00:00:00Z"}
+  - {path: C:\Windows\Temp\old.log, content: {text: "old"}}
+  - {path: C:\Windows\Temp\Sub\deep.txt, content: {base64: "AAEC"}}
+  - {path: C:\ProgramData\Vendor\config.ini, content: {text: "[main]\nlevel=1\n"}}
+processes:
+  - {id: system, image: System, pid: 4, user: NT AUTHORITY\SYSTEM, start_offset_s: 0}
+  - {id: smss, image: smss.exe, path: C:\Windows\System32\smss.exe, parent: system, start_offset_s: 1}
+  - {id: svchost-1, image: svchost.exe, path: C:\Windows\System32\svchost.exe, command_line: svchost.exe -k DcomLaunch, parent: smss, start_offset_s: 5}
+  - {id: svchost-2, image: svchost.exe, path: C:\Windows\System32\svchost.exe, command_line: svchost.exe -k netsvcs, parent: smss, start_offset_s: 6}
+  - {id: spooler, image: spoolsv.exe, parent: smss, start_offset_s: 9}

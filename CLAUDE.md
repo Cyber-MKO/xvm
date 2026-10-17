@@ -23,12 +23,12 @@ A container-like platform that runs many lightweight emulated hosts (Windows, ma
 - Python for the API census tool, control plane, scenario engine and test harness.
 - Phase 1 decisions (target version, CRT, `user32` subset) are in `docs/phase1-sizing.md`.
 
-## Proposed repo layout
+## Repo layout
 
 ```
 docs/            BRIEF.md, architecture notes, API tables per personality
 census/          API census tool and generated reports
-engine/          host-state engine (base images, per-host deltas)
+engine/          host-state engine (Rust): base images, per-host deltas, run-time state
 personalities/
   windows/       PE loader, NT and Win32 subset, registry, Event Log, services
   macos/         Mach-O loader, libSystem subset, sysctl, log command
@@ -40,9 +40,27 @@ control/         CLI and API, host profiles, Habeny provider
 tests/           T1 to T8, fidelity, resource and calibration harnesses
 ```
 
-## Current phase: Phase 1 (Windows personality, first boot)
+## Status (2026-10-17)
 
-Phase 0 is done: the census tool exists, and Kasim reviewed the Wazuh 4.14.2 census on 2026-10-16. The census report is `census/reports/wazuh-agent-4.14.2-windows.md`; the findings and the four Phase 1 decisions are in `docs/phase1-sizing.md`. The golden baseline capture from Phase 0 is still open.
+### Phase 0 (Foundations): one exit item open
+
+| Item | State |
+| --- | --- |
+| Repo, CI, lint, tests | Done |
+| API census tool (`census/`) | Done |
+| Wazuh Windows census | Done: 4.14.2 (the target) and 4.14.9, in `census/reports/` |
+| Golden baseline | **Open.** Kasim runs the kit in `scenarios/golden/windows/` on a Windows evaluation VM |
+
+### Phase 1 (Windows personality, first boot): in progress
+
+Kasim reviewed the census, accepted the four decisions in `docs/phase1-sizing.md`, and asked for the PE loader to start (2026-10-16).
+
+| Decision | Detail |
+| --- | --- |
+| Target | Wazuh agent 4.14.2, PE32 i386 |
+| Runtime | The Windows personality is a 32-bit Linux process (`i686-unknown-linux-gnu`) |
+| CRT | We provide `msvcrt.dll` on top of host libc, function by function from the census |
+| `user32` | Only the census functions, no window system |
 
 Phase 1 work lives in `personalities/windows/`. The exit check is in `docs/BRIEF.md` section 10.
 
@@ -58,7 +76,7 @@ Loader status:
 | Module table: dependency order, bundled DLLs from the agent directory, forwarders | Done (`process.rs`) |
 | Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`). Calls pass through a trampoline that realigns the stack to 16 bytes |
 | Start-up: TLS callbacks, `DllMain`, entry point (`runtime.rs`, `xvm-windows-run`) | Done |
-| Host profiles, Windows path mapping, command line and environment (`profile.rs`, `paths.rs`, `cmdline.rs`) | Done. Example: `control/profiles/example-windows.toml` |
+| Host profiles, Windows path mapping, command line and environment (`profile.rs`, `paths.rs`, `cmdline.rs`) | Done. Example: `control/profiles/example-windows.toml`. TOML is a stopgap for loader-only settings until the profile decision; host facts move to the engine |
 | Windows threads with attach and detach notifications (`Runtime::spawn`) | Done. `CreateThread` not started |
 | Service Control Manager, service side (`win/advapi32/service.rs`) | Done. SIGTERM stops a service |
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
@@ -76,6 +94,16 @@ Loader status:
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
+
+### Built so far
+
+| Component | Where | Notes |
+| --- | --- | --- |
+| Host profiles | `control/`, `docs/host-profiles.md` | YAML base images plus per-host deltas; `xvm-profile validate`, `resolve`, `compile`, `base-from-golden` |
+| Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes, Windows event logs (query subset, XML, message templates); run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
+| Golden capture kit | `scenarios/golden/windows/` | `capture.ps1`, `manager-capture.sh`, `xvm-golden` |
+
+Every host fact a personality reports must come from the engine (rule 5). Every write it makes goes through the engine's ops.
 
 ## Working style
 
