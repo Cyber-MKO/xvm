@@ -39,6 +39,24 @@ pub enum Object {
     RegKey(String),
     /// A Tool Help snapshot of the process list.
     Snapshot(Arc<ProcessSnapshot>),
+    /// A Winsock socket: a host socket.
+    Socket(Arc<SocketObject>),
+}
+
+/// A Winsock socket backed by a host socket, which closes with it.
+#[derive(Debug)]
+pub struct SocketObject {
+    pub fd: i32,
+    /// A non-blocking `connect` is in progress: `select` reports its
+    /// failure as an exception, as Winsock does.
+    pub connecting: std::sync::atomic::AtomicBool,
+}
+
+impl Drop for SocketObject {
+    fn drop(&mut self) {
+        // SAFETY: the socket owns its descriptor.
+        unsafe { libc::close(self.fd) };
+    }
 }
 
 /// The processes running when a snapshot was taken, and the position of
@@ -64,7 +82,7 @@ impl Object {
             Object::Thread(t) => Some(Waitable::Thread(t.clone())),
             Object::Semaphore(s) => Some(Waitable::Semaphore(s.clone())),
             Object::Mutex(m) => Some(Waitable::Mutex(m.clone())),
-            Object::File(_) | Object::RegKey(_) | Object::Snapshot(_) => None,
+            Object::File(_) | Object::RegKey(_) | Object::Snapshot(_) | Object::Socket(_) => None,
         }
     }
 }

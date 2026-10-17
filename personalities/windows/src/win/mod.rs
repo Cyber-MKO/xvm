@@ -21,7 +21,7 @@ mod text;
 pub(crate) mod wevtapi;
 mod wintrust;
 mod ws2_32;
-mod wsock32;
+pub(crate) mod wsock32;
 
 /// Sets up the variables of the emulated `dll` just loaded at `module`.
 pub fn on_load(p: &mut crate::process::Process, dll: &str, module: usize) {

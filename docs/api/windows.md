@@ -105,6 +105,33 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `wevtapi.dll` | `EvtOpenPublisherMetadata` | Wazuh 4.14.2: 1 image, in `wazuh-agent.exe` | `src/win/wevtapi/tests.rs` | A handle naming the provider; local only |
 | `wevtapi.dll` | `EvtCreateBookmark` | Wazuh 4.14.2: 1 image, in `wazuh-agent.exe` | `src/win/wevtapi/tests.rs` | Empty, or from bookmark XML (channel and record ID) |
 | `wevtapi.dll` | `EvtUpdateBookmark` | Wazuh 4.14.2: 1 image, in `wazuh-agent.exe` | `src/win/wevtapi/tests.rs` | Records the event's channel and record ID |
+| `wsock32.dll` | `socket` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | AF_INET and AF_INET6 (23) stream, datagram and raw sockets on host sockets. Other families are a logged gap |
+| `wsock32.dll` | `bind` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Winsock addresses translated to the host's |
+| `wsock32.dll` | `listen` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | On the host socket |
+| `wsock32.dll` | `accept` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Non-blocking when the listening socket is, as on Windows |
+| `wsock32.dll` | `connect` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Non-blocking: WSAEWOULDBLOCK, then writable in `select`, or in the except set on failure |
+| `wsock32.dll` | `send` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Never raises SIGPIPE: a closed peer is WSAECONNRESET. `MSG_OOB`, `MSG_DONTROUTE` |
+| `wsock32.dll` | `recv` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | `MSG_OOB`, `MSG_PEEK`, `MSG_WAITALL` (8 in Winsock). 0 at end of stream |
+| `wsock32.dll` | `shutdown` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | SD_RECEIVE, SD_SEND, SD_BOTH |
+| `wsock32.dll` | `closesocket` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Closes the host socket; WSAENOTSOCK for anything else |
+| `wsock32.dll` | `getsockname` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Address in Winsock's spelling; WSAEFAULT when it does not fit |
+| `wsock32.dll` | `getpeername` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/sockets/tests.rs` | As `getsockname` |
+| `wsock32.dll` | `setsockopt` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | `SOL_SOCKET` (0xffff) options with their Winsock numbers: SO_REUSEADDR, SO_KEEPALIVE, SO_LINGER (two u16), SO_DONTLINGER, SO_SNDBUF, SO_RCVBUF, SO_SNDTIMEO and SO_RCVTIMEO (milliseconds) and others; `TCP_NODELAY`. Other options are a logged gap |
+| `wsock32.dll` | `getsockopt` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | As `setsockopt`; SO_ERROR reads as a WSAE code |
+| `wsock32.dll` | `ioctlsocket` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | `FIONBIO`, `FIONREAD`. Other commands are a logged gap |
+| `wsock32.dll` | `WSAGetLastError` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | The thread's last error |
+| `wsock32.dll` | `WSASetLastError` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Sets the thread's last error |
+| `wsock32.dll` | `select` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Winsock `fd_set` (count and SOCKETs) waited on with `poll`. Failed non-blocking connects land in the except set. No sockets: WSAEINVAL |
+| `wsock32.dll` | `__WSAFDIsSet` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/select.rs` tests | Whether a SOCKET is in an `fd_set` |
+| `wsock32.dll` | `htonl` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | Big-endian |
+| `wsock32.dll` | `htons` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | Big-endian |
+| `wsock32.dll` | `ntohl` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | Big-endian |
+| `wsock32.dll` | `ntohs` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/convert.rs` tests | Big-endian |
+| `wsock32.dll` | `inet_addr` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | The forms on its Learn page (`a.b.c.d`, `a.b.c`, `a.b`, `a`; decimal, octal, hex); INADDR_NONE otherwise |
+| `wsock32.dll` | `inet_ntoa` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | Dotted decimal in a buffer per thread |
+| `ws2_32.dll` | `inet_addr` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
+| `ws2_32.dll` | `inet_ntoa` | Wazuh 4.14.2: 2 images, `libwazuhext.dll`, `sysinfo.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
+| `ws2_32.dll` | `ntohs` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
 | `wsock32.dll` | `gethostname` | Wazuh 4.14.2: 3 images, including `wazuh-agent.exe` | `src/win/wsock32/hostname.rs` tests | `identity.hostname` from the engine. Needs `WSAStartup`; WSAEFAULT when the name and NUL do not fit |
 | `ws2_32.dll` | `getaddrinfo` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/ws2_32/addrinfo.rs` tests | Numeric addresses, then the host's `hosts` file (`%SystemRoot%\System32\drivers\etc\hosts` on its drives), then the real resolver. Port numbers only; service names and extra flags are logged gaps |
 | `ws2_32.dll` | `freeaddrinfo` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/ws2_32/addrinfo.rs` tests | Unknown pointers are a logged gap |
