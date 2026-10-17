@@ -84,6 +84,9 @@ function Assert-Admin {
 function Invoke-Native {
     # Run a native command and fail on a non-zero exit code.
     param([string]$File, [string[]]$Arguments, [switch]$AllowFailure)
+    # Windows PowerShell 5.1 turns a native command's stderr into an error
+    # record, which 'Stop' makes fatal. Only the exit code decides here.
+    $ErrorActionPreference = 'Continue'
     & $File @Arguments 2>&1 | Out-Null
     if (-not $AllowFailure -and $LASTEXITCODE -ne 0) {
         throw "$File $($Arguments -join ' ') failed with exit code $LASTEXITCODE"
@@ -320,7 +323,8 @@ try {
     }
     Invoke-Step 'failed_logon' 'Security 4625 three times' {
         for ($i = 0; $i -lt 3; $i++) {
-            Invoke-Native net.exe @('use', '\\127.0.0.1\IPC$', '/user:' + $TestUser, 'wrong-password') -AllowFailure | Out-Null
+            # NET USE \\computer\share password /USER:name: the password comes first.
+            Invoke-Native net.exe @('use', '\\127.0.0.1\IPC$', 'wrong-password', '/user:' + $TestUser) -AllowFailure | Out-Null
         }
     }
     Invoke-Step 'group_remove' 'Security 4733' {
