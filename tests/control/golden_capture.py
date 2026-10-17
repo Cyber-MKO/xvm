@@ -168,6 +168,14 @@ def files() -> dict[str, bytes]:
             '"ACP"="1252"',
             '"OEMCP"="437"',
         ),
+        "registry/cpu0.reg": _reg(
+            r"[HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0]",
+            '"Identifier"="Intel64 Family 6 Model 85 Stepping 7"',
+        ),
+        "registry/environment.reg": _reg(
+            r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment]",
+            '"OS"="Windows_NT"',
+        ),
         "registry/eventlog-security.reg": _reg(
             r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Security]",
             '"MaxSize"=dword:01400000',
@@ -259,7 +267,30 @@ def files() -> dict[str, bytes]:
                     "InterfaceDescription": "Example NIC",
                     "Status": "Up",
                     "MacAddress": "02-00-00-00-00-01",
+                    "InterfaceGuid": "{11111111-2222-4333-8444-555555555555}",
+                    "ifIndex": 6,
+                    "InterfaceType": 6,
+                    "MtuSize": 1500,
+                    "Speed": 10000000000,
+                    "ifOperStatus": 1,
                 }
+            ]
+        ),
+        "host/netipinterfaces.json": _json(
+            [
+                {"InterfaceIndex": 1, "InterfaceMetric": 75},
+                {"InterfaceIndex": 6, "InterfaceMetric": 15},
+            ]
+        ),
+        "host/hotfixes.json": _json(
+            [
+                {
+                    "HotFixID": "KB5000001",
+                    "Description": "Security Update",
+                    "InstalledOn": "/Date(1704067200000)/",
+                    "InstalledBy": "NT AUTHORITY\\SYSTEM",
+                },
+                {"HotFixID": None},
             ]
         ),
         "host/network.json": _json(
