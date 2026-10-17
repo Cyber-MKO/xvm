@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from . import profile
+from . import profile, units
 
 ROOT = Path(__file__).resolve().parents[2]
 STOP_GRACE_S = 30.0
@@ -117,6 +117,8 @@ class Site:
     hosts_dir: Path
     # A golden capture whose recent events fill each host's logs on first start.
     corpus: Path | None = None
+    # How hosts are supervised: systemd (transient units), python, or auto.
+    supervisor: str = "auto"
 
     @property
     def socket(self) -> Path:
@@ -130,6 +132,7 @@ class Site:
                 "bases": [str(b.resolve()) for b in self.bases],
                 "hosts": str(self.hosts_dir.resolve()),
                 "corpus": str(self.corpus.resolve()) if self.corpus else None,
+                "supervisor": self.supervisor,
             },
         )
 
@@ -140,6 +143,7 @@ class Site:
         bases: list[Path] | None = None,
         hosts_dir: Path | None = None,
         corpus: Path | None = None,
+        supervisor: str | None = None,
     ) -> Site:
         """The site at root. Profile folders given here win over the saved ones."""
         saved = {}
@@ -150,7 +154,7 @@ class Site:
         if not b or h is None:
             raise HostError(f"{root}: no profile folders yet; pass --bases and --hosts")
         c = corpus or (Path(saved["corpus"]) if saved.get("corpus") else None)
-        return cls(root, b, h, c)
+        return cls(root, b, h, c, supervisor or saved.get("supervisor") or "auto")
 
     def host_dir(self, name: str) -> Path:
         return self.root / "hosts" / name
@@ -223,7 +227,7 @@ class Site:
         return proc.pid
 
     def stop_engine(self, force: bool = False) -> bool:
-        running = [h for h in self.hosts() if self.supervisor_pid(h)]
+        running = [h for h in self.hosts() if self.is_up(h)]
         if running and not force:
             raise HostError(f"hosts still up: {', '.join(running)}; stop them or use --force")
         pid = self.engine_pid()
@@ -235,9 +239,29 @@ class Site:
 
     # ------------------------------------------------------------ hosts
 
+    def runner_args(self, name: str) -> list[str]:
+        return ["--engine", str(self.socket), "--host", name, "--drive", f"C={self.drive(name)}"]
+
     def hosts(self) -> list[str]:
         d = self.root / "hosts"
         return sorted(p.name for p in d.iterdir() if p.is_dir()) if d.is_dir() else []
+
+    def backend(self) -> str:
+        if self.supervisor == "auto":
+            return "systemd" if units.available() else "python"
+        if self.supervisor == "systemd" and not units.available():
+            raise HostError("systemd is not running here; use --supervisor python")
+        return self.supervisor
+
+    def is_up(self, name: str) -> bool:
+        """Is the host's agent running, or about to run again?"""
+        if self.backend() == "systemd":
+            return units.status(self.root, name).get("state") in (
+                "running",
+                "restarting",
+                "stopping",
+            )
+        return self.supervisor_pid(name) is not None
 
     def supervisor_pid(self, name: str) -> int | None:
         return _read_pid(self.host_dir(name) / "supervisor.pid")
@@ -277,7 +301,7 @@ class Site:
         return f"installed {result.files} files, {len(result.gaps)} gaps"
 
     def up(self, name: str, msi: Path | None) -> str:
-        if self.supervisor_pid(name):
+        if self.is_up(name):
             return "already up"
         self.profile_path(name)
         self.start_engine()
@@ -285,6 +309,11 @@ class Site:
         if self.corpus:
             note += "; " + self.seed(name)
         hd = self.host_dir(name)
+        if self.backend() == "systemd":
+            argv = [str(runner_binary()), *self.runner_args(name)]
+            unit = units.start(self.root, name, argv, hd / "host.log")
+            _write_json(hd / "unit.json", {"unit": unit, "started": _now(), "stopped": False})
+            return note
         proc = subprocess.Popen(
             [
                 sys.executable,
@@ -309,6 +338,11 @@ class Site:
         return note
 
     def down(self, name: str, timeout: float = STOP_GRACE_S + 5) -> bool:
+        if self.backend() == "systemd":
+            marker = self.host_dir(name) / "unit.json"
+            if marker.exists():
+                _write_json(marker, {**json.loads(marker.read_text()), "stopped": True})
+            return units.stop(self.root, name)
         pid = self.supervisor_pid(name)
         if not pid:
             return False
@@ -317,7 +351,7 @@ class Site:
 
     def reset(self, name: str, msi: Path | None) -> str:
         """Return a stopped host to its profile: engine state, and a fresh install."""
-        if self.supervisor_pid(name):
+        if self.is_up(name):
             raise HostError(f"{name} is up; stop it first")
         if self.engine_pid():
             from xvm_scenario.engine import Engine  # the Python engine client
@@ -372,6 +406,16 @@ class Site:
         return f"seeded {len(sc.steps) - log.errors} events ({log.gaps} gaps)"
 
     def status(self, name: str) -> dict:
+        if self.backend() == "systemd":
+            st = units.status(self.root, name)
+            marker = self.host_dir(name) / "unit.json"
+            if not st and marker.exists():
+                # A transient unit is gone once it ends cleanly.
+                st = {"state": "stopped" if json.loads(marker.read_text())["stopped"] else "exited"}
+            for k, v in (("state", "down"), ("starts", 0), ("restarts", 0), ("pid", None)):
+                st.setdefault(k, v)
+            st["supervisor"] = "systemd"
+            return st
         st_path = self.host_dir(name) / "status.json"
         st = json.loads(st_path.read_text()) if st_path.exists() else {}
         st["supervisor"] = self.supervisor_pid(name)
@@ -437,15 +481,7 @@ def supervise(site: Site, name: str) -> int:
         log.flush()
         started = time.monotonic()
         child = subprocess.Popen(
-            [
-                str(runner),
-                "--engine",
-                str(site.socket),
-                "--host",
-                name,
-                "--drive",
-                f"C={site.drive(name)}",
-            ],
+            [str(runner), *site.runner_args(name)],
             stdout=log,
             stderr=log,
             stdin=subprocess.DEVNULL,

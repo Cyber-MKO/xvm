@@ -43,6 +43,13 @@ A real host's logs hold history when an agent first reads them. With `--corpus`,
 | `hosts/NAME/seeded.json`, `seed.jsonl` | The first-start log fill and its replay log |
 | `hosts/NAME/supervisor.pid`, `status.json`, `host.log` | The supervisor, the host's state, the agent's output and installer gaps |
 
+How hosts are supervised (`--supervisor`, saved in the run folder):
+
+| Mode | How | When |
+| --- | --- | --- |
+| `systemd` | Each host's agent is a transient unit from `systemd-run` (`xvm-SITE-NAME.service`): no unit file and no process of ours per host. `Restart=on-failure`, backoff from 1 s to 60 s (systemd 254 and later), no start limit, SIGTERM then SIGKILL after 30 s, output appended to `host.log`. User manager, or the system manager as root. | `auto` picks it when systemd is the machine's init |
+| `python` | One small Python supervisor per host, with the same restart and stop rules | Containers and machines without systemd |
+
 | Host state | Meaning |
 | --- | --- |
 | `running` | The agent process runs |

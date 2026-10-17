@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -269,3 +270,128 @@ def test_first_start_seeds_the_logs_once(site, tmp_path):
     again.reset("scn-a", None)
     assert security() == []
     assert again.up("scn-a", None).endswith("seeded 2 events (0 gaps)")
+
+
+# Stand-ins for systemd-run and systemctl: record each call, run the unit's
+# command in the background, and answer `show` from a state file per unit.
+FAKE_SYSTEMD_RUN = """
+import json, os, subprocess, sys
+from pathlib import Path
+d = Path(os.environ["FAKE_SYSTEMD"])
+args = sys.argv[1:]
+with (d / "calls.jsonl").open("a") as f:
+    f.write(json.dumps(["systemd-run", *args]) + "\\n")
+unit = next(a.split("=", 1)[1] for a in args if a.startswith("--unit="))
+cmd = args[args.index("--") + 1:]
+p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+(d / unit).write_text(json.dumps({"pid": p.pid}))
+"""
+FAKE_SYSTEMCTL = """
+import json, os, signal, sys, time
+from pathlib import Path
+d = Path(os.environ["FAKE_SYSTEMD"])
+args = sys.argv[1:]
+with (d / "calls.jsonl").open("a") as f:
+    f.write(json.dumps(["systemctl", *args]) + "\\n")
+words = [a for a in args if not a.startswith("--")]
+if args == ["--version"]:
+    print("systemd 255 (255.4)")
+    sys.exit(0)
+verb, unit = words[0], words[1]
+state = d / unit
+def alive(pid):
+    # Not our child, so a finished agent lingers as a zombie until init reaps it.
+    try:
+        return "zombie" not in Path(f"/proc/{pid}/status").read_text().lower()
+    except FileNotFoundError:
+        return False
+if verb == "show":
+    if not state.exists():
+        print("LoadState=not-found")
+        sys.exit(0)
+    pid = json.loads(state.read_text())["pid"]
+    if alive(pid):
+        print(f"LoadState=loaded\\nActiveState=active\\nSubState=running\\nMainPID={pid}\\n"
+              "NRestarts=0\\nExecMainStatus=\\nStateChangeTimestamp=now")
+    else:
+        state.unlink()  # a transient unit is gone once it ends
+        print("LoadState=not-found")
+elif verb == "stop" and state.exists():
+    pid = json.loads(state.read_text())["pid"]
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(200):
+        if not alive(pid):
+            break
+        time.sleep(0.02)
+    state.unlink()
+"""
+
+
+@pytest.fixture
+def systemd(site, tmp_path, monkeypatch):
+    s, out = site
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for name, body in (("systemd-run", FAKE_SYSTEMD_RUN), ("systemctl", FAKE_SYSTEMCTL)):
+        f = bin_dir / name
+        f.write_text(f"#!{sys.executable}\n{body}")
+        f.chmod(0o755)
+    state = tmp_path / "systemd"
+    state.mkdir()
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("FAKE_SYSTEMD", str(state))
+    monkeypatch.setenv("XVM_SUPERVISOR_SYSTEMD", "1")
+    s.supervisor = "systemd"
+    s.save()
+    yield s, out, state
+
+
+def _calls(state: Path) -> list[list[str]]:
+    return [json.loads(x) for x in (state / "calls.jsonl").read_text().splitlines()]
+
+
+def test_systemd_units(systemd):
+    from xvm_control import units
+
+    s, out, state = systemd
+    assert s.backend() == "systemd"
+    assert s.up("scn-a", None) == "no msi given; the drive is used as it is"
+    unit = units.unit_name(s.root, "scn-a")
+    run = next(c for c in _calls(state) if c[0] == "systemd-run")
+    scope = [] if os.geteuid() == 0 else ["--user"]
+    assert run[1 : 2 + len(scope)] == [*scope, f"--unit={unit}"]
+    props = [run[i + 1] for i, a in enumerate(run) if a == "--property"]
+    assert {
+        "Restart=on-failure",
+        "StartLimitIntervalSec=0",
+        "KillSignal=SIGTERM",
+        "TimeoutStopSec=30",
+        "RestartSteps=6",
+        "RestartMaxDelaySec=60",
+    } <= set(props)
+    assert f"StandardOutput=append:{s.host_dir('scn-a') / 'host.log'}" in props
+    assert run[run.index("--") + 1 :] == [os.environ["XVM_RUNNER"], *s.runner_args("scn-a")]
+    # No supervisor process of ours: systemd owns the agent.
+    st = wait_for(lambda: (x := s.status("scn-a"))["state"] == "running" and x)
+    assert st["supervisor"] == "systemd" and st["pid"] and st["unit"] == unit
+    assert s.supervisor_pid("scn-a") is None
+    assert s.up("scn-a", None) == "already up"
+    assert s.down("scn-a") is True
+    assert (out / "stopped").read_text() == "SIGTERM"
+    assert s.status("scn-a")["state"] == "stopped"
+    assert s.down("scn-a") is False
+
+
+def test_systemd_clean_exit_and_fallback(systemd, monkeypatch):
+    s, out, state = systemd
+    monkeypatch.setenv("FAKE_MODE", "exit0")
+    s.up("scn-b", None)
+    assert wait_for(lambda: s.status("scn-b")["state"] == "exited")
+    # Asked for systemd where it does not run: a clear error, not a silent switch.
+    monkeypatch.delenv("XVM_SUPERVISOR_SYSTEMD")
+    monkeypatch.setattr("xvm_control.units.available", lambda: False)
+    with pytest.raises(hostctl.HostError, match="systemd is not running"):
+        s.up("scn-a", None)
+    s.supervisor = "auto"
+    assert s.backend() == "python"

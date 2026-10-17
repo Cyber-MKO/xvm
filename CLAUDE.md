@@ -106,7 +106,7 @@ Build and test the loader for both targets: `cargo test` and `cargo test --targe
 | Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes, Windows event logs (query subset, XML, message templates, blocking `evt.wait` for subscriptions); run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
 | Golden capture kit | `scenarios/golden/windows/` | `capture.ps1`, `manager-capture.sh`, `xvm-golden` |
 | Scenario runner | `scenarios/xvm_scenario/`, `scenarios/README.md` | `xvm-scenario validate`, `run`, `replay`, `diff-events`; YAML steps with named actions, a seeded clock per host, JSON Lines run log; golden corpus replay with identity rewriting; event-layout diff against the capture; `library/golden-windows.yaml` mirrors the capture |
-| Host lifecycle | `control/xvm_control/hostctl.py`, `control/README.md` | `xvm-host up`, `down`, `reset`, `status`, `engine`: engine with saved state, MSI install once, one supervisor per host with restart and backoff |
+| Host lifecycle | `control/xvm_control/hostctl.py`, `control/README.md` | `xvm-host up`, `down`, `reset`, `status`, `engine`: engine with saved state, MSI install once, first-start log fill from the golden corpus, transient systemd units (or a Python supervisor) with restart and backoff |
 | Phase 1 checks | `control/xvm_control/checks.py`, `control/README.md` | `xvm-check t2` (enrolled, Active for 24 h, keepalive age) and `t3` (OS name and version) against the Wazuh manager API |
 | Manager-side checks | `scenarios/xvm_golden/fidelity.py` | `xvm-golden diff-manager` (fidelity test, T6) and `delivery` (T5) on the manager's `archives.json` and `alerts.json` |
 

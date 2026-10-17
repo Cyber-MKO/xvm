@@ -14,7 +14,11 @@ DEFAULT_ROOT = Path("run")
 
 def _site(args: argparse.Namespace) -> Site:
     site = Site.open(
-        args.root, args.bases or None, getattr(args, "hosts", None), getattr(args, "corpus", None)
+        args.root,
+        args.bases or None,
+        getattr(args, "hosts", None),
+        getattr(args, "corpus", None),
+        args.supervisor,
     )
     site.save()
     return site
@@ -86,6 +90,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="xvm-host", description=__doc__)
     ap.add_argument(
         "--root", type=Path, default=DEFAULT_ROOT, help=f"run folder (default {DEFAULT_ROOT})"
+    )
+    ap.add_argument(
+        "--supervisor",
+        choices=("auto", "systemd", "python"),
+        help="systemd transient units (light), or a Python supervisor per host; "
+        "auto picks systemd when it runs. Saved in the run folder.",
     )
     ap.add_argument(
         "--bases", type=Path, action="append", help="base image folder; saved in the run folder"
