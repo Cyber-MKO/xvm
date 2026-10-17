@@ -93,6 +93,7 @@ Quote timestamps in YAML, for example `"2026-01-01T00:00:00Z"`. Unquoted timesta
 | `software` | `registry/uninstall.reg` (x86_64) and `uninstall-wow64.reg` (x86), entries with a `DisplayName` that are not system components |
 | `files` | `host/files.json`: metadata and SHA-256 of the folders the agent's FIM configuration watches, the hosts file folder and the top of the Windows folder. No bytes. |
 | `processes` | `host/processes.json`, with start offsets from the boot time. System Idle and System keep PIDs 0 and 4; the engine assigns the rest. |
+| `event_messages` | `evtx/rendered/*.xml` and `evtx/scenario/*.rendered.xml`: each event's data values and the message Windows rendered, turned into templates. A template is kept only if it reproduces another event of the same provider, ID and version exactly (or is the only one). See `control/xvm_control/evtmsg.py`. |
 | `services` | `host/services.json` |
 | `registry.keys` | The identity exports: CurrentVersion, ComputerName, TCP/IP parameters, ProfileList, time zone, Event Log |
 

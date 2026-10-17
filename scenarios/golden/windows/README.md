@@ -59,6 +59,8 @@ The test user is removed even if a step fails. No event log is cleared.
 | `wazuh/*` | Agent `ossec.conf`, version files, `ossec.log`. Never `client.keys`. |
 | `evtx/full/*.evtx` | Security, System and Application, whole log |
 | `evtx/scenario/*.evtx` | The same logs, scenario window only |
+| `evtx/scenario/*.rendered.xml` | The scenario window as rendered XML, with each event's message text |
+| `evtx/rendered/*.xml` | The newest 5,000 events of each log as rendered XML, for message templates |
 | `manager/*.json` | Manager archives and alerts for the window, added by `xvm-golden import-manager` |
 
 `xvm-golden verify` checks the hashes, the required files and steps, the step times, and that no `client.keys` is present.

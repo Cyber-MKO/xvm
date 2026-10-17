@@ -14,7 +14,8 @@ left out, so each host profile must supply them:
 | The boot time | Per host; the engine boots each host itself |
 | The VM's name in process owners | Written as `.\\user`, meaning the host itself |
 
-Software comes from the Uninstall registry keys. Users, groups, services,
+Event message templates are derived from the capture's rendered events (see
+evtmsg.py). Software comes from the Uninstall registry keys. Users, groups, services,
 hardware, processes and file metadata come from the host JSON files. Files
 carry metadata and the captured SHA-256 only, never bytes (CLAUDE.md rule 1).
 """
@@ -29,7 +30,7 @@ from pathlib import Path
 
 from xvm_golden import baseline
 
-from . import profile, regfile
+from . import evtmsg, profile, regfile
 
 # Registry exports that become registry keys in the base. The others are
 # converted into structured sections or dropped.
@@ -428,6 +429,12 @@ def _processes(root: Path, manifest: dict, notes: list[str]) -> list[dict]:
     return out
 
 
+def _event_messages(root: Path, notes: list[str]) -> dict:
+    templates, derive_notes = evtmsg.from_capture(root)
+    notes.extend(f"event messages: {n}" for n in derive_notes)
+    return templates
+
+
 def build_base(capture: Path, name: str, description: str | None = None) -> tuple[dict, list[str]]:
     """Return (base image, notes). Raises ConvertError if the capture is unusable."""
     problems = baseline.verify(capture)
@@ -457,6 +464,7 @@ def build_base(capture: Path, name: str, description: str | None = None) -> tupl
         "files": _files(capture, notes),
         "processes": _processes(capture, manifest, notes),
         "registry": {"keys": keys},
+        "event_messages": _event_messages(capture, notes),
     }
     base = {k: v for k, v in base.items() if v not in ({}, [])}
     host = manifest.get("host", {})

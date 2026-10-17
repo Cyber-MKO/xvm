@@ -6,6 +6,7 @@ Record every third-party source used, and every Apple open-source Darwin release
 | --- | --- | --- | --- |
 | pefile | PE parsing in the census tool | MIT | Python dependency, not shipped in runtimes |
 | serde, serde_json (with indexmap) | Engine data model and wire format | MIT or Apache-2.0 | Rust dependencies |
+| Event message templates | `event_messages` in base images | Derived data | Taken from the rendered output of the golden capture's own Windows host (`wevtutil qe /f:RenderedXml`), the same kind of runtime capture as the golden corpus. No Microsoft binary or message file is read or copied (CLAUDE.md rule 1). |
 | PyYAML | Reading host profiles | MIT | Python dependency |
 | jsonschema | Validating host profiles | MIT | Python dependency |
 | msitools, libarchive, rpm2cpio, cpio | Unpacking packages in the census tool | LGPL-2.1, BSD-2-Clause, GPL | Invoked as external programs |

@@ -94,6 +94,25 @@ def _files() -> list[dict]:
     ]
 
 
+def _rendered(*logons) -> bytes:
+    """wevtutil qe /f:RenderedXml /e:Events output, as PowerShell writes it (UTF-8 with BOM)."""
+    ns = "http://schemas.microsoft.com/win/2004/08/events/event"
+    events = []
+    for user, logon_type in logons:
+        msg = (
+            f"An account was successfully logged on.\r\n\tAccount Name:\t\t{user}\r\n"
+            f"\tLogon Type:\t\t{logon_type}"
+        )
+        events.append(
+            f"<Event xmlns='{ns}'><System><Provider Name='Microsoft-Windows-Security-Auditing'/>"
+            f"<EventID>4624</EventID><Version>2</Version></System><EventData>"
+            f"<Data Name='TargetUserName'>{user}</Data><Data Name='LogonType'>{logon_type}</Data>"
+            f"</EventData><RenderingInfo Culture='en-US'><Message>{msg}</Message>"
+            f"</RenderingInfo></Event>"
+        )
+    return ("\ufeff<Events>" + "".join(events) + "</Events>").encode("utf-8")
+
+
 def files() -> dict[str, bytes]:
     expand = "%SystemRoot%\\x".encode("utf-16-le") + b"\0\0"
     multi = "a".encode("utf-16-le") + b"\0\0" + "b".encode("utf-16-le") + b"\0\0\0\0"
@@ -309,6 +328,12 @@ def files() -> dict[str, bytes]:
             ]
         ),
         "wazuh/ossec.conf": b"<ossec_config/>",
+        "evtx/rendered/Security.xml": _rendered(
+            ("bob", "3"),
+            ("alice", "2"),
+            ("svc-x", "5"),
+        ),
+        "evtx/scenario/Security.rendered.xml": _rendered(("xvmgolden", "3")),
         **{
             f"evtx/{part}/{log}.evtx": b"ElfFile\0"
             for part in ("full", "scenario")

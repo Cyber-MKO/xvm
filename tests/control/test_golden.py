@@ -200,3 +200,34 @@ def test_converted_base_runs_in_compile(tmp_path):
     )
     index = profile.compile_tree([bases], [hosts], tmp_path / "out")
     assert index["hosts"] == ["h1"]
+
+
+def test_event_messages_from_capture(tmp_path):
+    base, notes = golden.build_base(write(tmp_path / "cap"), "windows-2022")
+    templates = base["event_messages"]["Microsoft-Windows-Security-Auditing"]
+    want = "An account was successfully logged on.\r\n\tAccount Name:\t\t%1\r\n\tLogon Type:\t\t%2"
+    assert templates == {"4624/2": want, "4624": want}
+    assert not [n for n in notes if n.startswith("event messages")]
+
+
+def test_capture_without_rendered_events(tmp_path):
+    from .golden_capture import files
+
+    cap = tmp_path / "cap"
+    no_rendered = {k: v for k, v in files().items() if "rendered" not in k}
+    write(cap)
+    for k in files():
+        if "rendered" in k:
+            (cap / k).unlink()
+    # Rewrite the manifest without the removed files.
+    import hashlib
+    import json
+
+    m = json.loads((cap / "manifest.json").read_text(encoding="utf-8-sig"))
+    m["files"] = [f for f in m["files"] if f["path"] in no_rendered]
+    for f in m["files"]:
+        f["sha256"] = hashlib.sha256((cap / f["path"]).read_bytes()).hexdigest()
+    (cap / "manifest.json").write_text(json.dumps(m))
+    base, notes = golden.build_base(cap, "windows-2022")
+    assert "event_messages" not in base
+    assert "event messages: no rendered events in the capture; event_messages left out" in notes

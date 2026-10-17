@@ -119,7 +119,7 @@ if (Test-Path $OutDir) {
     New-Item -ItemType Directory -Path $OutDir | Out-Null
 }
 $OutDir = (Resolve-Path $OutDir).Path
-foreach ($d in 'registry', 'host', 'wazuh', 'evtx\full', 'evtx\scenario') {
+foreach ($d in 'registry', 'host', 'wazuh', 'evtx\full', 'evtx\scenario', 'evtx\rendered') {
     New-Item -ItemType Directory -Path (Join-Path $OutDir $d) | Out-Null
 }
 
@@ -351,6 +351,20 @@ foreach ($log in $Logs) {
     Invoke-Native wevtutil.exe @('epl', $log, (Join-Path $OutDir "evtx\full\$log.evtx")) | Out-Null
     Invoke-Native wevtutil.exe @('epl', $log, (Join-Path $OutDir "evtx\scenario\$log.evtx"),
         "/q:$window") | Out-Null
+}
+
+# Rendered events: the message text Windows produced for each event. The
+# engine's message templates are derived from these (data from the host's
+# own output, never from Microsoft binaries). The scenario window in full,
+# plus the newest events of each log for wider coverage.
+$MaxRenderedEvents = 5000
+foreach ($log in $Logs) {
+    $out = & wevtutil.exe qe $log "/q:$window" /f:RenderedXml /e:Events
+    if ($LASTEXITCODE -ne 0) { throw "wevtutil qe $log (scenario) failed with exit code $LASTEXITCODE" }
+    $out | Set-Content -Path (Join-Path $OutDir "evtx\scenario\$log.rendered.xml") -Encoding UTF8
+    $out = & wevtutil.exe qe $log /rd:true "/c:$MaxRenderedEvents" /f:RenderedXml /e:Events
+    if ($LASTEXITCODE -ne 0) { throw "wevtutil qe $log (recent) failed with exit code $LASTEXITCODE" }
+    $out | Set-Content -Path (Join-Path $OutDir "evtx\rendered\$log.xml") -Encoding UTF8
 }
 
 # ---------------------------------------------------------------- manifest
