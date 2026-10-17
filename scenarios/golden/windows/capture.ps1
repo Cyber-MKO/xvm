@@ -395,7 +395,9 @@ try {
     Invoke-Step 'failed_logon' 'Security 4625 three times' {
         for ($i = 0; $i -lt 3; $i++) {
             # NET USE \\computer\share password /USER:name: the password comes first.
-            Invoke-Native net.exe @('use', '\\127.0.0.1\IPC$', 'wrong-password', '/user:' + $TestUser) -AllowFailure | Out-Null
+            # One string: in an array literal, ',' binds tighter than '+', so
+            # '/user:' + $TestUser would pass /user: and the name apart.
+            Invoke-Native net.exe @('use', '\\127.0.0.1\IPC$', 'wrong-password', "/user:$TestUser") -AllowFailure | Out-Null
         }
     }
     Invoke-Step 'group_remove' 'Security 4733' {
