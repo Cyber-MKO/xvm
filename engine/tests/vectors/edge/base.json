@@ -118,7 +118,33 @@
       "b"
      ]
     }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Security": {
+    "MaxSize": {
+     "type": "REG_DWORD",
+     "data": 4096
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\System": {
+    "MaxSize": {
+     "type": "REG_DWORD",
+     "data": 20971520
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application": {},
+   "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WINEVT\\Channels\\Microsoft-Windows-Sysmon/Operational": {
+    "MaxSize": {
+     "type": "REG_DWORD",
+     "data": 67108864
+    }
    }
+  }
+ },
+ "event_messages": {
+  "Microsoft-Windows-Security-Auditing": {
+   "4625": "An account failed to log on.\r\n\r\nAccount Name:\t\t%1\r\nLogon Type:\t\t%2",
+   "4624": "An account was successfully logged on (v0).\r\n\tAccount Name:\t%1",
+   "4624/2": "An account was successfully logged on.\r\n\tAccount Name:\t%1\r\n\tLogon Type:\t%2"
   }
  },
  "files": [

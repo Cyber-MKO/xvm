@@ -112,6 +112,28 @@ impl Client {
         self.call("reg.set_value", params)
     }
 
+    /// Add an event to a channel. Returns its record ID.
+    pub fn evt_write(&mut self, channel: &str, event: &Value) -> Result<u64, ClientError> {
+        let r = self.call("evt.write", json!({"channel": channel, "event": event}))?;
+        r["record_id"]
+            .as_u64()
+            .ok_or_else(|| ClientError::Protocol("evt.write answered without a record_id".into()))
+    }
+
+    /// Events in `channel` after record `after` that match `query`, as XML.
+    pub fn evt_query(
+        &mut self,
+        channel: &str,
+        query: &str,
+        after: u64,
+        limit: u64,
+    ) -> Result<Value, ClientError> {
+        self.call(
+            "evt.query",
+            json!({"channel": channel, "query": query, "after": after, "limit": limit}),
+        )
+    }
+
     /// Journal entries after `since`. See `Runtime::changes`.
     pub fn changes(&mut self, since: u64) -> Result<Value, ClientError> {
         self.call("changes", json!({"since": since}))

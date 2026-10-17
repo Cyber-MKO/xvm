@@ -136,5 +136,13 @@
    "session": 0,
    "start_offset_s": 30
   }
- ]
+ ],
+ "event_messages": {
+  "Microsoft-Windows-Security-Auditing": {
+   "4625": "Logon failure for %1 (type %2)."
+  },
+  "Service Control Manager": {
+   "7036": "The %1 service entered the %2 state."
+  }
+ }
 }

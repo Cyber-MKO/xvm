@@ -20,7 +20,13 @@
 //! | `hosts/NAME/snapshot.json` | `{schema, host, digest, runtime}` |
 //! | `hosts/NAME/log.jsonl` | One `{op, params}` per change since the snapshot |
 //! | `blobs/SHA256` | File bytes written at run time, stored once |
+//! | `hosts/NAME/events/CHANNEL-HASH.NNNNNN.jsonl` | Event log segments, one event per line |
 //! | `discarded/NAME-TIME/` | State moved aside after a profile change |
+//!
+//! Event logs are kept out of the change log and snapshots, since a busy
+//! Security log can see many events per second. Each channel appends to
+//! segment files of about a quarter of its size limit; a segment is deleted
+//! once every event in it has been dropped by retention. `reset` deletes them.
 
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
@@ -99,7 +105,39 @@ pub struct Persist {
     dir: PathBuf,
     blobs: StateBlobs,
     logs: Mutex<HashMap<String, HostLog>>,
+    /// Open event segments, by (host, normalised channel).
+    events: Mutex<HashMap<(String, String), ChannelFiles>>,
     snapshot_every: usize,
+}
+
+/// One channel's segment files.
+struct ChannelFiles {
+    prefix: String,
+    /// (index, last record ID) of each segment, oldest first.
+    segments: std::collections::VecDeque<(u64, u64)>,
+    current: Option<BufWriter<File>>,
+    current_bytes: u64,
+    cap: u64,
+    dirty: bool,
+}
+
+/// Smallest segment, so tiny channels do not make thousands of files.
+const MIN_SEGMENT: u64 = 64 * 1024;
+
+/// A file name for a channel: readable, and unique even when names differ only by case or `/`.
+fn channel_prefix(name: &str) -> String {
+    let readable: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let hash = sha256_hex(crate::merge::norm(name).as_bytes());
+    format!("{readable}-{}", &hash[..8])
 }
 
 /// What loading the state found, for the daemon to report.
@@ -108,6 +146,8 @@ pub struct LoadReport {
     pub restored: Vec<String>,
     pub fresh: Vec<String>,
     pub replayed: usize,
+    /// Events read back from segment files.
+    pub events: usize,
     pub warnings: Vec<String>,
 }
 
@@ -162,6 +202,7 @@ impl Persist {
                 pending: Mutex::new(Vec::new()),
             },
             logs: Mutex::new(HashMap::new()),
+            events: Mutex::new(HashMap::new()),
             snapshot_every: snapshot_every.max(1),
         };
         let mut report = LoadReport::default();
@@ -237,7 +278,170 @@ impl Persist {
                 since_snapshot: 0,
             },
         );
+        drop(rt);
+        // Events last: a `reset` in the replayed log has already emptied them.
+        self.load_events(host, report).map_err(err)?;
         Ok(())
+    }
+
+    fn events_dir(&self, host: &str) -> PathBuf {
+        self.host_dir(host).join("events")
+    }
+
+    /// Read every event segment of a host back into its event logs.
+    fn load_events(&self, host: &Host, report: &mut LoadReport) -> io::Result<()> {
+        let dir = self.events_dir(&host.name);
+        fs::create_dir_all(&dir)?;
+        // (prefix, index) to path, so segments load oldest first.
+        let mut segs: Vec<(String, u64, PathBuf)> = Vec::new();
+        for e in fs::read_dir(&dir)?.flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            let Some(stem) = name.strip_suffix(".jsonl") else {
+                continue;
+            };
+            let Some((prefix, idx)) = stem.rsplit_once('.') else {
+                continue;
+            };
+            if let Ok(i) = idx.parse::<u64>() {
+                segs.push((prefix.to_string(), i, e.path()));
+            }
+        }
+        segs.sort();
+        let rt = host.read();
+        let reg = host.registry(&rt);
+        let mut logs = host.events_write();
+        let mut files = self.events.lock().unwrap_or_else(|e| e.into_inner());
+        let mut loaded = 0usize;
+        for (prefix, idx, path) in segs {
+            let text = fs::read_to_string(&path)?;
+            let mut last_id = 0;
+            let mut channel_key = None;
+            for (n, line) in text.lines().enumerate() {
+                let Ok(v) = serde_json::from_str::<Value>(line) else {
+                    report.warnings.push(format!(
+                        "{}: {} line {} is incomplete; the rest of that segment is skipped",
+                        host.name,
+                        path.display(),
+                        n + 1
+                    ));
+                    break;
+                };
+                let (Some(name), Some(id)) = (v["channel"].as_str(), v["record_id"].as_u64())
+                else {
+                    continue;
+                };
+                let ch = match logs.channel_mut(name, &reg) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        report.warnings.push(format!(
+                            "{}: saved events for undeclared channel {name} skipped",
+                            host.name
+                        ));
+                        break;
+                    }
+                };
+                let mut doc = v.as_object().cloned().unwrap_or_default();
+                let computer = doc
+                    .remove("computer")
+                    .and_then(|c| c.as_str().map(str::to_string))
+                    .unwrap_or_default();
+                doc.remove("record_id");
+                doc.remove("channel");
+                let e = crate::eventlog::Event {
+                    record_id: id,
+                    channel: ch.name.clone(),
+                    computer,
+                    doc,
+                    size: line.len() + 1,
+                };
+                ch.push(Arc::new(e));
+                channel_key = Some(crate::merge::norm(name));
+                last_id = id;
+                loaded += 1;
+            }
+            let Some(key) = channel_key else { continue };
+            let cap = logs
+                .channels
+                .get(&key)
+                .map_or(MIN_SEGMENT, |c| (c.max_bytes / 4).max(MIN_SEGMENT));
+            let entry = files
+                .entry((host.name.clone(), key))
+                .or_insert_with(|| ChannelFiles {
+                    prefix: prefix.clone(),
+                    segments: Default::default(),
+                    current: None,
+                    current_bytes: 0,
+                    cap,
+                    dirty: false,
+                });
+            entry.segments.push_back((idx, last_id));
+            entry.current_bytes = fs::metadata(&path)?.len();
+            entry.current = Some(BufWriter::new(OpenOptions::new().append(true).open(&path)?));
+        }
+        if loaded > 0 {
+            report.events += loaded;
+        }
+        Ok(())
+    }
+
+    /// Append one event to its channel's current segment. Called with the
+    /// host's event lock held, so lines are in record order. Segments whose
+    /// events retention has dropped (all below `oldest`) are deleted.
+    pub fn append_event(
+        &self,
+        host: &Host,
+        ch: &crate::eventlog::Channel,
+        line: &str,
+        oldest: u64,
+    ) -> io::Result<()> {
+        let key = (host.name.clone(), crate::merge::norm(&ch.name));
+        let dir = self.events_dir(&host.name);
+        let mut files = self.events.lock().unwrap_or_else(|e| e.into_inner());
+        let f = files.entry(key).or_insert_with(|| ChannelFiles {
+            prefix: channel_prefix(&ch.name),
+            segments: Default::default(),
+            current: None,
+            current_bytes: 0,
+            cap: (ch.max_bytes / 4).max(MIN_SEGMENT),
+            dirty: false,
+        });
+        let record_id = ch.next_record_id - 1;
+        if f.current.is_none() || f.current_bytes >= f.cap {
+            if let Some(mut old) = f.current.take() {
+                old.flush()?;
+                old.get_ref().sync_data()?;
+            }
+            let idx = f.segments.back().map_or(1, |(i, _)| i + 1);
+            let path = dir.join(format!("{}.{idx:06}.jsonl", f.prefix));
+            fs::create_dir_all(&dir)?;
+            f.current = Some(open_log(&path, true)?);
+            f.current_bytes = 0;
+            f.segments.push_back((idx, record_id));
+        }
+        let w = f.current.as_mut().expect("opened above");
+        writeln!(w, "{line}")?;
+        f.current_bytes += line.len() as u64 + 1;
+        f.dirty = true;
+        if let Some(last) = f.segments.back_mut() {
+            last.1 = record_id;
+        }
+        // Never delete the segment being written.
+        while f.segments.len() > 1 && f.segments.front().is_some_and(|(_, last)| *last < oldest) {
+            let (idx, _) = f.segments.pop_front().expect("checked");
+            let _ = fs::remove_file(dir.join(format!("{}.{idx:06}.jsonl", f.prefix)));
+        }
+        Ok(())
+    }
+
+    /// Delete a host's event segments (`reset`).
+    fn clear_events(&self, host: &str) -> io::Result<()> {
+        let mut files = self.events.lock().unwrap_or_else(|e| e.into_inner());
+        files.retain(|(h, _), _| h != host);
+        let dir = self.events_dir(host);
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
+        }
+        fs::create_dir_all(&dir)
     }
 
     fn load_snapshot(&self, host: &Host, path: &Path) -> Result<Runtime, String> {
@@ -341,6 +545,9 @@ impl Persist {
         op: &str,
         params: &Map<String, Value>,
     ) -> io::Result<()> {
+        if op == "reset" {
+            self.clear_events(&host.name)?;
+        }
         let mut params = params.clone();
         if op == "file.write"
             && let Some(data) = params.remove("data")
@@ -408,6 +615,15 @@ impl Persist {
             log.file.flush()?;
             log.file.get_ref().sync_data()?;
             log.dirty = false;
+        }
+        drop(logs);
+        let mut files = self.events.lock().unwrap_or_else(|e| e.into_inner());
+        for f in files.values_mut().filter(|f| f.dirty) {
+            if let Some(w) = f.current.as_mut() {
+                w.flush()?;
+                w.get_ref().sync_data()?;
+            }
+            f.dirty = false;
         }
         Ok(())
     }

@@ -100,6 +100,30 @@ pub fn format_ms(ms: i64) -> String {
     )
 }
 
+/// Milliseconds since 1970 for `YYYY-MM-DDTHH:MM:SS[.fraction]Z`; the fraction is
+/// cut to milliseconds. `None` if the text is not in that form.
+pub fn parse_ms(t: &str) -> Option<i64> {
+    check_time(t).ok()?;
+    let num = |r: std::ops::Range<usize>| t.get(r)?.parse::<i64>().ok();
+    let (y, mo, d) = (num(0..4)?, num(5..7)?, num(8..10)?);
+    let (h, mi, s) = (num(11..13)?, num(14..16)?, num(17..19)?);
+    // Days from civil (proleptic Gregorian), the inverse of `civil`.
+    let y = if mo <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = (mo + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    let ms = if t.as_bytes()[19] == b'.' {
+        let frac: String = t[20..t.len() - 1].chars().take(3).collect();
+        format!("{frac:0<3}").parse::<i64>().ok()?
+    } else {
+        0
+    };
+    Some((days * 86_400 + h * 3600 + mi * 60 + s) * 1000 + ms)
+}
+
 /// The engine's clock as RFC 3339 UTC with milliseconds.
 pub fn now() -> String {
     let t = SystemTime::now()

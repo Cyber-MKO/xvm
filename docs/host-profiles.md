@@ -26,6 +26,7 @@ Examples live in [control/profiles/examples/](../control/profiles/examples/). Th
 | `registry` | Windows only. Keys under `HKLM`, `HKU` or `HKCR`, typed values |
 | `files` | Files and directories: path, type, size, sha256, times, attributes (Windows), owner, mode (Unix), and `content` for bytes we author |
 | `processes` | Processes running at boot: id, image, path, command line, user, session, parent (an id), optional pinned pid, `start_offset_s` after boot |
+| `event_messages` | Windows only. Event message templates: provider name, then `"ID"` or `"ID/VERSION"`, then text with `%1`, `%2`... for the event's data values |
 | `agent` | SIEM agent product, version, manager and group |
 
 ## Merge rules

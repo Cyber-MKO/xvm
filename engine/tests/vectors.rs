@@ -105,7 +105,7 @@ fn registry_lookups() {
     assert_eq!(r.key_path(r"hklm\software"), Some(r"HKLM\SOFTWARE".into()));
     assert_eq!(
         r.subkeys(r"HKLM\SOFTWARE").unwrap(),
-        vec!["Other", "Vendor"]
+        vec!["Microsoft", "Other", "Vendor"]
     );
     assert_eq!(r.subkeys(r"HKLM\SOFTWARE\Vendor").unwrap(), vec!["App"]);
     assert_eq!(

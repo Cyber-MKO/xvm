@@ -63,6 +63,9 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Run-time changes persist through a change log plus snapshots | Decided | Kasim, 2026-10-16. Per-host append-only log, periodic snapshots, replay on start through the same code path as live writes. |
 | Persistence flushes in batches | Decided | Kasim, 2026-10-16. fsync every 200 ms by default; a power loss can drop the last batch. |
 | A changed profile discards that host's saved state | Decided | Kasim, 2026-10-16. The state moves to `discarded/`, never deleted, with a warning. |
+| Event message templates come from the golden capture, as data | Decided | Kasim, 2026-10-17. One template per provider and event ID, from the capture's rendered events; provenance in `docs/LICENSES.md`. A missing template is a logged gap. |
+| Event logs are stored in per-channel segment files | Decided | Kasim, 2026-10-17. Kept out of the change log and snapshots; same batched fsync. |
+| Full event channels overwrite the oldest events, sized by the registry's MaxSize | Decided | Kasim, 2026-10-17. Record IDs keep counting, as on Windows. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
 
 ## 4. Core insight: emulate the API surface, not just the files

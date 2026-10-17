@@ -22,7 +22,13 @@ pub const KEYED_LISTS: [&str; 4] = ["users", "groups", "software", "services"];
 /// Object sections a host can ask for whole.
 pub const SECTIONS: [&str; 5] = ["identity", "os_info", "hardware", "network", "agent"];
 /// Sections with their own layering, kept out of the generic object merge.
-const LAYERED: [&str; 4] = ["network", "registry", "files", "processes"];
+const LAYERED: [&str; 5] = [
+    "network",
+    "registry",
+    "files",
+    "processes",
+    "event_messages",
+];
 /// Fields that belong to the file, not to the host.
 const OWN_FIELDS: [&str; 6] = ["schema", "kind", "name", "description", "base", "source"];
 
@@ -69,7 +75,12 @@ pub struct Host {
     processes: Option<Vec<Value>>,
     /// The process table at boot, restored by `reset`.
     boot_procs: ProcTable,
+    /// Event message templates, base and profile merged: provider to "ID" or "ID/VERSION".
+    pub event_messages: Value,
     runtime: RwLock<Runtime>,
+    /// Event logs. Kept apart from `runtime` so high event rates do not touch
+    /// the change journal or snapshots. Lock order: `runtime`, then `events`.
+    events: RwLock<crate::eventlog::EventLogs>,
 }
 
 fn object(v: Value, what: &str) -> Result<Map<String, Value>, StoreError> {
@@ -192,6 +203,10 @@ impl Host {
         let boot_procs = ProcTable { live, pids };
         let mut runtime = Runtime::default();
         runtime.procs = boot_procs.clone();
+        let event_messages = match (base.doc.get("event_messages"), delta.get("event_messages")) {
+            (Some(Value::Object(b)), Some(Value::Object(d))) => Value::Object(merge_dict(b, d)),
+            (b, d) => d.or(b).cloned().unwrap_or(Value::Object(Map::new())),
+        };
         Ok(Host {
             name,
             base,
@@ -201,7 +216,9 @@ impl Host {
             files,
             processes,
             boot_procs,
+            event_messages,
             runtime: RwLock::new(runtime),
+            events: RwLock::new(Default::default()),
         })
     }
 
@@ -237,11 +254,33 @@ impl Host {
         &self.boot_procs
     }
 
-    /// Drop every run-time change and restore the boot process table.
+    /// Drop every run-time change, restore the boot process table and empty the event logs.
     pub fn reset(&self, rt: &mut Runtime, time: &str) -> Value {
         let out = rt.reset(time);
         rt.procs = self.boot_procs.clone();
+        *self.events_write() = Default::default();
         out
+    }
+
+    pub fn events_read(&self) -> std::sync::RwLockReadGuard<'_, crate::eventlog::EventLogs> {
+        self.events.read().unwrap_or_else(|e| e.into_inner())
+    }
+
+    pub fn events_write(&self) -> std::sync::RwLockWriteGuard<'_, crate::eventlog::EventLogs> {
+        self.events.write().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// The name events carry in `Computer`: the host name, with its DNS
+    /// domain when the host is in one (rule 5: from the profile).
+    pub fn computer(&self, rt: &Runtime) -> String {
+        let id = self.section_with(rt, "identity").unwrap_or(Value::Null);
+        let host = id["hostname"].as_str().unwrap_or(&self.name).to_string();
+        match id["domain"].as_str() {
+            Some(d) if !d.is_empty() && !d.eq_ignore_ascii_case("WORKGROUP") => {
+                format!("{host}.{d}")
+            }
+            _ => host,
+        }
     }
 
     pub fn os(&self) -> &str {
@@ -440,6 +479,10 @@ impl Host {
         // Definitions, as in the profile. The running table is `proc.list`.
         if let Some(p) = &self.processes {
             out.insert("processes".into(), Value::Array(p.clone()));
+        }
+        if self.base.doc.contains_key("event_messages") || self.delta.contains_key("event_messages")
+        {
+            out.insert("event_messages".into(), self.event_messages.clone());
         }
         Value::Object(out)
     }

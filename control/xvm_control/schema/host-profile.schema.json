@@ -294,6 +294,19 @@
       "items": {
         "$ref": "#/$defs/process"
       }
+    },
+    "event_messages": {
+      "description": "Event message templates, as EvtFormatMessage returns them: provider name to event key (\"4624\" or \"4624/2\" for a version) to text. %1, %2... insert the event's data values in order; %% is a percent sign. Built from a golden capture's rendered events.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "pattern": "^[0-9]{1,5}(/[0-9]{1,3})?$"
+        },
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
     }
   },
   "allOf": [
@@ -342,6 +355,24 @@
         "not": {
           "required": [
             "registry"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "os": {
+              "const": "windows"
+            }
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "event_messages"
           ]
         }
       }

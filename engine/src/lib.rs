@@ -7,6 +7,8 @@
 
 pub mod apply;
 pub mod client;
+pub mod eventlog;
+pub mod evtquery;
 pub mod files;
 pub mod merge;
 pub mod persist;

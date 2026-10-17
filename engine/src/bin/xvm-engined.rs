@@ -85,10 +85,11 @@ fn main() -> ExitCode {
             eprintln!("xvm-engined: warning: {w}");
         }
         eprintln!(
-            "xvm-engined: state {}: {} hosts restored ({} changes replayed), {} fresh",
+            "xvm-engined: state {}: {} hosts restored ({} changes replayed, {} events), {} fresh",
             dir.display(),
             report.restored.len(),
             report.replayed,
+            report.events,
             report.fresh.len()
         );
         let p = Arc::new(p);

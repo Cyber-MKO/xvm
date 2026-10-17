@@ -99,7 +99,7 @@ fn queries_over_the_socket() {
     );
     assert_eq!(
         c.reg_enum_subkeys(r"HKLM\SOFTWARE").unwrap(),
-        json!(["Other", "Vendor"])
+        json!(["Microsoft", "Other", "Vendor"])
     );
     assert_eq!(
         c.list("services").unwrap()[1],

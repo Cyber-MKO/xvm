@@ -11,6 +11,8 @@ use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as B64;
 
 use crate::apply::{self, Fail, apply, is_write};
+use crate::eventlog::{self, Event, check_event, declared_channels, find_template, format_message};
+use crate::evtquery;
 use crate::files::ReadError;
 use crate::persist::Persist;
 use crate::protocol::{Request, Response, code, read_message, write_message};
@@ -165,6 +167,155 @@ impl Server {
         }
     }
 
+    fn evt_channels(&self, h: &Host) -> Value {
+        let rt = h.read();
+        let declared = declared_channels(&h.registry(&rt));
+        let logs = h.events_read();
+        let list: Vec<Value> = declared
+            .iter()
+            .map(
+                |(key, (name, max, from_reg))| match logs.channels.get(key) {
+                    Some(ch) => ch.info(),
+                    None => eventlog::Channel::new(name.clone(), *max, *from_reg).info(),
+                },
+            )
+            .collect();
+        Value::Array(list)
+    }
+
+    fn evt_write(&self, req: &Request, h: &Host) -> Result<Value, Fail> {
+        let channel = param(req, "channel")?;
+        let time = time_param(req)?;
+        let raw = req
+            .params
+            .get("event")
+            .ok_or_else(|| Fail(code::BAD_REQUEST, "evt.write needs event".into()))?;
+        let doc = check_event(raw, &time)?;
+        let rt = h.read();
+        let computer = h.computer(&rt);
+        let reg = h.registry(&rt);
+        let mut logs = h.events_write();
+        let ch = logs.channel_mut(channel, &reg)?;
+        let mut e = Event {
+            record_id: ch.next_record_id,
+            channel: ch.name.clone(),
+            computer,
+            doc,
+            size: 0,
+        };
+        let line = serde_json::to_string(&e.to_value()).unwrap_or_default();
+        e.size = line.len() + 1;
+        let record_id = e.record_id;
+        let oldest = ch.push(Arc::new(e));
+        if let Some(p) = &self.persist
+            && let Err(err) = p.append_event(h, ch, &line, oldest)
+        {
+            eprintln!(
+                "xvm-engined: {}: could not save event {record_id}: {err}",
+                h.name
+            );
+            return Err(Fail(
+                code::NOT_SAVED,
+                format!("event {record_id} kept, but not saved: {err}"),
+            ));
+        }
+        Ok(json!({"record_id": record_id, "channel": ch.name}))
+    }
+
+    fn evt_query(&self, req: &Request, h: &Host) -> Result<Value, Fail> {
+        let channel = param(req, "channel")?;
+        let after = match req.params.get("after") {
+            None => 0,
+            Some(_) => apply::whole(&req.op, &req.params, "after")?,
+        };
+        let limit = match req.params.get("limit") {
+            None => 100,
+            Some(_) => apply::whole(&req.op, &req.params, "limit")?.clamp(1, 1000) as usize,
+        };
+        let as_json = match req.params.get("format").and_then(Value::as_str) {
+            None | Some("xml") => false,
+            Some("json") => true,
+            Some(other) => return Err(Fail(code::BAD_REQUEST, format!("unknown format {other}"))),
+        };
+        let text = req
+            .params
+            .get("query")
+            .and_then(Value::as_str)
+            .unwrap_or("*");
+        let expr = match evtquery::parse(text, channel) {
+            Ok(Some(e)) => e,
+            Ok(None) => return Ok(json!({"events": [], "more": false, "last_record_id": after})),
+            Err(why) => {
+                self.log(
+                    Some(h),
+                    json!({"gap": "event-query", "query": text, "why": why}),
+                );
+                return Err(Fail(code::BAD_QUERY, why));
+            }
+        };
+        {
+            let rt = h.read();
+            let declared = declared_channels(&h.registry(&rt));
+            if !declared.contains_key(&crate::merge::norm(channel)) {
+                return Err(Fail(code::NOT_FOUND, format!("no event channel {channel}")));
+            }
+        }
+        let logs = h.events_read();
+        let (events, more) = logs.read(channel, after, &expr, limit, &runtime::now());
+        let last = events.last().map_or(after, |e| e.record_id);
+        let list: Vec<Value> = events
+            .iter()
+            .map(|e| {
+                if as_json {
+                    e.to_value()
+                } else {
+                    json!({"record_id": e.record_id, "xml": e.xml()})
+                }
+            })
+            .collect();
+        Ok(json!({"events": list, "more": more, "last_record_id": last}))
+    }
+
+    fn evt_record(&self, req: &Request, h: &Host) -> Result<Arc<Event>, Fail> {
+        let channel = param(req, "channel")?;
+        let id = apply::whole(&req.op, &req.params, "record_id")?;
+        let logs = h.events_read();
+        let ch = logs
+            .channel(channel)
+            .ok_or_else(|| Fail(code::NOT_FOUND, format!("no events in {channel}")))?;
+        let i = ch
+            .events
+            .binary_search_by_key(&id, |e| e.record_id)
+            .map_err(|_| Fail(code::NOT_FOUND, format!("no record {id} in {channel}")))?;
+        Ok(ch.events[i].clone())
+    }
+
+    /// EvtFormatMessage for the event's message: its own text, or the host's template.
+    fn evt_message(&self, req: &Request, h: &Host) -> Result<Value, Fail> {
+        let e = self.evt_record(req, h)?;
+        if let Some(m) = e.doc.get("message").and_then(Value::as_str) {
+            return Ok(json!({"message": m, "source": "event"}));
+        }
+        let gap = |why: &str| {
+            json!({"gap": "event-message", "provider": e.doc["provider"], "event_id": e.doc["event_id"],
+                   "version": e.doc.get("version"), "why": why})
+        };
+        let Some(template) = find_template(&h.event_messages, &e) else {
+            self.log(Some(h), gap("no template"));
+            return Err(Fail(
+                code::NO_MESSAGE,
+                "no message template for this event".into(),
+            ));
+        };
+        match format_message(template, &e.data()) {
+            Ok(m) => Ok(json!({"message": m, "source": "template"})),
+            Err(why) => {
+                self.log(Some(h), gap(&why));
+                Err(Fail(code::NO_MESSAGE, why))
+            }
+        }
+    }
+
     /// Answer one request. `host` is the host bound by an earlier `hello`.
     pub fn handle(&self, req: &Request, host: &mut Option<Arc<Host>>) -> Response {
         match self.dispatch(req, host) {
@@ -246,6 +397,16 @@ impl Server {
                 Ok(h.read().changes(since, limit))
             }
             "file.stat" | "file.list" | "file.read" => self.file_read(req, h),
+            "evt.channels" => Ok(self.evt_channels(h)),
+            "evt.write" => self.evt_write(req, h),
+            "evt.query" => self.evt_query(req, h),
+            "evt.get" => {
+                let e = self.evt_record(req, h)?;
+                let mut v = e.to_value();
+                v["xml"] = e.xml().into();
+                Ok(v)
+            }
+            "evt.format_message" => self.evt_message(req, h),
             "proc.list" => Ok(Value::Array(h.read().procs.list())),
             "proc.get" => {
                 let pid = apply::whole(&req.op, &req.params, "pid")?;

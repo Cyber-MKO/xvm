@@ -42,3 +42,8 @@ processes:
   - {id: spooler, remove: true}
   - {id: svchost-2, command_line: svchost.exe -k netsvcs -p}
   - {id: backup, image: backup.exe, path: C:\Program Files\Backup\backup.exe, parent: svchost-1, user: EDGE-01\svc-backup, session: 0, start_offset_s: 30}
+event_messages:
+  Microsoft-Windows-Security-Auditing:
+    "4625": "Logon failure for %1 (type %2)."
+  Service Control Manager:
+    "7036": "The %1 service entered the %2 state."

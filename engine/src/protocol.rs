@@ -85,6 +85,10 @@ pub mod code {
     /// The file exists but its bytes were never captured. Also a logged gap.
     pub const NO_CONTENT: &str = "no_content";
     pub const UNSUPPORTED: &str = "unsupported";
+    /// An event query uses a form the engine does not support. Also a logged gap.
+    pub const BAD_QUERY: &str = "bad_query";
+    /// No message text for an event. Also a logged gap.
+    pub const NO_MESSAGE: &str = "no_message";
     /// The change was applied but could not be written to the state folder.
     pub const NOT_SAVED: &str = "not_saved";
 }
