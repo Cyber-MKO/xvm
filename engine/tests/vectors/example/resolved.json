@@ -218,6 +218,12 @@
      "data": "21H2"
     }
    },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName": {
+    "ComputerName": {
+     "type": "REG_SZ",
+     "data": "WIN-WEB-01"
+    }
+   },
    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName": {
     "ComputerName": {
      "type": "REG_SZ",

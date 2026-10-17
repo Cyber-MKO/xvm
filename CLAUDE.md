@@ -86,12 +86,13 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 230 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install` and run from the engine's profile. It runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity, reads the registry, sets up file integrity monitoring, starts its modules (agent upgrade, SCA, syscollector with SQLite; osquery and CIS-CAT disabled), subscribes to the Application, Security and System logs (`wevtapi`, on the engine's `evt.wait`) and reads log files and starts the file integrity scan. Syscollector reads network adapters (`GetAdaptersAddresses`). Next gap: COM and WMI (`ole32!CoInitializeEx`, for `SELECT * FROM Win32_QuickFixEngineering`) |
+| Emulated functions | 253 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install` and run from the engine's profile. It runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity, reads the registry, runs the file integrity scan, starts its modules (agent upgrade, SCA with the CIS Windows Server 2022 policy, syscollector; osquery and CIS-CAT disabled), subscribes to the Application, Security and System logs, reads log files and starts enrollment. Syscollector reads hardware, memory, adapters, hotfixes (WMI) and processes. Next gap: Winsock (`wsock32!socket`) for enrollment |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered. `_setjmp3` and `longjmp` work |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
-| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME --drive C=FOLDER`) | Started: `os_info` and the registry (open, query, close) |
+| COM objects (`com.rs`, `win/ole32`, `win/oleaut32`) | Done for the census calls: vtables through realigning thunks, gap traps for other methods; WMI `Win32_QuickFixEngineering` from the profile's `hotfixes` |
+| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME --drive C=FOLDER`) | Started: `os_info`, identity, hardware, network adapters, hotfixes, the process list, and the registry (open, query, enumerate, close) |
 | The agent in the engine's process list (`registration.rs`) | Done: `proc.start` with the profile's PID and the real PID, parent `services.exe` for a service; `proc.exit` on every exit path |
 | MSI installer step (`installer/xvm_msi`, `xvm-msi-install`) | Done: folders, files and components from the MSI tables, AppSearch registry searches, conditions from the host profile, `WAZUH_MANAGER` and enrollment properties in `ossec.conf`. Custom actions, registry, services, shortcuts and permissions are reported as gaps |
 

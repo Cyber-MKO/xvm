@@ -15,10 +15,15 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `kernel32.dll` | `WaitForMultipleObjects` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | Any or all, up to 64 handles; reports abandoned mutexes |
 | `msvcrt.dll` | `srand` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/random.rs` tests | Per-thread seed, kept only (`rand` is not imported) |
 | `advapi32.dll` | `CryptAcquireContextA` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/advapi32/crypt.rs` tests | Verify contexts and the default key container (not stored on disk: logged gap). Named containers, deleting, named providers: logged gaps |
+| `advapi32.dll` | `CryptAcquireContextW` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/advapi32/crypt.rs` tests | As `CryptAcquireContextA` |
 | `advapi32.dll` | `CryptGenRandom` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/advapi32/crypt.rs` tests | Bytes from the real kernel's random source |
+| `advapi32.dll` | `CryptReleaseContext` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/advapi32/crypt.rs` tests | Ends a context; NTE_BAD_UID for an unknown one, NTE_BAD_FLAGS for flags |
 | `kernel32.dll` | `Sleep` | Wazuh 4.14.2: 17 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | 0 yields; INFINITE never returns |
 | `msvcrt.dll` | `strerror` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/strerror.rs` tests | Text from the first sentence of each description on Learn's errno constants page (decision A), until golden-capture strings replace it. Unlisted numbers: "Unknown error". One buffer per thread |
-| `advapi32.dll` | `RegOpenKeyExA` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Keys from the engine. A 32-bit process on 64-bit Windows reads `HKLM\SOFTWARE` through `WOW6432Node` unless `KEY_WOW64_64KEY`; a missing 32-bit key falls back to the 64-bit one as a logged gap. `HKEY_CURRENT_USER` and `HKEY_CLASSES_ROOT` are logged gaps |
+| `advapi32.dll` | `RegOpenKeyExA` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Keys from the engine. A 32-bit process on 64-bit Windows reads `HKLM\SOFTWARE` through `WOW6432Node` unless `KEY_WOW64_64KEY`; a missing 32-bit key falls back to the 64-bit one as a logged gap. No subkey: a predefined key returns itself, an open key a new handle. `HKEY_CURRENT_USER` and `HKEY_CLASSES_ROOT` are logged gaps |
+| `advapi32.dll` | `RegEnumKeyExA` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | Subkeys from the engine, sorted without case. No class names. A profile key has no last write time: 0, a logged gap |
+| `advapi32.dll` | `RegEnumValueA` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | Values from the engine, data as `RegQueryValueExA` gives it. ERROR_MORE_DATA for short buffers |
+| `advapi32.dll` | `RegQueryInfoKeyA` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | Counts and longest names and data. Security descriptor length is not modelled: 0, a logged gap when asked for |
 | `advapi32.dll` | `RegQueryValueExA` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Values from the engine; strings in the profile's ANSI code page with their NUL. ERROR_MORE_DATA with the size needed |
 | `advapi32.dll` | `RegCloseKey` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Predefined roots close as success |
 | `kernel32.dll` | `GetFileAttributesA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/attributes.rs` tests | Directory, or archive for files, plus read-only from host permissions. Hidden and system are not modelled for drive files |
@@ -64,6 +69,19 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `kernel32.dll` | `HeapFree` | Wazuh 4.14.2: 2 images, `libwazuhext.dll` and `sysinfo.dll` | `src/win/kernel32/heap.rs` tests | NULL is nothing to free. Other heaps are a logged gap |
 | `kernel32.dll` | `GetModuleHandleExW` | Wazuh 4.14.2: 2 images, `libstdc++-6.dll` and `libwazuhext.dll` | `tests/process.rs` | By name, or by an address inside the image. Counts as a load unless the refcount stays unchanged; pinning changes nothing visible, as modules are never unmapped |
 | `iphlpapi.dll` | `GetAdaptersAddresses` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/iphlpapi/tests.rs` | One adapter per `network.interfaces` entry: GUID, index, names, MAC, type, MTU, speed, status, metric, IPv4 with prefix, gateway, DNS, DHCP, DNS suffix. A fact missing from the profile is a logged gap. IPv6, prefixes and WINS are logged gaps |
+| `kernel32.dll` | `GlobalMemoryStatusEx` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/kernel32/sysinfo.rs` tests | Total memory from `hardware.memory_mb`; total virtual from the application address range. Memory in use is not modelled: a logged gap |
+| `ole32.dll` | `CoInitializeEx` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/ole32/tests.rs` | Per thread: S_OK, then S_FALSE; RPC_E_CHANGED_MODE for another model |
+| `ole32.dll` | `CoUninitialize` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/ole32/tests.rs` | Undoes one `CoInitializeEx` |
+| `ole32.dll` | `CoCreateInstance` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/ole32/tests.rs` | The WMI locator only (see "COM interfaces" below). Other classes are a logged gap and REGDB_E_CLASSNOTREG |
+| `ole32.dll` | `CoSetProxyBlanket` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/ole32/tests.rs` | S_OK: objects are in-process |
+| `oleaut32.dll` | `SysAllocString` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/oleaut32/mod.rs` tests | Length-prefixed UTF-16 on host libc's heap |
+| `oleaut32.dll` | `SysAllocStringLen` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/oleaut32/mod.rs` tests | As `SysAllocString`, with a length; zeroed for NULL text |
+| `oleaut32.dll` | `SysFreeString` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/oleaut32/mod.rs` tests | NULL is nothing to free |
+| `oleaut32.dll` | `SysStringLen` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/oleaut32/mod.rs` tests | UTF-16 units; 0 for NULL |
+| `oleaut32.dll` | `VariantClear` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/oleaut32/mod.rs` tests | Frees a BSTR, releases an interface, leaves VT_EMPTY. Arrays and references are a logged gap |
+| `kernel32.dll` | `CreateToolhelp32Snapshot` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/kernel32/toolhelp.rs` tests | Processes only, from the engine's `proc.list` at that moment. Other snapshot kinds are a logged gap |
+| `kernel32.dll` | `Process32First` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/kernel32/toolhelp.rs` tests | ANSI `PROCESSENTRY32`: PID, parent PID, image name. Thread counts and base priorities are not in the process list: 0, a logged gap |
+| `kernel32.dll` | `Process32Next` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/kernel32/toolhelp.rs` tests | As `Process32First`; ERROR_NO_MORE_FILES at the end |
 | `kernel32.dll` | `GetTimeZoneInformation` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/timezone.rs` tests | From `windows.time_zone`. Returns DAYLIGHT or STANDARD for the current instant, UNKNOWN for a zone without daylight time |
 | `msvcrt.dll` | `clock` | Wazuh 4.14.2: 1 image, `wazuh-agent.exe` | `src/win/msvcrt/time.rs` tests | Wall-clock milliseconds since the CRT started; -1 once that does not fit |
 | `msvcrt.dll` | `gmtime` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` and `syscollector.dll` | `src/win/msvcrt/time.rs` tests | 32-bit `time_t`, UTC. Shares `localtime`'s buffer per thread. NULL with EINVAL for a negative time |
@@ -168,6 +186,11 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `msvcrt.dll` | `fsetpos` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Moves to an `fgetpos` offset, as `fseek` from the start |
 | `msvcrt.dll` | `clearerr` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Clears end of file and the error indicator |
 | `msvcrt.dll` | `getenv` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/env.rs` tests | From the CRT environment (the `envp` of `__getmainargs`, from the profile). Names match without case; the result points into that environment |
+| `msvcrt.dll` | `strcoll` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale: code-unit order, as `strcmp` |
+| `msvcrt.dll` | `wcscoll` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale: code-unit order, as `wcscmp` |
+| `msvcrt.dll` | `strxfrm` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale: the string itself. Returns its length; stores it only when it and its NUL fit |
+| `msvcrt.dll` | `wcsxfrm` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | As `strxfrm`, for UTF-16 |
+| `msvcrt.dll` | `qsort` | Wazuh 4.14.2: 9 images, including `libwazuhext.dll` | `src/win/msvcrt/sort.rs` tests | In-place heapsort with the caller's comparison. Not stable, as documented; ends even if the comparison is no order |
 | `msvcrt.dll` | `localeconv` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` and `syscollector.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale's `lconv`: "." as the decimal point, empty strings, CHAR_MAX fields |
 | `msvcrt.dll` | `setlocale` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/locale.rs` tests | Only the "C" locale. Any other, including "", fails with NULL and is a logged gap |
 | `shlwapi.dll` | `PathIsUNCA` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/shlwapi/path.rs` tests | The documented examples, including `\\?\UNC\` |
@@ -239,6 +262,18 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `msvcrt.dll` | `strpbrk` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/msvcrt/string.rs` tests | Host libc; C-standard behaviour |
 
 Every other census function is a gap. The loader logs it once per module when it binds imports. If agent code calls it, a trap prints `gap call DLL!Function from MODULE at ADDRESS` and the process aborts. To list the gaps for an image, run `cargo run --target i686-unknown-linux-gnu --bin xvm-windows-load -- IMAGE`.
+
+## COM interfaces
+
+Agent code reaches these through vtables, not imports (`src/com.rs`). Methods not listed are gap traps. Tests in `src/win/ole32/tests.rs`.
+
+| Interface | Methods | Notes |
+| --- | --- | --- |
+| `IWbemLocator` | `ConnectServer` | Local `ROOT\CIMV2` only. Credentials on a local connection: WBEM_E_LOCAL_CREDENTIALS. Other namespaces and servers are logged gaps |
+| `IWbemServices` | `ExecQuery` | WQL `SELECT * FROM Win32_QuickFixEngineering`, from the profile's `hotfixes`. Other queries are logged gaps |
+| `IEnumWbemClassObject` | `Next`, `Skip`, `Reset` | Over the rows taken when the query ran |
+| `IWbemClassObject` | `Get` | `HotFixID`, `Description`, `InstalledOn` (M/D/YYYY), `InstalledBy`, `CSName`, `__CLASS`. Properties without a profile source are VT_NULL and a logged gap |
+| All of them | `QueryInterface`, `AddRef`, `Release` | `IUnknown` and the object's own interface; others are a logged gap |
 
 ## TEB fields
 

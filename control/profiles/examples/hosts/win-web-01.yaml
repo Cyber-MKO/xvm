@@ -30,6 +30,8 @@ registry:
   keys:
     HKLM\SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName:
       ComputerName: {type: REG_SZ, data: WIN-WEB-01}
+    HKLM\SYSTEM\CurrentControlSet\Control\ComputerName\ActiveComputerName:
+      ComputerName: {type: REG_SZ, data: WIN-WEB-01}
     # TCP/IP settings of the adapter, under its GUID.
     HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{00000000-0000-4000-8000-000000000101}:
       EnableDHCP: {type: REG_DWORD, data: 0}
