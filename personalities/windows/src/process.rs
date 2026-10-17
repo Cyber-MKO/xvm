@@ -179,6 +179,7 @@ pub struct ProcessParams {
     /// The process ID the agent sees.
     pub pid: u32,
     pub time_zone: crate::timezone::TimeZone,
+    pub code_pages: crate::codepage::CodePages,
     /// System certificate stores by upper-case name.
     pub cert_stores: BTreeMap<String, Vec<Certificate>>,
     /// Where emulated system DLLs say they were loaded from.
@@ -197,6 +198,10 @@ impl ProcessParams {
             service: windows.agent.service.clone(),
             pid: windows.agent.pid,
             time_zone: windows.time_zone.clone(),
+            code_pages: crate::codepage::CodePages {
+                ansi: windows.ansi_code_page,
+                oem: windows.oem_code_page,
+            },
             cert_stores: windows.certificates.clone(),
             system_module_directory: windows.system_module_directory.clone(),
             trusted_files: windows

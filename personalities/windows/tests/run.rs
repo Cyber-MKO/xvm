@@ -23,6 +23,8 @@ name = "XVM-TEST"
 os = "windows"
 [windows]
 drives = {{ C = "{}" }}
+ansi_code_page = 1252
+oem_code_page = 437
 [windows.agent]
 command_line = 'C:\service.exe'
 current_directory = 'C:\'

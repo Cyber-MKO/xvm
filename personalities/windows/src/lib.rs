@@ -10,6 +10,7 @@
 //! and the entry point.
 
 pub mod cmdline;
+pub mod codepage;
 pub mod emu;
 pub mod gap;
 pub mod handles;

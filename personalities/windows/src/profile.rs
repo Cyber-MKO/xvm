@@ -76,6 +76,10 @@ pub struct Windows {
     pub trusted_files: BTreeMap<String, String>,
     /// What `GetTimeZoneInformation` reports, and what local time follows.
     pub time_zone: TimeZone,
+    /// The ANSI code page (`CP_ACP`), such as 1252.
+    pub ansi_code_page: u16,
+    /// The OEM code page (`CP_OEMCP`), such as 437.
+    pub oem_code_page: u16,
     /// The certificates of `cert_stores`, read by `Profile::load`, keyed by
     /// upper-case store name.
     #[serde(skip)]
@@ -213,6 +217,17 @@ impl Profile {
         {
             return invalid("time zone names must be ASCII".into());
         }
+        for (key, number) in [
+            ("ansi_code_page", windows.ansi_code_page),
+            ("oem_code_page", windows.oem_code_page),
+        ] {
+            if crate::codepage::single_byte(number).is_none() {
+                return invalid(format!(
+                    "{key}: no table for code page {number}; have {:?}",
+                    crate::codepage::supported()
+                ));
+            }
+        }
         if windows.agent.pid == 0 || windows.agent.pid % 4 != 0 {
             return invalid(format!(
                 "agent pid {} is not a non-zero multiple of 4",
@@ -256,6 +271,8 @@ mod tests {
 
         [windows]
         drives = { C = "drives/c" }
+        ansi_code_page = 1252
+        oem_code_page = 437
 
         [windows.agent]
         command_line = '"C:\Program Files\app\app.exe" -f'
@@ -304,6 +321,8 @@ mod tests {
         assert!(bad("        key_name = \"UTC\"\n", ""));
         assert!(bad("pid = 4812", "pid = 0"));
         assert!(bad("pid = 4812\n", ""));
+        assert!(bad("ansi_code_page = 1252", "ansi_code_page = 932"));
+        assert!(bad("oem_code_page = 437\n", ""));
         assert!(bad("[windows.agent]", "[windows.agent]\nextra = 1"));
         assert!(bad(
             "TEST-HOST\"\n        os = \"windows\"",

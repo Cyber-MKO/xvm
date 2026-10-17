@@ -16,6 +16,12 @@ drives = { C = "example-windows/c" }
 # take the real one from the golden VM.
 system_module_directory = 'C:\Windows\SysWOW64'
 
+# ANSI and OEM code pages, as GetACP and GetOEMCP report them. Values for
+# an English (United States) install; take the real ones from the golden
+# VM (HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage, ACP and OEMCP).
+ansi_code_page = 1252
+oem_code_page = 437
+
 [windows.agent]
 # The service's command line, as the Service Control Manager starts it.
 command_line = '"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe"'

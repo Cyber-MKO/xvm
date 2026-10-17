@@ -69,7 +69,7 @@ Loader status:
 | Waitable objects (`sync.rs`): events, threads, semaphores; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
 | Emulated functions | 145 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Next: code pages (decision A), then a manager address |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Code pages come from the profile. Next: a manager address in the configuration |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |

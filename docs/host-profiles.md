@@ -20,12 +20,14 @@ Profiles are where host facts live (CLAUDE.md rule 5). An example is in `control
 | `windows.system_module_directory` | string, optional | The directory emulated system DLLs report as their location, such as `C:\Windows\SysWOW64` for a 32-bit process on 64-bit Windows |
 | `windows.trusted_files` | table, optional | Windows path to the SHA-256 (64 hex digits) of a file whose signature is valid on this host. `WinVerifyTrust` answers from this list |
 | `windows.time_zone` | table | What `GetTimeZoneInformation` returns: `key_name`, `standard_name`, `daylight_name` (31 characters at most), `bias`, `standard_bias`, `daylight_bias` (minutes; UTC = local + bias), and optionally `standard_date` and `daylight_date` as `{ month, day_of_week, week, hour, minute, second }` (week 5 is the last). Local time follows these rules |
+| `windows.ansi_code_page` | integer | The ANSI code page (`CP_ACP`, `CP_THREAD_ACP`). Must be one we have a table for: 1252 |
+| `windows.oem_code_page` | integer | The OEM code page (`CP_OEMCP`). Must be one we have a table for: 437 |
 | `windows.environment` | table | The agent's environment variables. The runtime sorts them by name, ignoring case, as Windows keeps its environment block. |
 
 Rules:
 
 - Unknown keys are errors.
-- Windows strings must be ASCII until code-page conversion exists (it comes with `GetACP`).
+- Windows strings must be ASCII for now: the functions that return them do not convert them to the ANSI code page yet.
 - `host.os` must be `windows` when a `windows` section is present.
 
 ## Windows paths
