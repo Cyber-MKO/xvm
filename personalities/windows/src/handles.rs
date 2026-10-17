@@ -23,6 +23,8 @@ pub struct FileObject {
     /// FILE_SHARE_READ (1), FILE_SHARE_WRITE (2), FILE_SHARE_DELETE (4).
     pub share: u32,
     pub is_directory: bool,
+    /// Opened with FILE_FLAG_OVERLAPPED: asynchronous I/O, a logged gap.
+    pub overlapped: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -102,6 +104,7 @@ mod tests {
             can_delete: false,
             share: 7,
             is_directory: false,
+            overlapped: false,
         })
     }
 

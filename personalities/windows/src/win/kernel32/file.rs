@@ -11,7 +11,7 @@
 
 use std::ffi::c_char;
 use std::fs::{File, OpenOptions};
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -52,6 +52,7 @@ const FILE_FLAG_DELETE_ON_CLOSE: u32 = 0x0400_0000;
 const FILE_FLAG_OVERLAPPED: u32 = 0x4000_0000;
 
 const ERROR_INVALID_FUNCTION: u32 = 1;
+const ERROR_HANDLE_EOF: u32 = 38;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
@@ -229,6 +230,7 @@ fn create_file(p: &mut Process, name: &str, r: &Request) -> Result<u32, u32> {
         can_delete: delete,
         share: r.share,
         is_directory: host.is_dir(),
+        overlapped: r.flags & FILE_FLAG_OVERLAPPED != 0,
     }));
     if let Some(code) = last_error {
         set_last_error(code);
@@ -318,8 +320,10 @@ extern "stdcall" fn ReadFile(
     read: *mut u32,
     overlapped: u32,
 ) -> i32 {
-    if overlapped != 0 {
-        with_current(|p| gap(p, "ReadFile with OVERLAPPED"));
+    let asynchronous =
+        with_current(|p| matches!(p.handles.get(handle), Some(Object::File(f)) if f.overlapped));
+    if overlapped != 0 && asynchronous {
+        with_current(|p| gap(p, "ReadFile on an overlapped handle"));
         set_last_error(ERROR_INVALID_PARAMETER);
         return 0;
     }
@@ -342,6 +346,26 @@ extern "stdcall" fn ReadFile(
         set_last_error(ERROR_ACCESS_DENIED);
         return 0;
     }
+    // Our handles are never overlapped (FILE_FLAG_OVERLAPPED is a gap), so
+    // an OVERLAPPED asks for a synchronous read at its offset, which moves
+    // the file pointer; at or past the end that is ERROR_HANDLE_EOF.
+    let positioned = (overlapped != 0).then(|| {
+        // SAFETY: an OVERLAPPED (the API's contract): Internal,
+        // InternalHigh, Offset, OffsetHigh, hEvent.
+        let o = overlapped as *mut u32;
+        unsafe { (o, (*o.add(3) as u64) << 32 | *o.add(2) as u64) }
+    });
+    if let Some((_, offset)) = positioned {
+        let at_end = file.metadata().is_ok_and(|m| offset >= m.len());
+        if (&*file).seek(SeekFrom::Start(offset)).is_err() {
+            set_last_error(ERROR_INVALID_PARAMETER);
+            return 0;
+        }
+        if at_end && len > 0 {
+            set_last_error(ERROR_HANDLE_EOF);
+            return 0;
+        }
+    }
     // SAFETY: buffer holds len bytes (the API's contract).
     let buf = unsafe { std::slice::from_raw_parts_mut(buffer, len as usize) };
     let mut done = 0;
@@ -359,6 +383,13 @@ extern "stdcall" fn ReadFile(
     if !read.is_null() {
         // SAFETY: as above.
         unsafe { *read = done as u32 };
+    }
+    if let Some((o, _)) = positioned {
+        // SAFETY: as above; Internal is the status, InternalHigh the count.
+        unsafe {
+            *o = 0;
+            *o.add(1) = done as u32;
+        }
     }
     1
 }
@@ -457,6 +488,40 @@ mod tests {
         assert_eq!(CloseHandle(h), 1);
         assert_eq!(CloseHandle(h), 0);
         assert_eq!(last_error(), ERROR_INVALID_HANDLE);
+    }
+
+    #[test]
+    fn an_overlapped_read_on_a_synchronous_handle_reads_at_its_offset() {
+        let _h = host("pread");
+        let h = open(
+            "local_internal_options.conf",
+            GENERIC_READ,
+            7,
+            OPEN_EXISTING,
+            0,
+        );
+        let mut buf = [0u8; 4];
+        let mut n = 0;
+        // Internal, InternalHigh, Offset 4, OffsetHigh, hEvent.
+        let overlapped = Box::into_raw(Box::new([9u32, 9, 4, 0, 0]));
+        let o = overlapped as u32;
+        assert_eq!(ReadFile(h, buf.as_mut_ptr(), 4, &mut n, o), 1);
+        assert_eq!(&buf[..n as usize], b"valu");
+        // SAFETY: the box above, still owned here.
+        assert_eq!(unsafe { [(*overlapped)[0], (*overlapped)[1]] }, [0, 4]);
+        assert_eq!(
+            ReadFile(h, buf.as_mut_ptr(), 2, &mut n, 0),
+            1,
+            "the pointer moved"
+        );
+        assert_eq!(&buf[..2], b"e\n");
+        // SAFETY: as above.
+        unsafe { (*overlapped)[2] = 10 };
+        assert_eq!(ReadFile(h, buf.as_mut_ptr(), 4, &mut n, o), 0);
+        assert_eq!(last_error(), ERROR_HANDLE_EOF);
+        // SAFETY: made by Box::into_raw above.
+        drop(unsafe { Box::from_raw(overlapped) });
+        CloseHandle(h);
     }
 
     #[test]

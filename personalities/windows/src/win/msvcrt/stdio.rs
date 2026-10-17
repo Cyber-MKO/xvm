@@ -609,6 +609,7 @@ mod tests {
             can_delete: false,
             share: 7,
             is_directory: false,
+            overlapped: false,
         }));
         std::fs::remove_file(&path).unwrap();
         let fd = process.crt.insert_fd(CrtFd { handle, flags: 0 });
@@ -725,6 +726,7 @@ mod tests {
             can_delete: false,
             share: 7,
             is_directory: false,
+            overlapped: false,
         }));
         let fd = process.crt.insert_fd(CrtFd { handle, flags });
         let runtime = Runtime::new(process);

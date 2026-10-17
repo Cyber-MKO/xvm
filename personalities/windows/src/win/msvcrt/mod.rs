@@ -13,6 +13,7 @@ mod locks;
 mod lowio;
 mod msstring;
 mod random;
+mod remove;
 mod startup;
 mod stat;
 pub(crate) mod stdio;
@@ -42,6 +43,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         strerror::exports(),
         fullpath::exports(),
         find::exports(),
+        remove::exports(),
     ]
     .concat()
 }
