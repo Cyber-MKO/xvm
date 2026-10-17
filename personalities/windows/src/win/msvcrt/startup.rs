@@ -14,6 +14,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("_onexit", _onexit as *const () as u32),
         ("exit", exit as *const () as u32),
         ("_exit", _exit as *const () as u32),
+        ("_beginthreadex", _beginthreadex as *const () as u32),
         ("_endthreadex", _endthreadex as *const () as u32),
         ("_getpid", _getpid as *const () as u32),
         ("_initterm", _initterm as *const () as u32),
@@ -121,6 +122,37 @@ extern "C" fn exit(status: i32) -> ! {
         crate::registration::exit(p, status as u32);
     });
     std::process::exit(status)
+}
+
+/// Starts `start(arg)`, an `unsigned __stdcall` routine, on a new thread,
+/// as `CreateThread` does. Returns the thread's handle (close it with
+/// `CloseHandle`) and writes its ID to `id`; 0 with `errno` on failure.
+extern "C" fn _beginthreadex(
+    security: u32,
+    stack_size: u32,
+    start: u32,
+    arg: u32,
+    flags: u32,
+    id: *mut u32,
+) -> u32 {
+    use crate::win::kernel32::thread::create_thread;
+    match create_thread("_beginthreadex", security, stack_size, start, arg, flags) {
+        Ok((handle, thread)) => {
+            if !id.is_null() {
+                // SAFETY: writable (the function's contract).
+                unsafe { *id = thread };
+            }
+            handle
+        }
+        Err(code) => {
+            super::errno::set(if code == 8 {
+                super::errno::EAGAIN
+            } else {
+                super::errno::EINVAL
+            });
+            0
+        }
+    }
 }
 
 /// Ends the calling thread with `code`, as its routine's return would.
@@ -354,6 +386,39 @@ mod tests {
         assert_eq!(unsafe { libc::waitpid(child, &mut status, 0) }, child);
         assert!(libc::WIFEXITED(status));
         assert_eq!(libc::WEXITSTATUS(status), 7);
+    }
+
+    extern "stdcall" fn doubles(arg: u32) -> u32 {
+        arg * 2
+    }
+
+    extern "stdcall" fn ends_early(arg: u32) -> u32 {
+        _endthreadex(arg + 1);
+        0
+    }
+
+    #[test]
+    fn beginthreadex_runs_routines_that_return_or_end_early() {
+        use crate::win::kernel32::sync::WaitForSingleObject;
+        use crate::win::kernel32::thread::thread_of;
+        let (_runtime, _thread) = attached_with("prog", &[]);
+        let mut id = 0;
+        let h = _beginthreadex(0, 0, doubles as *const () as u32, 21, 0, &mut id);
+        assert_ne!((h, id), (0, 0));
+        assert_eq!(WaitForSingleObject(h, u32::MAX), 0);
+        assert_eq!(thread_of(h).unwrap().exit_code(), Some(42));
+        let h = _beginthreadex(
+            0,
+            0,
+            ends_early as *const () as u32,
+            6,
+            0,
+            std::ptr::null_mut(),
+        );
+        WaitForSingleObject(h, u32::MAX);
+        assert_eq!(thread_of(h).unwrap().exit_code(), Some(7));
+        assert_eq!(_beginthreadex(0, 0, 0, 0, 0, std::ptr::null_mut()), 0);
+        assert_eq!(super::super::errno::get(), super::super::errno::EINVAL);
     }
 
     #[test]

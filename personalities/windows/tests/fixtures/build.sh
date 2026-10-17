@@ -13,7 +13,7 @@ CC="clang --target=i686-pc-windows-msvc -O1 -fno-stack-protector -c"
 LINK="lld-link /nologo /nodefaultlib /machine:x86"
 $CC "$SRC/sample.c" -o sample.obj
 $LINK /dll /noentry /out:sample.dll /implib:sample.lib \
-    /export:hidden,@7,NONAME /export:Ticks=kernel32.GetTickCount sample.obj
+    /export:hidden,@7,NONAME /export:Ticks=kernel32.Beep sample.obj
 $CC "$SRC/tls.c" -o tls.obj
 $LINK /dll /noentry /out:tls.dll /base:0x30000000 tls.obj
 $CC "$SRC/calls.c" -o calls.obj

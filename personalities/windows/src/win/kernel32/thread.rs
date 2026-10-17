@@ -37,6 +37,45 @@ fn gap(what: &str) {
     with_current(|p| p.record_runtime_gap(GapKind::Feature, "kernel32.dll", what));
 }
 
+/// Why `create_thread` failed: a Win32 error code, already logged as a
+/// gap when it is one.
+pub(crate) type CreateError = u32;
+
+/// Start `start(parameter)`, a `DWORD WINAPI ThreadProc(LPVOID)`, on a
+/// new thread for `function`. Returns its handle and ID.
+pub(crate) fn create_thread(
+    function: &str,
+    security: u32,
+    stack_size: u32,
+    start: u32,
+    parameter: u32,
+    flags: u32,
+) -> Result<(u32, u32), CreateError> {
+    if start == 0 || flags & !(CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION) != 0 {
+        return Err(ERROR_INVALID_PARAMETER);
+    }
+    if security != 0 {
+        gap(&format!("{function} security attributes"));
+        return Err(ERROR_INVALID_PARAMETER);
+    }
+    if flags & CREATE_SUSPENDED != 0 {
+        gap(&format!("{function} CREATE_SUSPENDED"));
+        return Err(ERROR_INVALID_PARAMETER);
+    }
+    let runtime = crate::runtime::current().ok_or(ERROR_INVALID_PARAMETER)?;
+    let spawned = runtime.spawn_thread(stack_size as usize, move || {
+        // SAFETY: DWORD WINAPI ThreadProc(LPVOID), given by the caller.
+        let f: extern "stdcall" fn(u32) -> u32 = unsafe { std::mem::transmute(start as usize) };
+        f(parameter)
+    });
+    let (_, thread) = spawned.map_err(|_| ERROR_NOT_ENOUGH_MEMORY)?;
+    let id = thread.id;
+    Ok((
+        with_current(|p| p.handles.insert(Object::Thread(thread))),
+        id,
+    ))
+}
+
 /// Starts `start(parameter)` on a new thread. Returns a handle to it and
 /// writes its ID to `thread_id` when that is not NULL; NULL on failure.
 #[allow(non_snake_case)]
@@ -48,38 +87,26 @@ extern "stdcall" fn CreateThread(
     flags: u32,
     thread_id: *mut u32,
 ) -> u32 {
-    if start == 0 || flags & !(CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION) != 0 {
-        set_last_error(ERROR_INVALID_PARAMETER);
-        return 0;
+    match create_thread(
+        "CreateThread",
+        attributes,
+        stack_size,
+        start,
+        parameter,
+        flags,
+    ) {
+        Ok((handle, id)) => {
+            if !thread_id.is_null() {
+                // SAFETY: writable (the API's contract).
+                unsafe { *thread_id = id };
+            }
+            handle
+        }
+        Err(code) => {
+            set_last_error(code);
+            0
+        }
     }
-    if attributes != 0 {
-        gap("CreateThread security attributes");
-        set_last_error(ERROR_INVALID_PARAMETER);
-        return 0;
-    }
-    if flags & CREATE_SUSPENDED != 0 {
-        gap("CreateThread CREATE_SUSPENDED");
-        set_last_error(ERROR_INVALID_PARAMETER);
-        return 0;
-    }
-    let Some(runtime) = crate::runtime::current() else {
-        set_last_error(ERROR_INVALID_PARAMETER);
-        return 0;
-    };
-    let spawned = runtime.spawn_thread(stack_size as usize, move || {
-        // SAFETY: DWORD WINAPI ThreadProc(LPVOID), given by the caller.
-        let f: extern "stdcall" fn(u32) -> u32 = unsafe { std::mem::transmute(start as usize) };
-        f(parameter)
-    });
-    let Ok((_, thread)) = spawned else {
-        set_last_error(ERROR_NOT_ENOUGH_MEMORY);
-        return 0;
-    };
-    if !thread_id.is_null() {
-        // SAFETY: writable (the API's contract).
-        unsafe { *thread_id = thread.id };
-    }
-    with_current(|p| p.handles.insert(Object::Thread(thread)))
 }
 
 /// The thread a handle names: the pseudo-handle or a thread handle.

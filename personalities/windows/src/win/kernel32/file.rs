@@ -397,12 +397,17 @@ extern "stdcall" fn ReadFile(
 /// Closes a handle. The process and thread pseudo-handles need no
 /// closing and always succeed.
 #[allow(non_snake_case)]
-extern "stdcall" fn CloseHandle(handle: u32) -> i32 {
+pub(crate) extern "stdcall" fn CloseHandle(handle: u32) -> i32 {
     if handle == super::process::CURRENT_PROCESS || handle == super::process::CURRENT_THREAD {
         return 1;
     }
     match with_current(|p| p.handles.remove(handle)) {
-        Some(_) => 1,
+        Some(_) => {
+            if let Some(runtime) = crate::runtime::current() {
+                runtime.file_locks().release(handle);
+            }
+            1
+        }
         None => {
             set_last_error(ERROR_INVALID_HANDLE);
             0

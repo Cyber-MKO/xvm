@@ -1,4 +1,4 @@
-//! The system: `GetSystemInfo`.
+//! The system: `GetSystemInfo`, `GetProcessAffinityMask`.
 //!
 //! `SYSTEM_INFO` as a 32-bit process sees it, from the GetSystemInfo page
 //! and "WOW64 Implementation Details" on Microsoft Learn:
@@ -12,6 +12,9 @@
 //! | Level, revision | Family, and model and stepping, from `Identifier` under `HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0` |
 //!
 //! A missing fact is a logged gap: 1 processor, or level and revision 0.
+//!
+//! `GetProcessAffinityMask` gives every processor to the process and the
+//! system: one bit per processor of `GetSystemInfo`'s count.
 
 use serde_json::Value;
 
@@ -24,7 +27,13 @@ const CPU_KEY: &str = r"HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0";
 const IMAGE_FILE_LARGE_ADDRESS_AWARE: u16 = 0x20;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
-    vec![("GetSystemInfo", GetSystemInfo as *const () as u32)]
+    vec![
+        ("GetSystemInfo", GetSystemInfo as *const () as u32),
+        (
+            "GetProcessAffinityMask",
+            GetProcessAffinityMask as *const () as u32,
+        ),
+    ]
 }
 
 fn gap(what: &str) {
@@ -45,15 +54,44 @@ fn level_revision(identifier: &str) -> Option<(u16, u16)> {
     Some((family, (model << 8) | stepping))
 }
 
-#[allow(non_snake_case)]
-extern "stdcall" fn GetSystemInfo(out: *mut u8) {
+/// The host's processor count as a 32-bit process sees it (1 to 32).
+fn processors() -> u32 {
     let processors = facts::section(CALLER, "hardware")
         .and_then(|h| h.pointer("/cpu/logical_processors").and_then(Value::as_u64))
         .map(|n| n.clamp(1, 32) as u32);
-    let processors = processors.unwrap_or_else(|| {
+    processors.unwrap_or_else(|| {
         gap("no hardware.cpu.logical_processors");
         1
-    });
+    })
+}
+
+fn mask(processors: u32) -> u32 {
+    if processors >= 32 {
+        u32::MAX
+    } else {
+        (1u32 << processors) - 1
+    }
+}
+
+#[allow(non_snake_case)]
+extern "stdcall" fn GetProcessAffinityMask(process: u32, own: *mut u32, system: *mut u32) -> i32 {
+    if process != super::process::CURRENT_PROCESS || own.is_null() || system.is_null() {
+        gap("another process, or NULL masks");
+        super::error::set_last_error(super::error::ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+    let m = mask(processors());
+    // SAFETY: writable (the API's contract).
+    unsafe {
+        *own = m;
+        *system = m;
+    }
+    1
+}
+
+#[allow(non_snake_case)]
+extern "stdcall" fn GetSystemInfo(out: *mut u8) {
+    let processors = processors();
     let identifier = facts::reg_value(CALLER, CPU_KEY, "Identifier")
         .ok()
         .flatten()
@@ -74,11 +112,7 @@ extern "stdcall" fn GetSystemInfo(out: *mut u8) {
     } else {
         0x7ffe_ffff
     };
-    let mask = if processors == 32 {
-        u32::MAX
-    } else {
-        (1u32 << processors) - 1
-    };
+    let mask = mask(processors);
     let mut buf = [0u8; 36];
     buf[4..8].copy_from_slice(&4096u32.to_le_bytes());
     buf[8..12].copy_from_slice(&0x1_0000u32.to_le_bytes());
@@ -116,6 +150,10 @@ mod tests {
         let _thread = runtime.attach().unwrap();
         let mut buf = [0xaau8; 36];
         GetSystemInfo(buf.as_mut_ptr());
+        let (mut own, mut system) = (0, 0);
+        let me = super::super::process::CURRENT_PROCESS;
+        assert_eq!(GetProcessAffinityMask(me, &mut own, &mut system), 1);
+        assert_eq!((own, system), (0xf, 0xf), "four processors");
         let gaps = runtime
             .lock()
             .gaps()

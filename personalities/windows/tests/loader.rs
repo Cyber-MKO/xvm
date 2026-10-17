@@ -66,7 +66,7 @@ fn reads_exports_by_name_ordinal_and_forwarder() {
     assert_eq!(hidden.name, None);
     assert_eq!(
         exports.by_name("Ticks").unwrap().target,
-        ExportTarget::Forwarder("kernel32.GetTickCount".into())
+        ExportTarget::Forwarder("kernel32.Beep".into())
     );
 }
 
@@ -113,7 +113,7 @@ fn binds_imports_and_reports_gaps() {
         .map(|i| i.symbol.to_string())
         .collect();
     symbols.sort();
-    assert_eq!(symbols, ["#99", "GetLastError", "GetTickCount"]);
+    assert_eq!(symbols, ["#99", "Beep", "GetLastError"]);
 
     let add = match dll
         .exports()
@@ -128,7 +128,7 @@ fn binds_imports_and_reports_gaps() {
     };
     let mut table = Table(HashMap::from([
         (("sample.dll".into(), name("add")), add),
-        (("kernel32.dll".into(), name("GetTickCount")), 0x7000_0010),
+        (("kernel32.dll".into(), name("Beep")), 0x7000_0010),
     ]));
     let trap = 0xdead_0000;
     let mut gaps = exe.bind(&mut table, &mut |_| trap).unwrap();
@@ -156,7 +156,7 @@ fn binds_imports_and_reports_gaps() {
         exe.u32(i.iat_rva).unwrap()
     };
     assert_eq!(slot("sample.dll", "add"), add);
-    assert_eq!(slot("kernel32.dll", "GetTickCount"), 0x7000_0010);
+    assert_eq!(slot("kernel32.dll", "Beep"), 0x7000_0010);
     assert_eq!(slot("kernel32.dll", "GetLastError"), trap);
     assert_eq!(slot("kernel32.dll", "#99"), trap);
 }

@@ -7,6 +7,7 @@ pub(super) const ENOENT: i32 = 2;
 pub(super) const EACCES: i32 = 13;
 pub(super) const EEXIST: i32 = 17;
 pub(super) const EBADF: i32 = 9;
+pub(super) const EAGAIN: i32 = 11;
 pub(super) const EMFILE: i32 = 24;
 pub(super) const ENOTDIR: i32 = 20;
 pub(super) const EINVAL: i32 = 22;

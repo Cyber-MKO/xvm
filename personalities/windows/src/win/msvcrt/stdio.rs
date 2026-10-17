@@ -582,6 +582,9 @@ extern "C" fn fclose(file: u32) -> i32 {
         if let Some(entry) = p.crt.fd(stream.fd) {
             p.crt.fds[stream.fd as usize] = None;
             p.handles.remove(entry.handle);
+            if let Some(runtime) = crate::runtime::current() {
+                runtime.file_locks().release(entry.handle);
+            }
         }
         if flushed { 0 } else { EOF }
     })

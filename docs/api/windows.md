@@ -32,6 +32,28 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `kernel32.dll` | `GetSystemInfo` | Wazuh 4.14.2: 2 images | `src/win/kernel32/sysinfo.rs` tests | The 32-bit view: x86, 4 KB pages, 64 KB granularity, 2 GB (or 4 GB when large-address-aware on 64-bit) of addresses; processors from `hardware.cpu`; level and revision from the registry's processor `Identifier` |
 | `kernel32.dll` | `GetFileAttributesExW` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/attributes.rs` tests | As `GetFileAttributesA`, with FILETIMEs and size |
 | `msvcrt.dll` | `remove` | Wazuh 4.14.2: 3 images | `src/win/msvcrt/remove.rs` tests | ENOENT, or EACCES for a folder, a read-only file, or a file another handle holds without delete sharing |
+| `kernel32.dll` | `LockFile` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/lockfile.rs` tests | Exclusive, fails at once (ERROR_LOCK_VIOLATION). Rules in `filelock.rs`: exclusive overlaps nothing, shared overlaps only shared; closing a handle releases its locks |
+| `kernel32.dll` | `LockFileEx` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/lockfile.rs` tests | Offset from the OVERLAPPED; shared or exclusive; waits unless LOCKFILE_FAIL_IMMEDIATELY |
+| `kernel32.dll` | `UnlockFile` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/lockfile.rs` tests | The exact range only, else ERROR_NOT_LOCKED |
+| `kernel32.dll` | `UnlockFileEx` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/lockfile.rs` tests | As `UnlockFile`, offset from the OVERLAPPED |
+| `kernel32.dll` | `GetFileSize` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/fileio.rs` tests | Sets the last error to 0 on success |
+| `kernel32.dll` | `GetFileSizeEx` | Wazuh 4.14.2: 2 images | `src/win/kernel32/fileio.rs` tests |  |
+| `kernel32.dll` | `SetFilePointer` | Wazuh 4.14.2: 2 images | `src/win/kernel32/fileio.rs` tests | 32-bit or 64-bit distance; ERROR_NEGATIVE_SEEK; last error 0 on success |
+| `kernel32.dll` | `WriteFile` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/fileio.rs` tests | Synchronous; an OVERLAPPED names the offset |
+| `kernel32.dll` | `FlushFileBuffers` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/fileio.rs` tests |  |
+| `kernel32.dll` | `SetEndOfFile` | Wazuh 4.14.2: 2 images | `src/win/kernel32/fileio.rs` tests | At the file pointer |
+| `kernel32.dll` | `GetFileType` | Wazuh 4.14.2: 2 images | `src/win/kernel32/fileio.rs` tests | FILE_TYPE_DISK for every file handle |
+| `kernel32.dll` | `DeleteFileA` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/fileio.rs` tests | ERROR_ACCESS_DENIED for folders and read-only files; ERROR_SHARING_VIOLATION when held without delete sharing |
+| `kernel32.dll` | `DeleteFileW` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/fileio.rs` tests | As `DeleteFileA` |
+| `kernel32.dll` | `GetSystemTime` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/time.rs` tests | The real machine's clock |
+| `kernel32.dll` | `GetSystemTimeAsFileTime` | Wazuh 4.14.2: 11 images, including `wazuh-agent.exe` | `src/win/kernel32/time.rs` tests | The real machine's clock |
+| `kernel32.dll` | `FileTimeToSystemTime` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/time.rs` tests |  |
+| `kernel32.dll` | `SystemTimeToFileTime` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/time.rs` tests | Years 1601 to 30827; wDayOfWeek ignored |
+| `kernel32.dll` | `GetTickCount` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/time.rs` tests | Milliseconds since boot: the engine's start time for the System process (PID 4) |
+| `kernel32.dll` | `QueryPerformanceCounter` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/time.rs` tests | 100-nanosecond ticks since that boot |
+| `kernel32.dll` | `QueryPerformanceFrequency` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/time.rs` tests | 10 MHz, as documented for Windows under a hypervisor |
+| `kernel32.dll` | `GetProcessAffinityMask` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sysinfo.rs` tests | Every processor of `GetSystemInfo`'s count; other processes are a logged gap |
+| `msvcrt.dll` | `_beginthreadex` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | As `CreateThread`; EINVAL or EAGAIN on failure |
 | `kernel32.dll` | `GetTimeZoneInformation` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/timezone.rs` tests | From `windows.time_zone`. Returns DAYLIGHT or STANDARD for the current instant, UNKNOWN for a zone without daylight time |
 | `msvcrt.dll` | `localtime` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/time.rs` tests | 32-bit `time_t`. Uses the profile's zone rules; a `TZ` variable is a logged gap. One buffer per thread. NULL with EINVAL for a negative time |
 | `msvcrt.dll` | `fputc` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Buffered, 4096 bytes. Text mode writes LF as CR LF; `_O_APPEND` writes at the end |

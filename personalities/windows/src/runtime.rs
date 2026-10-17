@@ -53,6 +53,7 @@ pub struct Runtime {
     process: Arc<Mutex<Process>>,
     services: Arc<ServiceEvents>,
     sync: Arc<SyncHub>,
+    file_locks: Arc<crate::filelock::FileLocks>,
 }
 
 /// What the service control dispatcher waits for.
@@ -118,6 +119,7 @@ impl Runtime {
             process: Arc::new(Mutex::new(process)),
             services: Arc::default(),
             sync: Arc::default(),
+            file_locks: Arc::default(),
         }
     }
 
@@ -128,6 +130,11 @@ impl Runtime {
     /// The process's waitable-object hub.
     pub fn sync(&self) -> &SyncHub {
         &self.sync
+    }
+
+    /// The process's byte-range file locks.
+    pub fn file_locks(&self) -> &crate::filelock::FileLocks {
+        &self.file_locks
     }
 
     /// Give the calling thread a TEB with this process's TLS and make the

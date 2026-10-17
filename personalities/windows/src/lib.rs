@@ -12,6 +12,7 @@
 pub mod cmdline;
 pub mod codepage;
 pub mod emu;
+pub mod filelock;
 pub mod gap;
 pub mod handles;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]

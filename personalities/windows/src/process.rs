@@ -404,6 +404,8 @@ pub struct Process {
     pub crypt_providers: Vec<u32>,
     /// The engine's process list holds this process (`registration`).
     pub registered: bool,
+    /// The host's boot time in Unix milliseconds, once read (`GetTickCount`).
+    pub boot_ms: Option<i64>,
 }
 
 /// Why `Process::load_library` failed.
@@ -443,6 +445,7 @@ impl Process {
             named_mutexes: BTreeMap::new(),
             crypt_providers: Vec::new(),
             registered: false,
+            boot_ms: None,
         }
     }
 

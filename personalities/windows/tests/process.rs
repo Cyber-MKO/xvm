@@ -62,7 +62,7 @@ fn loads_dependencies_first_and_records_gaps() {
         gaps,
         [
             gap("importer.exe", "#99"),
-            gap("importer.exe", "GetTickCount")
+            gap("importer.exe", "Beep")
         ]
     );
 
@@ -92,9 +92,9 @@ fn loads_dependencies_first_and_records_gaps() {
         slot("kernel32.dll", "GetLastError"),
         export(kernel32, "GetLastError")
     );
-    assert_ne!(slot("kernel32.dll", "GetTickCount"), 0);
+    assert_ne!(slot("kernel32.dll", "Beep"), 0);
     assert_ne!(
-        slot("kernel32.dll", "GetTickCount"),
+        slot("kernel32.dll", "Beep"),
         slot("kernel32.dll", "#99")
     );
 }
@@ -178,7 +178,7 @@ fn calling_a_gap_reports_it_and_aborts() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(!out.status.success());
     assert!(
-        stderr.contains("gap call kernel32.dll!GetTickCount from calls.dll at 0x"),
+        stderr.contains("gap call kernel32.dll!Beep from calls.dll at 0x"),
         "{stderr}"
     );
 }
@@ -277,7 +277,7 @@ fn module_handles_and_proc_addresses_through_kernel32() {
 
     // Misses that Windows would answer are gaps; ordinary misses are not.
     let before = runtime.lock().gaps().len();
-    assert_eq!(get_proc(k32_base, c"GetTickCount".as_ptr()), 0);
+    assert_eq!(get_proc(k32_base, c"Beep".as_ptr()), 0);
     assert_ne!(get_module_a(c"ntdll.dll".as_ptr()), 0, "always loaded");
     assert_eq!(get_module_a(c"kernelbase.dll".as_ptr()), 0);
     let p = runtime.lock();
@@ -286,7 +286,7 @@ fn module_handles_and_proc_addresses_through_kernel32() {
         .map(|g| (g.kind, g.dll.as_str(), g.symbol.as_str()))
         .collect();
     assert!(
-        new.contains(&(GapKind::ProcAddress, "kernel32.dll", "GetTickCount")),
+        new.contains(&(GapKind::ProcAddress, "kernel32.dll", "Beep")),
         "{new:?}"
     );
     assert!(

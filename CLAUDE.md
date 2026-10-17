@@ -81,13 +81,13 @@ Loader status:
 | Service Control Manager, service side (`win/advapi32/service.rs`) | Done. SIGTERM stops a service |
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
 | Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
-| Kernel handle table, file I/O (`handles.rs`, `win/kernel32/file.rs`) | Started: open, read, close |
+| Kernel handle table, file I/O (`handles.rs`, `win/kernel32/file.rs`, `fileio.rs`, `lockfile.rs`) | Done for synchronous I/O: open, read, write, seek, size, truncate, flush, delete, byte-range locks. Asynchronous handles are a logged gap |
 | C streams (`win/msvcrt/stdio.rs`) | Started: `_fdopen`, reading, buffered writing, `fflush`, `fclose`, standard streams in `_iob` |
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 172 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install` and run from the engine's profile. It runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity, reads the registry, sets up file integrity monitoring, starts its modules (agent upgrade, SCA; osquery and CIS-CAT disabled) and log collection. Next gaps: `kernel32!FormatMessageW`, `msvcrt!remove`, and the Event Log API (`EvtSubscribe`, waits on the engine's `evt.wait`) |
+| Emulated functions | 194 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install` and run from the engine's profile. It runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity, reads the registry, sets up file integrity monitoring, starts its modules (agent upgrade, SCA, syscollector with SQLite; osquery and CIS-CAT disabled) and log collection. Next gap: the Event Log API (`wevtapi!EvtSubscribe`), on the engine's `evt.wait` |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |

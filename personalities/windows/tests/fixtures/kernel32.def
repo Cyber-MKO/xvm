@@ -1,6 +1,6 @@
 LIBRARY kernel32.dll
 EXPORTS
-GetTickCount@0
+Beep@8
 GetLastError@0
 SetLastError@4
 ByOrdinal@0 @99 NONAME
