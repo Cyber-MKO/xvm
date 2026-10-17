@@ -21,6 +21,7 @@ mod startup;
 mod stat;
 pub(crate) mod stdio;
 mod strerror;
+mod strftime;
 mod string;
 mod time;
 mod wide;
@@ -45,6 +46,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         time::exports(),
         random::exports(),
         strerror::exports(),
+        strftime::exports(),
         fullpath::exports(),
         find::exports(),
         sort::exports(),

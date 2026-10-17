@@ -213,6 +213,7 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `msvcrt.dll` | `fsetpos` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Moves to an `fgetpos` offset, as `fseek` from the start |
 | `msvcrt.dll` | `clearerr` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Clears end of file and the error indicator |
 | `msvcrt.dll` | `getenv` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/env.rs` tests | From the CRT environment (the `envp` of `__getmainargs`, from the profile). Names match without case; the result points into that environment |
+| `msvcrt.dll` | `strftime` | Wazuh 4.14.2: 6 images, including `sysinfo.dll` | `src/win/msvcrt/strftime.rs` tests | The "C" locale and the `msvcrt.dll` specifiers, with the `#` flag. `%z` and `%Z` are the profile's zone names. Other specifiers are a logged gap: 0 and EINVAL |
 | `msvcrt.dll` | `strcoll` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale: code-unit order, as `strcmp` |
 | `msvcrt.dll` | `wcscoll` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale: code-unit order, as `wcscmp` |
 | `msvcrt.dll` | `strxfrm` | Wazuh 4.14.2: 1 image, `libstdc++-6.dll` | `src/win/msvcrt/locale.rs` tests | The "C" locale: the string itself. Returns its length; stores it only when it and its NUL fit |
