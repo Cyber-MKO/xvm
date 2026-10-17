@@ -12,7 +12,7 @@
 use std::ffi::c_char;
 use std::fs::{File, OpenOptions};
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::error::{
@@ -86,6 +86,34 @@ struct Request {
     template: u32,
 }
 
+/// The full Windows path of `name` and the host path behind it, or a
+/// Win32 error code. Path forms we do not support are logged for
+/// `function`.
+pub(super) fn resolve(
+    p: &mut Process,
+    name: &str,
+    function: &str,
+) -> Result<(String, PathBuf), u32> {
+    let params = &p.params;
+    let full = DriveMap::full_path(name, &params.current_directory).map_err(|_| ERROR_BAD_PATHNAME);
+    let host = full.as_ref().map_err(|e| *e).and_then(|full| {
+        match params.drives.to_host(full, &params.current_directory) {
+            Ok(host) => Ok(host),
+            Err(PathError::NoSuchDrive(_)) => Err(ERROR_PATH_NOT_FOUND),
+            Err(PathError::Unsupported(_)) => Err(ERROR_BAD_PATHNAME),
+        }
+    });
+    match (full, host) {
+        (Ok(full), Ok(host)) => Ok((full, host)),
+        (_, Err(code)) | (Err(code), _) => {
+            if code == ERROR_BAD_PATHNAME {
+                gap(p, &format!("{function} path form {name}"));
+            }
+            Err(code)
+        }
+    }
+}
+
 /// Open or create the file; returns the handle or a Win32 error code.
 fn create_file(p: &mut Process, name: &str, r: &Request) -> Result<u32, u32> {
     if r.flags & FILE_FLAG_OVERLAPPED != 0 {
@@ -109,24 +137,7 @@ fn create_file(p: &mut Process, name: &str, r: &Request) -> Result<u32, u32> {
         }
     }
 
-    let params = &p.params;
-    let full = DriveMap::full_path(name, &params.current_directory).map_err(|_| ERROR_BAD_PATHNAME);
-    let host = full.as_ref().map_err(|e| *e).and_then(|full| {
-        match params.drives.to_host(full, &params.current_directory) {
-            Ok(host) => Ok(host),
-            Err(PathError::NoSuchDrive(_)) => Err(ERROR_PATH_NOT_FOUND),
-            Err(PathError::Unsupported(_)) => Err(ERROR_BAD_PATHNAME),
-        }
-    });
-    let (full, host) = match (full, host) {
-        (Ok(full), Ok(host)) => (full, host),
-        (_, Err(code)) | (Err(code), _) => {
-            if code == ERROR_BAD_PATHNAME {
-                gap(p, &format!("CreateFile path form {name}"));
-            }
-            return Err(code);
-        }
-    };
+    let (full, host) = resolve(p, name, "CreateFile")?;
 
     let read = r.access & (GENERIC_READ | GENERIC_ALL | FILE_READ_DATA) != 0;
     let write_data = r.access & (GENERIC_WRITE | GENERIC_ALL | FILE_WRITE_DATA) != 0;

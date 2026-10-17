@@ -1,6 +1,6 @@
 //! Events, semaphores, mutexes and waits: `CreateEventA`, `SetEvent`,
 //! `ResetEvent`, `CreateSemaphoreA`, `ReleaseSemaphore`, `CreateMutexA`,
-//! `ReleaseMutex`, `WaitForSingleObject`, `WaitForSingleObjectEx`,
+//! `ReleaseMutex`, `WaitForSingleObject`, `WaitForSingleObjectEx`, `Sleep`,
 //! `WaitForMultipleObjects`.
 //!
 //! Objects and waits are in `crate::sync`. Mutex names live in a
@@ -46,6 +46,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
             "WaitForMultipleObjects",
             WaitForMultipleObjects as *const () as u32,
         ),
+        ("Sleep", Sleep as *const () as u32),
         (
             "WaitForSingleObject",
             WaitForSingleObject as *const () as u32,
@@ -133,6 +134,19 @@ extern "stdcall" fn ReleaseSemaphore(handle: u32, count: i32, previous: *mut i32
             });
             0
         }
+    }
+}
+
+/// Suspends the thread for `ms` milliseconds; 0 gives up the rest of
+/// its time slice, INFINITE never returns.
+#[allow(non_snake_case)]
+extern "stdcall" fn Sleep(ms: u32) {
+    match timeout(ms) {
+        Some(d) if d.is_zero() => std::thread::yield_now(),
+        Some(d) => std::thread::sleep(d),
+        None => loop {
+            std::thread::park();
+        },
     }
 }
 
@@ -405,6 +419,14 @@ mod tests {
         assert_eq!(WaitForMultipleObjects(0, both.as_ptr(), 0, 0), WAIT_FAILED);
         let bad = [e1, 0x1234];
         assert_eq!(WaitForMultipleObjects(2, bad.as_ptr(), 0, 0), WAIT_FAILED);
+    }
+
+    #[test]
+    fn sleep_waits_at_least_the_time_asked() {
+        let start = std::time::Instant::now();
+        Sleep(0);
+        Sleep(20);
+        assert!(start.elapsed() >= Duration::from_millis(20));
     }
 
     #[test]

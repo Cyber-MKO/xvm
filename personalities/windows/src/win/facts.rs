@@ -67,6 +67,36 @@ pub(crate) fn reg_value(caller: Caller, key: &str, name: &str) -> Result<Option<
     }
 }
 
+/// Why an engine call gave no answer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Failure {
+    /// The engine says the thing does not exist.
+    NotFound,
+    /// No engine, or it could not answer: already logged as a gap.
+    Unavailable,
+}
+
+/// Any engine operation, for callers that need more than sections and
+/// registry values.
+pub(crate) fn call(caller: Caller, op: &str, params: Value) -> Result<Value, Failure> {
+    match ask(caller, op, |c| c.call(op, params)) {
+        Ok(v) => Ok(v),
+        Err(ClientError::Engine(e)) if e.code == code::NOT_FOUND => Err(Failure::NotFound),
+        Err(ClientError::Protocol(m)) if m == "no engine connection" => Err(Failure::Unavailable),
+        Err(e) => {
+            gap(caller, format!("{op}: {e}"));
+            Err(Failure::Unavailable)
+        }
+    }
+}
+
+/// Whether the host runs 64-bit Windows (`os_info.architecture`).
+pub(crate) fn is_64bit(caller: Caller) -> Option<bool> {
+    let os_info = section(caller, "os_info")?;
+    let arch = os_info.get("architecture")?.as_str()?.to_ascii_lowercase();
+    Some(matches!(arch.as_str(), "x86_64" | "amd64" | "arm64"))
+}
+
 /// An engine serving one host built from `base` and `host` (compiled
 /// JSON), on a socket in the temporary folder.
 #[cfg(test)]
