@@ -86,6 +86,25 @@ struct Request {
     template: u32,
 }
 
+/// Open `name` as CreateFile does, without security attributes, flags or
+/// a template. Returns the handle or a Win32 error code.
+pub(crate) fn open_handle(
+    name: &str,
+    access: u32,
+    share: u32,
+    disposition: u32,
+) -> Result<u32, u32> {
+    let request = Request {
+        access,
+        share,
+        security: std::ptr::null(),
+        disposition,
+        flags: 0,
+        template: 0,
+    };
+    with_current(|p| create_file(p, name, &request))
+}
+
 /// The full Windows path of `name` and the host path behind it, or a
 /// Win32 error code. Path forms we do not support are logged for
 /// `function`.

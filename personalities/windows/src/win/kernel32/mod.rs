@@ -14,6 +14,7 @@ mod module;
 mod path;
 pub(crate) mod process;
 pub(crate) mod sync;
+mod sysinfo;
 pub(crate) mod thread;
 mod timezone;
 mod tls;
@@ -39,6 +40,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         sync::exports(),
         process::exports(),
         version::exports(),
+        sysinfo::exports(),
     ]
     .concat()
 }

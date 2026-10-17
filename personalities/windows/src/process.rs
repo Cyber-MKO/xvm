@@ -74,6 +74,8 @@ pub struct Module {
     pub size_of_image: u32,
     /// The application manifest, for images that embed one.
     pub manifest: Option<String>,
+    /// The COFF header's characteristics (0 for emulated modules).
+    pub characteristics: u16,
     mapped: Mapped,
 }
 
@@ -243,6 +245,8 @@ pub struct CrtState {
     /// The CRT's numbered internal locks, as `CRITICAL_SECTION`s (24 bytes
     /// each). All zero is unlocked.
     pub locks: Box<[[u32; 6]; 64]>,
+    /// `_findfirst` searches: handle to the names still to report.
+    pub finds: BTreeMap<i32, crate::win::msvcrt::find::Search>,
 }
 
 /// One CRT file descriptor.
@@ -290,6 +294,7 @@ impl Default for CrtState {
             fds: Vec::new(),
             streams: Vec::new(),
             locks: Box::new([[0; 6]; 64]),
+            finds: BTreeMap::new(),
         }
     }
 }
@@ -605,6 +610,7 @@ impl Process {
             size_of_image: image.headers.size_of_image,
             is_dll: image.headers.is_dll(),
             entry_point: image.entry_point(),
+            characteristics: image.headers.characteristics,
             manifest: image
                 .manifest()
                 .map_err(pe)?
@@ -663,6 +669,7 @@ impl Process {
             is_dll: true,
             entry_point: None,
             manifest: None,
+            characteristics: 0,
             exports: image
                 .exports()
                 .map_err(pe)?

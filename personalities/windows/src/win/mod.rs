@@ -9,6 +9,7 @@ mod advapi32;
 mod crypt32;
 pub(crate) mod facts;
 pub(crate) mod kernel32;
+mod mpr;
 pub(crate) mod msvcrt;
 mod ntdll;
 mod psapi;
@@ -32,6 +33,7 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "advapi32.dll" => (advapi32::exports(), Vec::new()),
         "crypt32.dll" => (crypt32::exports(), Vec::new()),
         "kernel32.dll" => (kernel32::exports(), Vec::new()),
+        "mpr.dll" => (mpr::exports(), Vec::new()),
         "msvcrt.dll" => (msvcrt::exports(), msvcrt::data()),
         "ntdll.dll" => (ntdll::exports(), Vec::new()),
         "psapi.dll" => (psapi::exports(), Vec::new()),

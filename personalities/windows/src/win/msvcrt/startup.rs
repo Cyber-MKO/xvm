@@ -14,6 +14,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("_onexit", _onexit as *const () as u32),
         ("exit", exit as *const () as u32),
         ("_exit", _exit as *const () as u32),
+        ("_endthreadex", _endthreadex as *const () as u32),
         ("_getpid", _getpid as *const () as u32),
         ("_initterm", _initterm as *const () as u32),
         ("__set_app_type", __set_app_type as *const () as u32),
@@ -120,6 +121,22 @@ extern "C" fn exit(status: i32) -> ! {
         crate::registration::exit(p, status as u32);
     });
     std::process::exit(status)
+}
+
+/// Ends the calling thread with `code`, as its routine's return would.
+/// On the main thread, which no routine started, it is a logged gap and
+/// the process ends.
+extern "C" fn _endthreadex(code: u32) {
+    crate::runtime::exit_thread(code);
+    with_current(|p| {
+        p.record_runtime_gap(
+            GapKind::Feature,
+            "msvcrt.dll",
+            "_endthreadex on the main thread",
+        );
+        crate::registration::exit(p, code);
+    });
+    std::process::exit(code as i32)
 }
 
 /// Ends the process at once, without `exit_steps`.

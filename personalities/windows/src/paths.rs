@@ -50,6 +50,11 @@ impl DriveMap {
         }
     }
 
+    /// Whether the host has drive `letter`.
+    pub fn has_drive(&self, letter: char) -> bool {
+        self.drives.contains_key(&letter.to_ascii_uppercase())
+    }
+
     /// Make `path` absolute and normal: `C:\dir\file`, with `.` and `..`
     /// resolved and separators unified. `cwd` must be absolute.
     pub fn full_path(path: &str, cwd: &str) -> Result<String, PathError> {

@@ -1,4 +1,4 @@
-//! Streams: `_fdopen`, reading, writing, `fflush`, `fclose`.
+//! Streams: `fopen`, `_fdopen`, reading, writing, `fflush`, `fclose`.
 //!
 //! `stdin`, `stdout` and `stderr` are the first three of the 20 `FILE`s
 //! in `msvcrt!_iob`. A service has no standard handles, so they have no
@@ -26,11 +26,12 @@ use std::collections::VecDeque;
 use std::ffi::c_char;
 use std::io::{Read, Seek, SeekFrom, Write};
 
-use super::errno::{self, EBADF, EINVAL};
+use super::errno::{self, EACCES, EBADF, EEXIST, EINVAL, ENOENT};
 use crate::gap::GapKind;
+use crate::process::CrtFd;
 use crate::process::{O_TEXT, Process};
 use crate::runtime::with_current;
-use crate::win::kernel32::file::file_of;
+use crate::win::kernel32::file::{self, file_of};
 use crate::win::text::ansi;
 
 const O_APPEND: i32 = 0x8;
@@ -103,6 +104,7 @@ pub(crate) fn init_standard_streams(p: &mut Process, iob: u32) {
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
+        ("fopen", fopen as *const () as u32),
         ("_fdopen", _fdopen as *const () as u32),
         ("fgets", fgets as *const () as u32),
         ("fgetc", fgetc as *const () as u32),
@@ -155,6 +157,104 @@ fn stream_mut(p: &mut Process, file: u32) -> Option<&mut Stream> {
     p.crt.streams.iter_mut().find(|s| s.address == file)
 }
 
+/// A stream on descriptor `fd`, or 0 with `errno` set.
+fn open_stream(p: &mut Process, fd: i32, mode: &Mode) -> u32 {
+    let Some(entry) = p.crt.fd(fd) else {
+        errno::set(EBADF);
+        return 0;
+    };
+    let text = mode.text.unwrap_or(if entry.flags & O_BINARY != 0 {
+        false
+    } else if entry.flags & O_TEXT != 0 {
+        true
+    } else {
+        *p.crt.fmode & O_BINARY == 0
+    });
+    let mut block = Box::new([0u32; 14]);
+    block[3] = match (mode.read, mode.write) {
+        (true, true) => IORW,
+        (true, false) => IOREAD,
+        _ => IOWRT,
+    };
+    block[4] = fd as u32;
+    let stream = Stream {
+        address: block.as_ptr() as u32,
+        block: Some(block),
+        fd,
+        read: mode.read,
+        write: mode.write,
+        text,
+        eof: false,
+        error: false,
+        pending: VecDeque::new(),
+        held_cr: false,
+        out: Vec::new(),
+        buffered: true,
+    };
+    let address = stream.address;
+    p.crt.streams.push(stream);
+    address
+}
+
+/// Opens a file as a stream, following the `fopen` page on Microsoft
+/// Learn: `r` opens an existing file, `w` creates or truncates, `a`
+/// creates or opens and always writes at the end; `+` adds the other
+/// direction. Others may read and write it meanwhile (`_SH_DENYNO`).
+/// Returns the stream, or NULL with `errno` set.
+extern "C" fn fopen(name: *const c_char, mode: *const c_char) -> u32 {
+    const GENERIC_READ: u32 = 0x8000_0000;
+    const GENERIC_WRITE: u32 = 0x4000_0000;
+    const SHARE_READ_WRITE: u32 = 3;
+    const CREATE_ALWAYS: u32 = 2;
+    const OPEN_EXISTING: u32 = 3;
+    const OPEN_ALWAYS: u32 = 4;
+    // SAFETY: NUL-terminated strings (the function's contract).
+    let (name, mode_text) = unsafe { (ansi(name), ansi(mode)) };
+    let (Some(name), Some(mode_text)) = (name, mode_text) else {
+        errno::set(EINVAL);
+        return 0;
+    };
+    let Some(mode) = parse_mode(&mode_text) else {
+        errno::set(EINVAL);
+        return 0;
+    };
+    let append = mode_text.starts_with('a');
+    let disposition = match mode_text.chars().next() {
+        Some('r') => OPEN_EXISTING,
+        Some('w') => CREATE_ALWAYS,
+        _ => OPEN_ALWAYS,
+    };
+    let mut access = 0;
+    if mode.read {
+        access |= GENERIC_READ;
+    }
+    if mode.write {
+        access |= GENERIC_WRITE;
+    }
+    let handle = match file::open_handle(&name, access, SHARE_READ_WRITE, disposition) {
+        Ok(h) => h,
+        Err(code) => {
+            errno::set(match code {
+                2 | 3 => ENOENT,
+                5 | 32 => EACCES,
+                80 => EEXIST,
+                _ => EINVAL,
+            });
+            return 0;
+        }
+    };
+    with_current(|p| {
+        let mut flags = if append { O_APPEND } else { 0 };
+        flags |= match mode.text {
+            Some(true) => O_TEXT,
+            Some(false) => O_BINARY,
+            None => 0,
+        };
+        let fd = p.crt.insert_fd(CrtFd { handle, flags });
+        open_stream(p, fd, &mode)
+    })
+}
+
 /// Opens a stream on descriptor `fd`. Text or binary comes from the mode,
 /// else from the descriptor's flags, else from `_fmode`.
 extern "C" fn _fdopen(fd: i32, mode: *const c_char) -> u32 {
@@ -163,43 +263,7 @@ extern "C" fn _fdopen(fd: i32, mode: *const c_char) -> u32 {
         errno::set(EINVAL);
         return 0;
     };
-    with_current(|p| {
-        let Some(entry) = p.crt.fd(fd) else {
-            errno::set(EBADF);
-            return 0;
-        };
-        let text = mode.text.unwrap_or(if entry.flags & O_BINARY != 0 {
-            false
-        } else if entry.flags & O_TEXT != 0 {
-            true
-        } else {
-            *p.crt.fmode & O_BINARY == 0
-        });
-        let mut block = Box::new([0u32; 14]);
-        block[3] = match (mode.read, mode.write) {
-            (true, true) => IORW,
-            (true, false) => IOREAD,
-            _ => IOWRT,
-        };
-        block[4] = fd as u32;
-        let stream = Stream {
-            address: block.as_ptr() as u32,
-            block: Some(block),
-            fd,
-            read: mode.read,
-            write: mode.write,
-            text,
-            eof: false,
-            error: false,
-            pending: VecDeque::new(),
-            held_cr: false,
-            out: Vec::new(),
-            buffered: true,
-        };
-        let address = stream.address;
-        p.crt.streams.push(stream);
-        address
-    })
+    with_current(|p| open_stream(p, fd, &mode))
 }
 
 /// Read more bytes into the stream's pending queue, applying text mode.
@@ -737,6 +801,47 @@ mod tests {
         assert_eq!(fflush(stdout), EOF);
         assert_eq!(fputc(b'x' as i32, stderr), EOF, "stderr is unbuffered");
         assert_eq!(ferror(stderr), 1);
+    }
+
+    #[test]
+    fn fopen_creates_truncates_appends_and_reads() {
+        use crate::paths::DriveMap;
+        use std::collections::BTreeMap;
+        let root = std::env::temp_dir().join(format!("xvm-fopen-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("c/agent")).unwrap();
+        let mut process = Process::new(Vec::new());
+        process.params.drives = DriveMap::new(&BTreeMap::from([("C".to_string(), root.join("c"))]));
+        process.params.current_directory = r"C:\agent".into();
+        let runtime = Runtime::new(process);
+        let _thread = runtime.attach().unwrap();
+        let host = root.join("c/agent/state.txt");
+
+        let f = fopen(c"state.txt".as_ptr(), c"w".as_ptr());
+        assert_ne!(f, 0);
+        fputs(c"one\n".as_ptr(), f);
+        assert_eq!(fclose(f), 0);
+        assert_eq!(std::fs::read(&host).unwrap(), b"one\r\n");
+        let f = fopen(c"C:\\AGENT\\STATE.TXT".as_ptr(), c"a".as_ptr());
+        fputs(c"two\n".as_ptr(), f);
+        fclose(f);
+        let f = fopen(c"state.txt".as_ptr(), c"r".as_ptr());
+        assert_eq!(lines(f, 64), ["one\n", "two\n"]);
+        fclose(f);
+        let f = fopen(c"state.txt".as_ptr(), c"rb".as_ptr());
+        assert_eq!(lines(f, 64), ["one\r\n", "two\r\n"]);
+        fclose(f);
+        let f = fopen(c"state.txt".as_ptr(), c"w".as_ptr());
+        fclose(f);
+        assert_eq!(std::fs::read(&host).unwrap(), b"", "w truncates");
+        assert_eq!(fopen(c"missing.txt".as_ptr(), c"r".as_ptr()), 0);
+        assert_eq!(errno::get(), ENOENT);
+        assert_eq!(fopen(c"state.txt".as_ptr(), c"q".as_ptr()), 0);
+        assert_eq!(errno::get(), EINVAL);
+        assert!(
+            runtime.lock().handles.files().next().is_none(),
+            "all closed"
+        );
+        std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

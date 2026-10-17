@@ -213,7 +213,7 @@ impl Runtime {
                     // SAFETY: initialised modules, and this thread has a TEB.
                     unsafe { notify(step, DLL_THREAD_ATTACH) };
                 }
-                let code = start();
+                let code = run_exitable(start);
                 for step in steps.iter().rev() {
                     // SAFETY: as above.
                     unsafe { notify(step, DLL_THREAD_DETACH) };
@@ -255,6 +255,94 @@ impl Runtime {
         let entry: extern "stdcall" fn() -> u32 = unsafe { std::mem::transmute(entry as usize) };
         Ok(entry())
     }
+}
+
+// A thread ends early (`_endthreadex`, `ExitThread`) by jumping back to
+// the frame that started its routine, the way `longjmp` does. Only agent
+// frames and the emulated function's own frame lie in between, and none
+// of them holds anything to drop. `xvm_call_exitable(f, arg, slot)` saves
+// its frame pointer in `*slot` and calls `f(arg)` with a 16-byte aligned
+// stack; `xvm_exit_to(frame, code)` returns `code` from that call.
+#[cfg(all(target_arch = "x86", target_os = "linux"))]
+std::arch::global_asm!(
+    ".globl xvm_call_exitable",
+    "xvm_call_exitable:",
+    "push ebp",
+    "mov ebp, esp",
+    "push ebx",
+    "push esi",
+    "push edi",
+    "mov eax, [ebp + 16]",
+    "mov [eax], ebp",
+    "mov ecx, [ebp + 12]",
+    "and esp, -16",
+    "sub esp, 12",
+    "push ecx",
+    "call [ebp + 8]",
+    "lea esp, [ebp - 12]",
+    "pop edi",
+    "pop esi",
+    "pop ebx",
+    "pop ebp",
+    "ret",
+    ".globl xvm_exit_to",
+    "xvm_exit_to:",
+    "mov eax, [esp + 8]",
+    "mov ebp, [esp + 4]",
+    "lea esp, [ebp - 12]",
+    "pop edi",
+    "pop esi",
+    "pop ebx",
+    "pop ebp",
+    "ret",
+);
+
+unsafe extern "C" {
+    fn xvm_call_exitable(
+        f: extern "C" fn(*mut std::ffi::c_void) -> u32,
+        arg: *mut std::ffi::c_void,
+        slot: *mut u32,
+    ) -> u32;
+    fn xvm_exit_to(frame: u32, code: u32) -> !;
+}
+
+thread_local! {
+    /// Where `run_exitable` keeps the frame `exit_thread` returns to; 0
+    /// outside a thread routine.
+    static EXIT_SLOT: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+}
+
+/// Run `start` so that `exit_thread` can end it early with an exit code.
+fn run_exitable<F: FnOnce() -> u32>(start: F) -> u32 {
+    extern "C" fn call<F: FnOnce() -> u32>(arg: *mut std::ffi::c_void) -> u32 {
+        // SAFETY: arg is the Option<F> below, taken once.
+        let start = unsafe { (*arg.cast::<Option<F>>()).take() }.expect("routine");
+        start()
+    }
+    let mut start = Some(start);
+    let mut frame = 0u32;
+    let slot: *mut u32 = &mut frame;
+    EXIT_SLOT.with(|s| s.set(slot as u32));
+    // SAFETY: the assembly keeps the C calling convention and fills the
+    // slot before `call` runs.
+    let code = unsafe { xvm_call_exitable(call::<F>, (&mut start as *mut Option<F>).cast(), slot) };
+    EXIT_SLOT.with(|s| s.set(0));
+    code
+}
+
+/// End the calling Windows thread's routine with `code`, as `ExitThread`
+/// does. Returns only if the thread did not start through `spawn_thread`
+/// (the main thread), so the caller can handle that.
+pub(crate) fn exit_thread(code: u32) {
+    let slot = EXIT_SLOT.with(|s| s.get());
+    if slot == 0 {
+        return;
+    }
+    // SAFETY: slot points at run_exitable's frame variable, still live
+    // because this thread is inside it.
+    let frame = unsafe { *(slot as *const u32) };
+    // SAFETY: the frame belongs to this thread's xvm_call_exitable call.
+    unsafe { xvm_exit_to(frame, code) }
 }
 
 /// The process the calling thread is attached to.
@@ -305,5 +393,32 @@ unsafe fn notify(step: &InitStep, reason: u32) -> i32 {
             f(step.base, reason, 0)
         }
         None => 1,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_thread_can_end_from_deep_inside_its_routine() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        static AFTER: AtomicBool = AtomicBool::new(false);
+        #[inline(never)]
+        fn deep(n: u32) -> u32 {
+            if n == 0 {
+                exit_thread(7);
+                AFTER.store(true, Ordering::SeqCst);
+                return 1;
+            }
+            deep(n - 1) + 1
+        }
+        let runtime = Runtime::new(crate::process::Process::new(Vec::new()));
+        let (handle, thread) = runtime.spawn_thread(0, || deep(5)).unwrap();
+        assert_eq!(handle.join().unwrap(), 7);
+        assert_eq!(thread.exit_code(), Some(7));
+        assert!(!AFTER.load(Ordering::SeqCst), "nothing after the exit runs");
+        let (handle, _) = runtime.spawn_thread(0, || 3).unwrap();
+        assert_eq!(handle.join().unwrap(), 3, "a normal return still works");
     }
 }
