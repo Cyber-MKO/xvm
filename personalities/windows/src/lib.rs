@@ -29,6 +29,7 @@ pub mod sync;
 pub mod teb;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod thread;
+pub mod timezone;
 pub mod tls;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod trap;

@@ -64,12 +64,12 @@ Loader status:
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
 | Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
 | Kernel handle table, file I/O (`handles.rs`, `win/kernel32/file.rs`) | Started: open, read, close |
-| C streams (`win/msvcrt/stdio.rs`) | Started: `_fdopen`, `fgets`, `fclose` |
+| C streams (`win/msvcrt/stdio.rs`) | Started: `_fdopen`, reading, buffered writing, `fflush`, `fclose`, standard streams in `_iob` |
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 136 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock. Next gap: `msvcrt!localtime` (waits on the time-zone decision) |
+| Emulated functions | 145 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Next: code pages (decision A), then a manager address |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |

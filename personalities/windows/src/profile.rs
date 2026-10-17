@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
+use crate::timezone::TimeZone;
 use crate::x509::Certificate;
 
 pub const SCHEMA: u32 = 1;
@@ -73,6 +74,8 @@ pub struct Windows {
     /// valid on this host.
     #[serde(default)]
     pub trusted_files: BTreeMap<String, String>,
+    /// What `GetTimeZoneInformation` reports, and what local time follows.
+    pub time_zone: TimeZone,
     /// The certificates of `cert_stores`, read by `Profile::load`, keyed by
     /// upper-case store name.
     #[serde(skip)]
@@ -199,6 +202,17 @@ impl Profile {
         if stores.windows(2).any(|w| w[0] == w[1]) {
             return invalid("certificate store names must differ ignoring case".into());
         }
+        windows
+            .time_zone
+            .validate()
+            .map_err(|e| ProfileError::Invalid(format!("time_zone: {e}")))?;
+        let tz = &windows.time_zone;
+        if ![&tz.key_name, &tz.standard_name, &tz.daylight_name]
+            .iter()
+            .all(|n| n.is_ascii())
+        {
+            return invalid("time zone names must be ASCII".into());
+        }
         if windows.agent.pid == 0 || windows.agent.pid % 4 != 0 {
             return invalid(format!(
                 "agent pid {} is not a non-zero multiple of 4",
@@ -248,6 +262,12 @@ mod tests {
         current_directory = 'C:\Windows\system32'
         pid = 4812
 
+        [windows.time_zone]
+        key_name = "UTC"
+        standard_name = "Coordinated Universal Time"
+        daylight_name = "Coordinated Universal Time"
+        bias = 0
+
         [windows.environment]
         windir = 'C:\Windows'
         ComSpec = 'C:\Windows\system32\cmd.exe'
@@ -277,6 +297,11 @@ mod tests {
         assert!(bad("{ C = ", "{ CD = "));
         assert!(bad("schema = 1", "schema = 2"));
         assert!(bad("pid = 4812", "pid = 4813"));
+        assert!(bad(
+            "bias = 0",
+            "bias = 0\nstandard_date = { month = 13, day_of_week = 0, week = 1, hour = 2 }\ndaylight_date = { month = 3, day_of_week = 0, week = 1, hour = 2 }"
+        ));
+        assert!(bad("        key_name = \"UTC\"\n", ""));
         assert!(bad("pid = 4812", "pid = 0"));
         assert!(bad("pid = 4812\n", ""));
         assert!(bad("[windows.agent]", "[windows.agent]\nextra = 1"));

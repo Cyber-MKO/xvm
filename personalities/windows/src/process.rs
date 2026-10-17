@@ -178,6 +178,7 @@ pub struct ProcessParams {
     pub service: Option<String>,
     /// The process ID the agent sees.
     pub pid: u32,
+    pub time_zone: crate::timezone::TimeZone,
     /// System certificate stores by upper-case name.
     pub cert_stores: BTreeMap<String, Vec<Certificate>>,
     /// Where emulated system DLLs say they were loaded from.
@@ -195,6 +196,7 @@ impl ProcessParams {
             drives: DriveMap::new(&windows.drives),
             service: windows.agent.service.clone(),
             pid: windows.agent.pid,
+            time_zone: windows.time_zone.clone(),
             cert_stores: windows.certificates.clone(),
             system_module_directory: windows.system_module_directory.clone(),
             trusted_files: windows
@@ -666,6 +668,7 @@ impl Process {
                 .unwrap_or_else(|| no_exports(name)),
             mapped,
         });
+        win::on_load(self, name, self.modules.len() - 1);
         Ok(())
     }
 

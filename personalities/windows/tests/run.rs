@@ -28,6 +28,11 @@ command_line = 'C:\service.exe'
 current_directory = 'C:\'
 pid = 4812
 service = 'XvmTestSvc'
+[windows.time_zone]
+key_name = 'UTC'
+standard_name = 'Coordinated Universal Time'
+daylight_name = 'Coordinated Universal Time'
+bias = 0
 "#,
             dir.display()
         ),

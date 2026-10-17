@@ -16,6 +16,13 @@ mod text;
 mod wintrust;
 mod wsock32;
 
+/// Sets up the variables of the emulated `dll` just loaded at `module`.
+pub fn on_load(p: &mut crate::process::Process, dll: &str, module: usize) {
+    if dll.eq_ignore_ascii_case("msvcrt.dll") {
+        msvcrt::on_load(p, module);
+    }
+}
+
 /// What we implement for `dll`. System DLLs with nothing implemented yet
 /// return an empty list; their imports become gaps.
 pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {

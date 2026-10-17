@@ -40,5 +40,15 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
 
 /// Exported variables, as (name, size in bytes).
 pub(super) fn data() -> Vec<(&'static str, u32)> {
-    startup::data()
+    let mut data = startup::data();
+    // FILE _iob[_IOB_ENTRIES]: stdin, stdout and stderr, then free slots.
+    data.push(("_iob", stdio::IOB_ENTRIES * 32));
+    data
+}
+
+/// Sets up the variables of the image just loaded at `module`.
+pub(super) fn on_load(p: &mut crate::process::Process, module: usize) {
+    if let Some(iob) = p.modules()[module].export_address("_iob") {
+        stdio::init_standard_streams(p, iob);
+    }
 }

@@ -7,6 +7,16 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `kernel32.dll` | `GetEnvironmentVariableA` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/kernel32/env.rs` tests | From the profile; names ignore case. An empty value returns 0 and clears the last error |
 | `kernel32.dll` | `GetEnvironmentVariableW` | Wazuh 4.14.2: 3 images, in `agent-auth.exe`, `libwazuhext.dll`, `manage_agents.exe` | `src/win/kernel32/env.rs` tests | As `GetEnvironmentVariableA` |
 | `msvcrt.dll` | `time` | Wazuh 4.14.2: 12 images, including `wazuh-agent.exe` | `src/win/msvcrt/time.rs` tests | 32-bit `_time32` from the host clock; -1 after January 2038 |
+| `kernel32.dll` | `GetTimeZoneInformation` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/kernel32/timezone.rs` tests | From `windows.time_zone`. Returns DAYLIGHT or STANDARD for the current instant, UNKNOWN for a zone without daylight time |
+| `msvcrt.dll` | `localtime` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/time.rs` tests | 32-bit `time_t`. Uses the profile's zone rules; a `TZ` variable is a logged gap. One buffer per thread. NULL with EINVAL for a negative time |
+| `msvcrt.dll` | `fputc` | Wazuh 4.14.2: 15 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Buffered, 4096 bytes. Text mode writes LF as CR LF; `_O_APPEND` writes at the end |
+| `msvcrt.dll` | `putc` | Wazuh 4.14.2: 1 image, in `libstdc++-6.dll` | `src/win/msvcrt/stdio.rs` tests | As `fputc` |
+| `msvcrt.dll` | `fputs` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | As `fputc`; returns 0 |
+| `msvcrt.dll` | `fwrite` | Wazuh 4.14.2: 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | As `fputc`; all items or none |
+| `msvcrt.dll` | `fflush` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | NULL flushes every stream. On an input stream: logged gap, read-ahead kept |
+| `msvcrt.dll` | `exit` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | `_onexit` functions last first, then flushes streams. `DLL_PROCESS_DETACH` is a logged gap |
+| `msvcrt.dll` | `_exit` | Wazuh 4.14.2: 1 image, in `libwazuhext.dll` | `src/win/msvcrt/startup.rs` tests | Ends the process at once, without `exit`'s steps |
+| `msvcrt.dll` | `_iob` | Wazuh 4.14.2: 17 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Variable: 20 `FILE`s. A service has no standard handles, so `stdin`, `stdout` and `stderr` have descriptor -2 and their I/O fails |
 | `msvcrt.dll` | `_stat` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stat.rs` tests | 36-byte `struct _stat` as documented: drive number, mode bits copied to group and other, creation time in `st_ctime`. EOVERFLOW past 2 GB |
 | `wsock32.dll` | `WSAStartup` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` | `src/win/wsock32/startup.rs` tests | Counts starts; grants up to version 2.2 |
 | `wsock32.dll` | `WSACleanup` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/wsock32/startup.rs` tests | WSANOTINITIALISED without a matching start |
@@ -25,7 +35,7 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `msvcrt.dll` | `fgets` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Text mode: CR LF to LF, CTRL+Z ends the file |
 | `msvcrt.dll` | `feof` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests |  |
 | `msvcrt.dll` | `ferror` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests |  |
-| `msvcrt.dll` | `fclose` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Also closes the descriptor and its OS handle |
+| `msvcrt.dll` | `fclose` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Flushes first. Also closes the descriptor and its OS handle |
 | `msvcrt.dll` | `_strdup` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/msstring.rs` tests |  |
 | `msvcrt.dll` | `_stricmp` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/msstring.rs` tests | ASCII folding to lower case, as the "C" locale does |
 | `msvcrt.dll` | `_strnicmp` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/msvcrt/msstring.rs` tests | As `_stricmp` |

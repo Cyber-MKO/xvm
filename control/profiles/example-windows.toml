@@ -48,6 +48,19 @@ service = 'WazuhSvc'
 'C:\Program Files (x86)\ossec-agent\wazuh-agent.exe' = 'dec07a11341446346de44fc821759eedcc6cc6511d4dbe55d4fc0067febb2337'
 'C:\Program Files (x86)\ossec-agent\win32ui.exe' = '4937021aa44fc804a74e242c437ec48b8457e372d41f316f75787bc3b3b8b7e1'
 
+# The host's time zone, as GetTimeZoneInformation reports it. Example
+# values for central Europe; capture the real ones from the golden VM
+# (HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation).
+[windows.time_zone]
+key_name = 'W. Europe Standard Time'
+standard_name = 'W. Europe Standard Time'
+daylight_name = 'W. Europe Daylight Time'
+bias = -60
+standard_bias = 0
+daylight_bias = -60
+standard_date = { month = 10, day_of_week = 0, week = 5, hour = 3 }
+daylight_date = { month = 3, day_of_week = 0, week = 5, hour = 2 }
+
 # System certificate stores, as DER files relative to this file. A real
 # host's ROOT store holds many more; capture them from the golden VM.
 [windows.cert_stores]

@@ -12,6 +12,8 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("__getmainargs", __getmainargs as *const () as u32),
         ("__p__acmdln", __p__acmdln as *const () as u32),
         ("_onexit", _onexit as *const () as u32),
+        ("exit", exit as *const () as u32),
+        ("_exit", _exit as *const () as u32),
         ("_getpid", _getpid as *const () as u32),
         ("_initterm", _initterm as *const () as u32),
         ("__set_app_type", __set_app_type as *const () as u32),
@@ -90,6 +92,39 @@ extern "C" fn _onexit(function: u32) -> u32 {
         with_current(|p| p.crt.onexit.push(function));
     }
     function
+}
+
+/// What `exit` does before the process ends: calls the `_onexit`
+/// functions, last registered first, then writes every stream's waiting
+/// output.
+fn exit_steps() {
+    while let Some(function) = with_current(|p| p.crt.onexit.pop()) {
+        // SAFETY: _onexit_t is int (__cdecl *)(void).
+        let f: extern "C" fn() -> i32 = unsafe { std::mem::transmute(function as usize) };
+        f();
+    }
+    super::stdio::flush_all();
+}
+
+/// Ends the process normally with `status`, after `exit_steps`. Windows
+/// would then stop the other threads and send `DLL_PROCESS_DETACH`; we
+/// cannot stop threads yet, so the notifications are a logged gap.
+extern "C" fn exit(status: i32) -> ! {
+    exit_steps();
+    with_current(|p| {
+        p.record_runtime_gap(
+            GapKind::Feature,
+            "msvcrt.dll",
+            "DLL_PROCESS_DETACH at process exit",
+        )
+    });
+    std::process::exit(status)
+}
+
+/// Ends the process at once, without `exit_steps`.
+extern "C" fn _exit(status: i32) -> ! {
+    // SAFETY: _exit has no preconditions.
+    unsafe { libc::_exit(status) }
 }
 
 fn main_args(argv: &[String], environment: &[String]) -> MainArgs {
@@ -258,6 +293,46 @@ mod tests {
         assert_eq!(_onexit(0x1000), 0x1000);
         assert_eq!(_onexit(0x2000), 0x2000);
         assert_eq!(runtime.lock().crt.onexit, [0x1000, 0x2000]);
+    }
+
+    static EXITS: Mutex<Vec<u32>> = Mutex::new(Vec::new());
+    extern "C" fn first() -> i32 {
+        EXITS.lock().unwrap().push(1);
+        0
+    }
+    extern "C" fn second() -> i32 {
+        EXITS.lock().unwrap().push(2);
+        // Registered while exiting: runs next.
+        _onexit(third as *const () as u32);
+        0
+    }
+    extern "C" fn third() -> i32 {
+        EXITS.lock().unwrap().push(3);
+        0
+    }
+
+    #[test]
+    fn exit_runs_onexit_functions_last_first() {
+        let (runtime, _thread) = attached_with("prog", &[]);
+        _onexit(first as *const () as u32);
+        _onexit(second as *const () as u32);
+        exit_steps();
+        assert_eq!(*EXITS.lock().unwrap(), [2, 3, 1]);
+        assert!(runtime.lock().crt.onexit.is_empty());
+    }
+
+    #[test]
+    fn underscore_exit_ends_the_process_with_its_status() {
+        // SAFETY: the child only calls _exit.
+        let child = unsafe { libc::fork() };
+        if child == 0 {
+            _exit(7);
+        }
+        let mut status = 0;
+        // SAFETY: waits for the child forked above.
+        assert_eq!(unsafe { libc::waitpid(child, &mut status, 0) }, child);
+        assert!(libc::WIFEXITED(status));
+        assert_eq!(libc::WEXITSTATUS(status), 7);
     }
 
     #[test]
