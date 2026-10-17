@@ -27,6 +27,8 @@ A one-time capture from a real Windows evaluation VM running the Wazuh agent. Em
 
 If `capture.ps1` is blocked, run it with `powershell -ExecutionPolicy Bypass -File .\capture.ps1 -OutDir C:\xvm-golden-out`.
 
+Events are rendered one at a time: each event's XML, plus the message text where Windows has one. An event whose provider has no message for its ID keeps its XML without a message. To rebuild only the rendered XML of an existing capture, without running the scenario again, run it with `-RenderOnly -OutDir <capture-dir>`. It reads the scenario window from the capture's own `.evtx` files and updates the manifest.
+
 ## The scenario
 
 Each step waits 10 seconds so the agent can ship its events. The manifest records the start and end of each step in UTC.
@@ -59,7 +61,7 @@ The test user is removed even if a step fails. No event log is cleared.
 | `wazuh/*` | Agent `ossec.conf`, version files, `ossec.log`. Never `client.keys`. |
 | `evtx/full/*.evtx` | Security, System and Application, whole log |
 | `evtx/scenario/*.evtx` | The same logs, scenario window only |
-| `evtx/scenario/*.rendered.xml` | The scenario window as rendered XML, with each event's message text |
+| `evtx/scenario/*.rendered.xml` | The scenario window: each event's XML, with its message text where Windows has one |
 | `evtx/rendered/*.xml` | The newest 5,000 events of each log as rendered XML, for message templates |
 | `manager/*.json` | Manager archives and alerts for the window, added by `xvm-golden import-manager` |
 

@@ -37,7 +37,10 @@ param(
     [Parameter(Mandatory = $true)][string]$OutDir,
     [string]$FimDir = 'C:\xvm-golden-fim',
     [string]$AgentDir = "${env:ProgramFiles(x86)}\ossec-agent",
-    [int]$SettleSeconds = 10
+    [int]$SettleSeconds = 10,
+    # Rebuild only the rendered XML of an existing capture, from its .evtx
+    # files and the live logs, and update the manifest. The scenario does not run.
+    [switch]$RenderOnly
 )
 
 Set-StrictMode -Version 2.0
@@ -100,6 +103,61 @@ function Save-Json {
     ConvertTo-Json -InputObject $Object -Depth 6 | Set-Content -Path $Path -Encoding UTF8
 }
 
+function Export-Rendered {
+    # Each event's XML, with the message text Windows renders for it where
+    # Windows has one. wevtutil /f:RenderedXml drops an event whose message
+    # it cannot find (error 15028), so events are rendered one by one here.
+    param($Events, [string]$Path)
+    $culture = (Get-Culture).Name
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.Append('<Events>')
+    $count = 0
+    foreach ($e in @($Events | Where-Object { $_ } | Sort-Object RecordId)) {
+        $xml = $e.ToXml()
+        $msg = $null
+        try { $msg = $e.FormatDescription() } catch { $msg = $null }
+        if ($msg) {
+            # Characters XML 1.0 cannot carry are dropped from the message.
+            $msg = [Security.SecurityElement]::Escape(($msg -replace '[\x00-\x08\x0B\x0C\x0E-\x1F]', ''))
+            $cut = $xml.LastIndexOf('</Event>')
+            $xml = $xml.Substring(0, $cut) +
+                "<RenderingInfo Culture='$culture'><Message>$msg</Message></RenderingInfo></Event>"
+        }
+        [void]$sb.Append($xml)
+        $count++
+    }
+    [void]$sb.Append('</Events>')
+    Set-Content -Path $Path -Value $sb.ToString() -Encoding UTF8
+    return $count
+}
+
+function Export-AllRendered {
+    # The scenario window from its exported .evtx, and the newest events of each live log.
+    param([string]$Root, [int]$Max)
+    foreach ($log in $Logs) {
+        $scenario = @(Get-WinEvent -Path (Join-Path $Root "evtx\scenario\$log.evtx") -ErrorAction SilentlyContinue)
+        $n = Export-Rendered $scenario (Join-Path $Root "evtx\scenario\$log.rendered.xml")
+        $recent = @(Get-WinEvent -LogName $log -MaxEvents $Max -ErrorAction SilentlyContinue)
+        $m = Export-Rendered $recent (Join-Path $Root "evtx\rendered\$log.xml")
+        Write-Host ("rendered {0}: {1} scenario events, {2} recent" -f $log, $n, $m)
+    }
+}
+
+function Get-FileList {
+    param([string]$Root)
+    $files = New-Object System.Collections.ArrayList
+    Get-ChildItem -Path $Root -Recurse -File | Where-Object { $_.Name -ne 'manifest.json' } |
+        Sort-Object FullName | ForEach-Object {
+            $rel = $_.FullName.Substring($Root.Length + 1).Replace('\', '/')
+            [void]$files.Add([ordered]@{
+                path   = $rel
+                size   = $_.Length
+                sha256 = (Get-FileHash -Algorithm SHA256 -Path $_.FullName).Hash.ToLowerInvariant()
+            })
+        }
+    return ,$files
+}
+
 function New-RandomPassword {
     $bytes = New-Object byte[] 18
     [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
@@ -121,6 +179,19 @@ function Invoke-Step {
 # ---------------------------------------------------------------- preflight
 
 Assert-Admin
+$MaxRenderedEvents = 5000
+if ($RenderOnly) {
+    $OutDir = (Resolve-Path $OutDir).Path
+    $manifestPath = Join-Path $OutDir 'manifest.json'
+    if (-not (Test-Path $manifestPath)) { throw "No capture in $OutDir (manifest.json missing)" }
+    Export-AllRendered $OutDir $MaxRenderedEvents
+    $m = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $m.files = Get-FileList $OutDir
+    $m.warnings = @($m.warnings) + "Rendered XML rebuilt by -RenderOnly at $(Get-UtcNow)."
+    Save-Json $m $manifestPath
+    Write-Host "Done: rendered XML rebuilt in $OutDir"
+    exit 0
+}
 if (Test-Path $OutDir) {
     if (@(Get-ChildItem -Force $OutDir).Count -gt 0) { throw "OutDir is not empty: $OutDir" }
 } else {
@@ -367,31 +438,15 @@ foreach ($log in $Logs) {
         "/q:$window") | Out-Null
 }
 
-# Rendered events: the message text Windows produced for each event. The
-# engine's message templates are derived from these (data from the host's
+# Rendered events: each event with the message text Windows produced for it.
+# The engine's message templates are derived from these (data from the host's
 # own output, never from Microsoft binaries). The scenario window in full,
 # plus the newest events of each log for wider coverage.
-$MaxRenderedEvents = 5000
-foreach ($log in $Logs) {
-    $out = & wevtutil.exe qe $log "/q:$window" /f:RenderedXml /e:Events
-    if ($LASTEXITCODE -ne 0) { throw "wevtutil qe $log (scenario) failed with exit code $LASTEXITCODE" }
-    $out | Set-Content -Path (Join-Path $OutDir "evtx\scenario\$log.rendered.xml") -Encoding UTF8
-    $out = & wevtutil.exe qe $log /rd:true "/c:$MaxRenderedEvents" /f:RenderedXml /e:Events
-    if ($LASTEXITCODE -ne 0) { throw "wevtutil qe $log (recent) failed with exit code $LASTEXITCODE" }
-    $out | Set-Content -Path (Join-Path $OutDir "evtx\rendered\$log.xml") -Encoding UTF8
-}
+Export-AllRendered $OutDir $MaxRenderedEvents
 
 # ---------------------------------------------------------------- manifest
 
-$files = New-Object System.Collections.ArrayList
-Get-ChildItem -Path $OutDir -Recurse -File | Sort-Object FullName | ForEach-Object {
-    $rel = $_.FullName.Substring($OutDir.Length + 1).Replace('\', '/')
-    [void]$files.Add([ordered]@{
-        path   = $rel
-        size   = $_.Length
-        sha256 = (Get-FileHash -Algorithm SHA256 -Path $_.FullName).Hash.ToLowerInvariant()
-    })
-}
+$files = Get-FileList $OutDir
 
 $os = Get-CimInstance Win32_OperatingSystem
 $agentVersion = $null
