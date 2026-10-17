@@ -67,7 +67,7 @@ const PAGE: u32 = 0x1000;
 const THUNK_SIZE: u32 = 16;
 
 /// The realigning trampoline every thunk jumps to, with the target in eax.
-const TRAMPOLINE: [u8; 56] = [
+pub(crate) const TRAMPOLINE: [u8; 56] = [
     0x55, // push ebp
     0x89, 0xe5, // mov ebp, esp
     0x56, // push esi

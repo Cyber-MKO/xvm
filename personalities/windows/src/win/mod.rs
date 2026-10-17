@@ -13,6 +13,8 @@ pub(crate) mod kernel32;
 mod mpr;
 pub(crate) mod msvcrt;
 mod ntdll;
+mod ole32;
+pub(crate) mod oleaut32;
 mod psapi;
 mod shlwapi;
 mod text;
@@ -39,6 +41,8 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "mpr.dll" => (mpr::exports(), Vec::new()),
         "msvcrt.dll" => (msvcrt::exports(), msvcrt::data()),
         "ntdll.dll" => (ntdll::exports(), Vec::new()),
+        "ole32.dll" => (ole32::exports(), Vec::new()),
+        "oleaut32.dll" => (oleaut32::exports(), Vec::new()),
         "psapi.dll" => (psapi::exports(), Vec::new()),
         "shlwapi.dll" => (shlwapi::exports(), Vec::new()),
         "wevtapi.dll" => (wevtapi::exports(), Vec::new()),

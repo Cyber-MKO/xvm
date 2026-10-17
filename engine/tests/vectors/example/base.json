@@ -39,7 +39,13 @@
    {
     "name": "Ethernet0",
     "description": "Example virtual NIC",
-    "dhcp": true
+    "dhcp": true,
+    "index": 4,
+    "type": 6,
+    "mtu": 1500,
+    "speed": 1000000000,
+    "status": "up",
+    "metric": 15
    }
   ]
  },
@@ -73,6 +79,20 @@
   {
    "name": "Guests",
    "sid": "S-1-5-32-546"
+  }
+ ],
+ "hotfixes": [
+  {
+   "name": "KB5000001",
+   "description": "Update",
+   "installed_on": "2026-01-01",
+   "installed_by": "NT AUTHORITY\\SYSTEM"
+  },
+  {
+   "name": "KB5000002",
+   "description": "Security Update",
+   "installed_on": "2026-01-02",
+   "installed_by": "NT AUTHORITY\\SYSTEM"
   }
  ],
  "services": [
@@ -215,6 +235,58 @@
     "OEMCP": {
      "type": "REG_SZ",
      "data": "437"
+    }
+   },
+   "HKLM\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0": {
+    "Identifier": {
+     "type": "REG_SZ",
+     "data": "Intel64 Family 6 Model 85 Stepping 7"
+    },
+    "ProcessorNameString": {
+     "type": "REG_SZ",
+     "data": "Example vCPU"
+    },
+    "VendorIdentifier": {
+     "type": "REG_SZ",
+     "data": "GenuineIntel"
+    },
+    "~MHz": {
+     "type": "REG_DWORD",
+     "data": 2400
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment": {
+    "ComSpec": {
+     "type": "REG_EXPAND_SZ",
+     "data": "%SystemRoot%\\system32\\cmd.exe"
+    },
+    "NUMBER_OF_PROCESSORS": {
+     "type": "REG_SZ",
+     "data": "2"
+    },
+    "OS": {
+     "type": "REG_SZ",
+     "data": "Windows_NT"
+    },
+    "Path": {
+     "type": "REG_EXPAND_SZ",
+     "data": "%SystemRoot%\\system32;%SystemRoot%;%SystemRoot%\\System32\\Wbem"
+    },
+    "PROCESSOR_ARCHITECTURE": {
+     "type": "REG_SZ",
+     "data": "AMD64"
+    },
+    "TEMP": {
+     "type": "REG_EXPAND_SZ",
+     "data": "%SystemRoot%\\TEMP"
+    },
+    "TMP": {
+     "type": "REG_EXPAND_SZ",
+     "data": "%SystemRoot%\\TEMP"
+    },
+    "windir": {
+     "type": "REG_EXPAND_SZ",
+     "data": "%SystemRoot%"
     }
    }
   }

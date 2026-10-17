@@ -54,8 +54,8 @@ The test user is removed even if a step fails. No event log is cleared.
 | Path | Contents |
 | --- | --- |
 | `manifest.json` | Host, agent version, step times, file hashes, warnings |
-| `registry/*.reg` | Identity keys: OS version (64-bit and 32-bit views), computer name, TCP/IP, uninstall, profiles, time zone, code pages, Wazuh service, Event Log |
-| `host/*` | `systeminfo`, `ipconfig /all`, and JSON for OS, locale, computer, CPU, BIOS, network, network adapters, hotfixes, users, groups, group members, services, processes (with command lines, owners and start times), and file metadata |
+| `registry/*.reg` | Identity keys: OS version (64-bit and 32-bit views), computer name, TCP/IP, uninstall, profiles, time zone, code pages, the first processor, the system environment, Wazuh service, Event Log |
+| `host/*` | `systeminfo`, `ipconfig /all`, and JSON for OS, locale, computer, CPU, BIOS, network, network adapters and their IPv4 metrics, hotfixes, users, groups, group members, services, processes (with command lines, owners and start times), and file metadata |
 | `wazuh/*` | Agent `ossec.conf`, version files, `ossec.log`. Never `client.keys`. |
 | `evtx/full/*.evtx` | Security, System and Application, whole log |
 | `evtx/scenario/*.evtx` | The same logs, scenario window only |

@@ -1,6 +1,6 @@
 # engine
 
-The host-state engine (brief section 6, component 1). One process serves the facts of every emulated host: identity, OS, hardware, network, users, groups, software, services, the Windows registry, files, processes and Windows event logs. Personality runtimes ask it instead of hardcoding anything (CLAUDE.md rule 5).
+The host-state engine (brief section 6, component 1). One process serves the facts of every emulated host: identity, OS, hardware, network, users, groups, software, hotfixes, services, the Windows registry, files, processes and Windows event logs. Personality runtimes ask it instead of hardcoding anything (CLAUDE.md rule 5).
 
 ## How it fits
 
@@ -25,7 +25,7 @@ The run-time layer copies a key, list or section the first time it changes. The 
 | Area | Behaviour |
 | --- | --- |
 | Sections | `identity`, `os_info`, `hardware`, `network`, `agent`, `windows`. Objects merge key by key. |
-| Lists | `users`, `groups`, `software`, `services`, `interfaces`. Merge by name, ignoring case, keeping the base's spelling. |
+| Lists | `users`, `groups`, `software`, `hotfixes`, `services`, `interfaces`. Merge by name, ignoring case, keeping the base's spelling. |
 | Registry keys | Case-insensitive. A key exists if it is listed or a key below it is, so `HKLM\SOFTWARE` exists without being listed. |
 | Registry values | Base values first in base order, then values the host adds. A `null` in the host deletes a value. |
 | Subkeys | Immediate children, sorted without regard to case. |

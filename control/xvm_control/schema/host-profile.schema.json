@@ -217,6 +217,12 @@
         "$ref": "#/$defs/package"
       }
     },
+    "hotfixes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hotfix"
+      }
+    },
     "services": {
       "type": "array",
       "items": {
@@ -503,6 +509,41 @@
         },
         "dhcp": {
           "type": "boolean"
+        },
+        "guid": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\}$"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "type": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mtu": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "speed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "up",
+            "down",
+            "testing",
+            "unknown",
+            "dormant",
+            "not_present",
+            "lower_layer_down"
+          ]
+        },
+        "metric": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -941,6 +982,31 @@
           "type": "number",
           "minimum": 0,
           "description": "Seconds after boot."
+        }
+      }
+    },
+    "hotfix": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        },
+        "description": {
+          "type": "string"
+        },
+        "installed_on": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "installed_by": {
+          "type": "string"
         }
       }
     }

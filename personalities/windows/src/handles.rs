@@ -37,6 +37,23 @@ pub enum Object {
     /// An open registry key: its path in the engine, such as
     /// `HKLM\SOFTWARE\WOW6432Node\Wazuh`.
     RegKey(String),
+    /// A Tool Help snapshot of the process list.
+    Snapshot(Arc<ProcessSnapshot>),
+}
+
+/// The processes running when a snapshot was taken, and the position of
+/// `Process32Next`.
+#[derive(Debug, Default)]
+pub struct ProcessSnapshot {
+    pub processes: Vec<SnapshotEntry>,
+    pub next: std::sync::Mutex<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotEntry {
+    pub pid: u32,
+    pub ppid: u32,
+    pub image: String,
 }
 
 impl Object {
@@ -47,7 +64,7 @@ impl Object {
             Object::Thread(t) => Some(Waitable::Thread(t.clone())),
             Object::Semaphore(s) => Some(Waitable::Semaphore(s.clone())),
             Object::Mutex(m) => Some(Waitable::Mutex(m.clone())),
-            Object::File(_) | Object::RegKey(_) => None,
+            Object::File(_) | Object::RegKey(_) | Object::Snapshot(_) => None,
         }
     }
 }

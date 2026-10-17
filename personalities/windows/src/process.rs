@@ -472,6 +472,12 @@ impl Process {
 
     /// Record a gap found at run time, once however often it recurs.
     /// Run-time gaps name the main module: the caller is not tracked yet.
+    /// A stub that reports `gap` when called and stops the process, for
+    /// code addresses handed out at run time (COM methods).
+    pub fn trap(&mut self, gap: &Gap) -> Result<u32, crate::map::MapError> {
+        self.traps.stub(gap)
+    }
+
     pub fn record_runtime_gap(&mut self, kind: GapKind, dll: &str, symbol: &str) {
         let gap = Gap {
             module: self

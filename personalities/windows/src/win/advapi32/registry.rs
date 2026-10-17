@@ -1,4 +1,5 @@
 //! The registry: `RegOpenKeyExA`, `RegQueryValueExA`, `RegCloseKey`.
+//! Enumeration is in `enumerate.rs`.
 //!
 //! Keys and values come from the host-state engine. A key handle is a
 //! kernel handle that holds the key's path in the engine. Following the
@@ -9,9 +10,12 @@
 //! | 32-bit process, 64-bit Windows, `HKLM\SOFTWARE\...` | Read through `HKLM\SOFTWARE\WOW6432Node` unless `KEY_WOW64_64KEY` |
 //! | That 32-bit key is not in the profile | The 64-bit key, as a logged gap: captures export the 64-bit view |
 //! | String values | Converted to the profile's ANSI code page, with their NUL |
+//! | No subkey (NULL or empty) | A predefined key returns itself; an open key gets a new handle to the same key |
 //! | `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT` and other roots | Logged gaps |
 //!
 //! Return values are Win32 error codes, not the last error.
+
+mod enumerate;
 
 use std::ffi::c_char;
 
@@ -44,6 +48,9 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("RegQueryValueExA", RegQueryValueExA as *const () as u32),
         ("RegCloseKey", RegCloseKey as *const () as u32),
     ]
+    .into_iter()
+    .chain(enumerate::exports())
+    .collect()
 }
 
 fn gap(caller: Caller, what: &str) {
@@ -116,11 +123,17 @@ extern "stdcall" fn RegOpenKeyExA(
     // SAFETY: NUL-terminated or NULL (the API's contract).
     let sub = unsafe { ansi(subkey) }.unwrap_or_default();
     let sub = sub.trim_matches('\\');
-    let path = if sub.is_empty() {
-        base
-    } else {
-        format!("{base}\\{sub}")
-    };
+    if sub.is_empty() {
+        let handle = if matches!(hkey, HKEY_LOCAL_MACHINE | HKEY_USERS) {
+            hkey
+        } else {
+            with_current(|p| p.handles.insert(Object::RegKey(base)))
+        };
+        // SAFETY: writable (the API's contract).
+        unsafe { *result = handle };
+        return ERROR_SUCCESS;
+    }
+    let path = format!("{base}\\{sub}");
     let mut candidates = vec![path.clone()];
     let wow64 = access & KEY_WOW64_64KEY == 0 && facts::is_64bit(CALLER) == Some(true);
     if access & KEY_WOW64_32KEY != 0 && !wow64 {
@@ -268,14 +281,14 @@ extern "stdcall" fn RegCloseKey(hkey: u32) -> i32 {
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use crate::process::Process;
     use crate::runtime::Runtime;
 
     const CV: &str = r"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
 
-    fn host() -> Runtime {
+    pub(super) fn host() -> Runtime {
         let base = json!({
             "schema": 1, "kind": "base-image", "name": "b", "os": "windows",
             "source": {"golden_capture": "synthetic"},
@@ -393,6 +406,18 @@ mod tests {
             Err(ERROR_FILE_NOT_FOUND)
         );
         assert_eq!(open(0x1234, c"x", 0), Err(ERROR_INVALID_HANDLE));
+        // No subkey: a predefined key is itself, even with nothing under
+        // it; an open key gets a second handle.
+        assert_eq!(open(HKEY_USERS, c"", 0), Ok(HKEY_USERS));
+        let again = open(child, c"", 0).unwrap();
+        assert_ne!(again, child);
+        assert_eq!(query(again, c"Dir").unwrap().1, b"x86\0");
+        let mut h = 0;
+        assert_eq!(
+            RegOpenKeyExA(HKEY_LOCAL_MACHINE, std::ptr::null(), 0, 0, &mut h),
+            0
+        );
+        assert_eq!(h, HKEY_LOCAL_MACHINE);
     }
 
     #[test]

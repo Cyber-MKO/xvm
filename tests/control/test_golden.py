@@ -38,8 +38,33 @@ def test_build_base(tmp_path):
         "bios": {"vendor": "Example BIOS", "version": "1.0", "release_date": "2024-01-01"},
     }
     assert base["network"] == {
-        "interfaces": [{"name": "Ethernet0", "description": "Example NIC", "dhcp": True}]
+        "interfaces": [
+            {
+                "name": "Ethernet0",
+                "description": "Example NIC",
+                "dhcp": True,
+                "index": 6,
+                "type": 6,
+                "mtu": 1500,
+                "speed": 10000000000,
+                "status": "up",
+                "metric": 15,
+            }
+        ]
     }
+    assert base["hotfixes"] == [
+        {
+            "name": "KB5000001",
+            "description": "Security Update",
+            "installed_on": "2024-01-01",
+            "installed_by": "NT AUTHORITY\\SYSTEM",
+        }
+    ]
+    keys = base["registry"]["keys"]
+    cpu = keys["HKLM\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0"]
+    assert cpu["Identifier"]["data"].startswith("Intel64")
+    env = keys["HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"]
+    assert env["OS"]["data"] == "Windows_NT"
     assert f"{CV}: value 'Odd' of type hex(0)" in " ".join(notes)
 
 
@@ -61,6 +86,7 @@ def test_identity_is_left_out(tmp_path):
         "198.51.100.7",
         "02:00:00:00:00:01",
         "02-00-00-00-00-01",
+        "11111111-2222-4333-8444-555555555555",
         "SERIAL-123",
     ):
         assert secret not in text

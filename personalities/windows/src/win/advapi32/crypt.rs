@@ -1,4 +1,5 @@
-//! CryptoAPI random numbers: `CryptAcquireContextA`, `CryptGenRandom`.
+//! CryptoAPI random numbers: `CryptAcquireContextA`, `CryptAcquireContextW`,
+//! `CryptGenRandom`, `CryptReleaseContext`.
 //!
 //! Following the two functions' pages on Microsoft Learn. Random bytes
 //! are all the census shows the agent asking for, so a context holds no
@@ -32,7 +33,15 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
             "CryptAcquireContextA",
             CryptAcquireContextA as *const () as u32,
         ),
+        (
+            "CryptAcquireContextW",
+            CryptAcquireContextW as *const () as u32,
+        ),
         ("CryptGenRandom", CryptGenRandom as *const () as u32),
+        (
+            "CryptReleaseContext",
+            CryptReleaseContext as *const () as u32,
+        ),
     ]
 }
 
@@ -48,26 +57,62 @@ extern "stdcall" fn CryptAcquireContextA(
     _provider_type: u32,
     flags: u32,
 ) -> i32 {
+    acquire(
+        "CryptAcquireContextA",
+        provider,
+        !container.is_null(),
+        !provider_name.is_null(),
+        flags,
+    )
+}
+
+/// As `CryptAcquireContextA`, with UTF-16 names.
+#[allow(non_snake_case)]
+extern "stdcall" fn CryptAcquireContextW(
+    provider: *mut u32,
+    container: *const u16,
+    provider_name: *const u16,
+    _provider_type: u32,
+    flags: u32,
+) -> i32 {
+    acquire(
+        "CryptAcquireContextW",
+        provider,
+        !container.is_null(),
+        !provider_name.is_null(),
+        flags,
+    )
+}
+
+fn acquire(
+    function: &str,
+    provider: *mut u32,
+    container: bool,
+    provider_name: bool,
+    flags: u32,
+) -> i32 {
     if provider.is_null() {
         set_last_error(ERROR_INVALID_PARAMETER);
         return 0;
     }
     let known = CRYPT_VERIFYCONTEXT | CRYPT_SILENT | CRYPT_MACHINE_KEYSET | CRYPT_NEWKEYSET;
     if flags & !known != 0 {
-        gap("CryptAcquireContextA flags beyond opening and creating");
+        gap(&format!("{function} flags beyond opening and creating"));
         set_last_error(NTE_BAD_FLAGS);
         return 0;
     }
-    if !container.is_null() {
-        gap("CryptAcquireContextA named key containers");
+    if container {
+        gap(&format!("{function} named key containers"));
         set_last_error(NTE_BAD_KEYSET);
         return 0;
     }
     if flags & CRYPT_VERIFYCONTEXT == 0 {
-        gap("CryptAcquireContextA default key container (not stored on disk)");
+        gap(&format!(
+            "{function} default key container (not stored on disk)"
+        ));
     }
-    if !provider_name.is_null() {
-        gap("CryptAcquireContextA named providers");
+    if provider_name {
+        gap(&format!("{function} named providers"));
         set_last_error(NTE_KEYSET_NOT_DEF);
         return 0;
     }
@@ -78,6 +123,26 @@ extern "stdcall" fn CryptAcquireContextA(
     });
     // SAFETY: writable (the API's contract).
     unsafe { *provider = handle };
+    1
+}
+
+/// Ends a context. NTE_BAD_UID for a handle that is not one, and
+/// NTE_BAD_FLAGS for non-zero flags, as the CryptReleaseContext page says.
+#[allow(non_snake_case)]
+extern "stdcall" fn CryptReleaseContext(provider: u32, flags: u32) -> i32 {
+    const NTE_BAD_UID: u32 = 0x8009_0001;
+    if flags != 0 {
+        set_last_error(NTE_BAD_FLAGS);
+        return 0;
+    }
+    let known = with_current(|p| {
+        let at = p.crypt_providers.iter().position(|&h| h == provider);
+        at.map(|i| p.crypt_providers.remove(i)).is_some()
+    });
+    if !known {
+        set_last_error(NTE_BAD_UID);
+        return 0;
+    }
     1
 }
 
@@ -122,6 +187,21 @@ mod tests {
             1
         );
         assert_ne!(h, 0);
+        let mut w = 0;
+        let wnull: *const u16 = std::ptr::null();
+        assert_eq!(
+            CryptAcquireContextW(&mut w, wnull, wnull, 1, CRYPT_VERIFYCONTEXT | CRYPT_SILENT),
+            1
+        );
+        assert!(w != h && w != 0, "a second context");
+        let name: Vec<u16> = "keys\0".encode_utf16().collect();
+        assert_eq!(
+            CryptAcquireContextW(&mut w, name.as_ptr(), wnull, 1, CRYPT_VERIFYCONTEXT),
+            0
+        );
+        assert_eq!(CryptReleaseContext(w, 1), 0, "flags must be 0");
+        assert_eq!(CryptReleaseContext(w, 0), 1);
+        assert_eq!(CryptReleaseContext(w, 0), 0, "released");
         let (mut a, mut b) = ([0u8; 64], [0u8; 64]);
         assert_eq!(CryptGenRandom(h, 64, a.as_mut_ptr()), 1);
         assert_eq!(CryptGenRandom(h, 64, b.as_mut_ptr()), 1);
@@ -150,6 +230,7 @@ mod tests {
         assert_eq!(
             gaps,
             [
+                "CryptAcquireContextW named key containers",
                 "CryptAcquireContextA named key containers",
                 "CryptAcquireContextA default key container (not stored on disk)",
                 "CryptAcquireContextA flags beyond opening and creating",
