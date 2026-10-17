@@ -1,0 +1,344 @@
+{
+  "schema": 1,
+  "kind": "windows-golden-baseline",
+  "host": {
+    "name": "XVM-GOLDEN",
+    "os": "Microsoft Windows Server 2022 Standard Evaluation",
+    "version": "10.0.20348",
+    "build": "20348"
+  },
+  "agent": {
+    "product": "wazuh",
+    "version": "4.14.2"
+  },
+  "capture_pid": 6784,
+  "capture_start": "2026-10-17T21:41:10.635Z",
+  "capture_end": "2026-10-17T21:43:15.543Z",
+  "scenario": {
+    "start": "2026-10-17T21:41:29.458Z",
+    "end": "2026-10-17T21:43:06.260Z",
+    "steps": [
+      {
+        "name": "marker_start",
+        "start": "2026-10-17T21:41:29.473Z",
+        "end": "2026-10-17T21:41:39.513Z",
+        "expect": "Application event 900 from xvm-golden"
+      },
+      {
+        "name": "user_create",
+        "start": "2026-10-17T21:41:39.513Z",
+        "end": "2026-10-17T21:41:49.530Z",
+        "expect": "Security 4720, 4722, 4724, 4738"
+      },
+      {
+        "name": "group_add",
+        "start": "2026-10-17T21:41:49.530Z",
+        "end": "2026-10-17T21:41:59.562Z",
+        "expect": "Security 4732"
+      },
+      {
+        "name": "failed_logon",
+        "start": "2026-10-17T21:41:59.562Z",
+        "end": "2026-10-17T21:42:09.632Z",
+        "expect": "Security 4625 three times"
+      },
+      {
+        "name": "group_remove",
+        "start": "2026-10-17T21:42:09.632Z",
+        "end": "2026-10-17T21:42:19.662Z",
+        "expect": "Security 4733"
+      },
+      {
+        "name": "user_delete",
+        "start": "2026-10-17T21:42:19.662Z",
+        "end": "2026-10-17T21:42:29.665Z",
+        "expect": "Security 4726"
+      },
+      {
+        "name": "service_restart",
+        "start": "2026-10-17T21:42:29.665Z",
+        "end": "2026-10-17T21:42:40.218Z",
+        "expect": "System 7036 for W32Time"
+      },
+      {
+        "name": "fim_change",
+        "start": "2026-10-17T21:42:40.218Z",
+        "end": "2026-10-17T21:42:56.240Z",
+        "expect": "Wazuh FIM added, modified and deleted alerts"
+      },
+      {
+        "name": "marker_end",
+        "start": "2026-10-17T21:42:56.242Z",
+        "end": "2026-10-17T21:43:06.260Z",
+        "expect": "Application event 901 from xvm-golden"
+      }
+    ]
+  },
+  "warnings": [
+    "1 files could not be hashed (in use or access denied)."
+  ],
+  "files": [
+    {
+      "path": "evtx/full/Application.evtx",
+      "size": 1118208,
+      "sha256": "a27cac8be04f6d87cc0fe182fee7ef4140daaa0aabd4c59304985af6a7cdcd3d"
+    },
+    {
+      "path": "evtx/full/Security.evtx",
+      "size": 2166784,
+      "sha256": "bb1327f881c330f53246eaff3599d74353a69c8dd5bd74a7218ccd12e1a89068"
+    },
+    {
+      "path": "evtx/full/System.evtx",
+      "size": 1118208,
+      "sha256": "75cce1eccf9211d972a2d812ff469c26820374cdf6231fdc4d9f9bc5d9108334"
+    },
+    {
+      "path": "evtx/rendered/Application.xml",
+      "size": 264349,
+      "sha256": "b3c5b47323d8a1be82affbce43a7c229f4766ab90bcf6e84f06dbbb440895578"
+    },
+    {
+      "path": "evtx/rendered/Security.xml",
+      "size": 4705570,
+      "sha256": "508155506720da96190daab1a69c8990a564a7d1ba4b7a76d2328bd840893a27"
+    },
+    {
+      "path": "evtx/rendered/System.xml",
+      "size": 1454174,
+      "sha256": "55e5954963d81240856ecfa4c37256116cdc6dd6e806df3755955d7ab054f911"
+    },
+    {
+      "path": "evtx/scenario/Application.evtx",
+      "size": 69632,
+      "sha256": "fc81136f0b56facdb1c9e9ec19a1317a1ebec767248a4bacf36e467dd5dbdf2d"
+    },
+    {
+      "path": "evtx/scenario/Application.rendered.xml",
+      "size": 1392,
+      "sha256": "95d5119aa92ccef11e6b03ccf940cce644c53f4164077d2ab59ab58e26a25e72"
+    },
+    {
+      "path": "evtx/scenario/Security.evtx",
+      "size": 69632,
+      "sha256": "22a1a48fd7c0d2761c1c0e8256e8c52624b639081c69225690706c99b66fcbfc"
+    },
+    {
+      "path": "evtx/scenario/Security.rendered.xml",
+      "size": 20822,
+      "sha256": "0f06b97db84c0e9550bc9f059213da63ac6c260f9bba439a8b8cb2808c125ee4"
+    },
+    {
+      "path": "evtx/scenario/System.evtx",
+      "size": 69632,
+      "sha256": "5d2dc380e7a9687bd4af48b7f4fb45286dd1de16d47f6eae71c478dd4cf49857"
+    },
+    {
+      "path": "evtx/scenario/System.rendered.xml",
+      "size": 6744,
+      "sha256": "4a23998a830acb16f2333b6b94ba41b995d77299ea33a55fb3983f6ea2bc01bb"
+    },
+    {
+      "path": "host/bios.json",
+      "size": 192,
+      "sha256": "78c62edba54ea37272c14665bb82f052566036936280888f192b4408f71fd6a3"
+    },
+    {
+      "path": "host/computer.json",
+      "size": 257,
+      "sha256": "8638de7a8fb4e772c2766bc71768bbdbaf7f1194ae78ede3a26e750e99175730"
+    },
+    {
+      "path": "host/cpu.json",
+      "size": 432,
+      "sha256": "06940f78217615316fd075aaeb4b5bc7b1508c52c88f03b67f8ff174bb2ecc7e"
+    },
+    {
+      "path": "host/files.json",
+      "size": 1728909,
+      "sha256": "05a8703b3b7c44ff7281ee11135c82ea1354da94c24b352cf0c0bff96d36ed15"
+    },
+    {
+      "path": "host/group-members.json",
+      "size": 1215,
+      "sha256": "9090c2eee17d15e40fcff480d89aaea424088407e80b8a98d53ca7eadb0d861a"
+    },
+    {
+      "path": "host/groups.json",
+      "size": 2227,
+      "sha256": "fc3232204ff62f96459186cbf23821acd9efbcea5ec8c547195d4e97d120368b"
+    },
+    {
+      "path": "host/hotfixes.json",
+      "size": 959,
+      "sha256": "d1d2a989ddedbe5f1634bcb69ee9a3a7ea925298a08daac514e6aea0c07c343c"
+    },
+    {
+      "path": "host/ipconfig.txt",
+      "size": 1595,
+      "sha256": "7f3d72fb18651ace182893fb466bc8dfefdfeed3c15eb85374e4713d005dfd83"
+    },
+    {
+      "path": "host/locale.json",
+      "size": 77,
+      "sha256": "0cd3dc372f7c5d33fa0012413302a20ac940e88a7eec9c2513f00817144b4237"
+    },
+    {
+      "path": "host/netadapters.json",
+      "size": 410,
+      "sha256": "b5d7db3e1e4f16e43c56668de8cc9d41bcd53d3f308f7fa177ac70bfdf7fe3cb"
+    },
+    {
+      "path": "host/netipinterfaces.json",
+      "size": 164,
+      "sha256": "ee6b077506dd8784ffcb181eff9e6a569b228f98b95d091bb46fea8e05cb0d83"
+    },
+    {
+      "path": "host/network.json",
+      "size": 835,
+      "sha256": "fd0993f14681cb01f2dc9b33a7291cc65f3fa35a2622d3aab31c3c52ebf6a81f"
+    },
+    {
+      "path": "host/os.json",
+      "size": 425,
+      "sha256": "6af0911df4e26067dab657af53ffe3c04d015d2b81729ad3a6c23e8886b3f019"
+    },
+    {
+      "path": "host/processes.json",
+      "size": 63553,
+      "sha256": "d89a573c7e8d2db474b26d8084568b9110993a0c0825b5fa2509d6126638251a"
+    },
+    {
+      "path": "host/services.json",
+      "size": 60198,
+      "sha256": "79d804985d8129b204f3aa49517965f8191ac25b9e9e659c212acae8f31acef6"
+    },
+    {
+      "path": "host/systeminfo.csv",
+      "size": 1913,
+      "sha256": "73cabcbf516fdcf49ac2a4e216026e074e3629591cac851842dfb8635c137701"
+    },
+    {
+      "path": "host/users.json",
+      "size": 896,
+      "sha256": "9767d0d30f846b86c8d1b091e8d6e57ce2106e0d69423d60b73a127c00c4d58b"
+    },
+    {
+      "path": "registry/codepage.reg",
+      "size": 6920,
+      "sha256": "decea099e867d24267684742cbf8e9ba774ab77458b26726f009ec2f1fba1f44"
+    },
+    {
+      "path": "registry/computername.reg",
+      "size": 708,
+      "sha256": "bbd30ae16bd025b9a029ba9b0b44b9c59cf0762a46d23d5a3fd48f09db203c73"
+    },
+    {
+      "path": "registry/cpu0.reg",
+      "size": 1284,
+      "sha256": "65892c44d584566a13dba519317650f95f000ffcdf2c9120de44dcd2091057df"
+    },
+    {
+      "path": "registry/environment.reg",
+      "size": 5150,
+      "sha256": "c9ed35a92f2e04948eef3ffc95ebb5bdcf33a5d293602b41a37f04f51078841f"
+    },
+    {
+      "path": "registry/eventlog-application.reg",
+      "size": 129192,
+      "sha256": "16d0a45c9c7a9b556e383e18ee0cb3f6591e93a61f087a1c83cd135dca4de321"
+    },
+    {
+      "path": "registry/eventlog-security.reg",
+      "size": 15762,
+      "sha256": "a79a31c9ad6f3c7ec7245eb29adaf195ffada28af0f11713c9bce1bd2c59e067"
+    },
+    {
+      "path": "registry/eventlog-system.reg",
+      "size": 278572,
+      "sha256": "3bb129d871d278b167aeb7a7c62f1424b098cbbd40c2a74086fd2041031d50fa"
+    },
+    {
+      "path": "registry/os-currentversion.reg",
+      "size": 20419064,
+      "sha256": "ab9bcad317e17cfd7a0fd2f05d5607f8d455c59dd2b0377455cc43305b52d288"
+    },
+    {
+      "path": "registry/os-currentversion-wow64.reg",
+      "size": 18858424,
+      "sha256": "19fb1977bf2712913578d2b9f4fdc627ef9250c95fcb5bd3fac74d6418a10f59"
+    },
+    {
+      "path": "registry/profilelist.reg",
+      "size": 6234,
+      "sha256": "e36279da42e37c6f9ca6ef365259244effb7610d14fa04a03f7b9b2be42dcf6d"
+    },
+    {
+      "path": "registry/tcpip-parameters.reg",
+      "size": 15814,
+      "sha256": "14d72f1a17b905b298116724fb6b7701a8d9bfa6d2c83eb0b1e7c2de6507378a"
+    },
+    {
+      "path": "registry/timezone.reg",
+      "size": 1062,
+      "sha256": "6712f4477dff932cb6ce8a610d26d314972c3df1da7b58ea39730c6168bf34e9"
+    },
+    {
+      "path": "registry/uninstall.reg",
+      "size": 2612,
+      "sha256": "eb836c094f21334e99ad9d61107acc6b6985eb710d09de86c3b6b0cbcc94817a"
+    },
+    {
+      "path": "registry/uninstall-wow64.reg",
+      "size": 8152,
+      "sha256": "4a252ecd0a3146666e6b500628c7a6f0218509dd57f4330a597216faece18d96"
+    },
+    {
+      "path": "registry/wazuh-service.reg",
+      "size": 1264,
+      "sha256": "8f95973ff3778473ba2478d5cfa5b9f0b423b59f089a4ab3f75c4b447fab0e54"
+    },
+    {
+      "path": "wazuh/ossec.conf",
+      "size": 9998,
+      "sha256": "20518ee5fbdd0e5d0ee077dcb33b7ab9550897e9fd62e08271e4a76aeacf658d"
+    },
+    {
+      "path": "wazuh/ossec.log",
+      "size": 111496,
+      "sha256": "703db9aba1a901cd2e4059a5ef649e403050013173c269185eb03cd5d8aa5303"
+    },
+    {
+      "path": "wazuh/VERSION.json",
+      "size": 78,
+      "sha256": "f97cae610a9567ed6835d2c7a79c954c8f10fae4cd2a55930cb5da43678e8283"
+    },
+    {
+      "path": "manager/archives.json",
+      "sha256": "9b7e3ae667b48d61526afcd781d44baa4a782a0235c217addac56c94e4c67ecc",
+      "size": 394583
+    },
+    {
+      "path": "manager/alerts.json",
+      "sha256": "fa975ec9af850a081b0fc5ed7a6ebb96e74e135a134011867ccc6d3fa6ff4333",
+      "size": 26700
+    }
+  ],
+  "manager": {
+    "window_margin_seconds": 120,
+    "counts": {
+      "archives": 127,
+      "alerts": 12
+    },
+    "files": [
+      {
+        "path": "manager/archives.json",
+        "sha256": "9b7e3ae667b48d61526afcd781d44baa4a782a0235c217addac56c94e4c67ecc"
+      },
+      {
+        "path": "manager/alerts.json",
+        "sha256": "fa975ec9af850a081b0fc5ed7a6ebb96e74e135a134011867ccc6d3fa6ff4333"
+      }
+    ]
+  }
+}
