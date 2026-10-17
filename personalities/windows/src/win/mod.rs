@@ -14,6 +14,7 @@ mod psapi;
 mod shlwapi;
 mod text;
 mod wintrust;
+mod ws2_32;
 mod wsock32;
 
 /// Sets up the variables of the emulated `dll` just loaded at `module`.
@@ -35,6 +36,7 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "psapi.dll" => (psapi::exports(), Vec::new()),
         "shlwapi.dll" => (shlwapi::exports(), Vec::new()),
         "wintrust.dll" => (wintrust::exports(), Vec::new()),
+        "ws2_32.dll" => (ws2_32::exports(), Vec::new()),
         "wsock32.dll" => (wsock32::exports(), Vec::new()),
         _ => (Vec::new(), Vec::new()),
     };

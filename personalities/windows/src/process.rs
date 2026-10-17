@@ -413,6 +413,9 @@ pub struct Process {
     pub memory: MemoryMap,
     /// `WSAStartup` calls not yet matched by `WSACleanup`.
     pub winsock_starts: u32,
+    /// `getaddrinfo` results not yet freed, by the address of their first
+    /// `ADDRINFOA`.
+    pub addrinfo: BTreeMap<u32, Box<[u32]>>,
 }
 
 /// Why `Process::load_library` failed.
@@ -447,6 +450,7 @@ impl Process {
             tls_slots: [false; 64],
             memory: MemoryMap::default(),
             winsock_starts: 0,
+            addrinfo: BTreeMap::new(),
         }
     }
 
