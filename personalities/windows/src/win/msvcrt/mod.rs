@@ -11,6 +11,7 @@ mod locks;
 mod lowio;
 mod msstring;
 mod startup;
+mod stat;
 pub(crate) mod stdio;
 mod string;
 mod wide;
@@ -30,6 +31,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         convert::exports(),
         msstring::exports(),
         locks::exports(),
+        stat::exports(),
     ]
     .concat()
 }

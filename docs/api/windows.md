@@ -4,6 +4,9 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `msvcrt.dll` | `_stat` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stat.rs` tests | 36-byte `struct _stat` as documented: drive number, mode bits copied to group and other, creation time in `st_ctime`. EOVERFLOW past 2 GB |
+| `wsock32.dll` | `WSAStartup` | Wazuh 4.14.2: 4 images, including `wazuh-agent.exe` | `src/win/wsock32/startup.rs` tests | Counts starts; grants up to version 2.2 |
+| `wsock32.dll` | `WSACleanup` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/wsock32/startup.rs` tests | WSANOTINITIALISED without a matching start |
 | `kernel32.dll` | `GetCurrentProcessId` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/process.rs` tests | `windows.agent.pid` from the host profile |
 | `msvcrt.dll` | `_getpid` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | As `GetCurrentProcessId` |
 | `msvcrt.dll` | `fgetc` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Unsigned byte or EOF |

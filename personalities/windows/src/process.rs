@@ -404,6 +404,8 @@ pub struct Process {
     pub tls_slots: [bool; 64],
     /// Pages of mapped images, for `VirtualQuery` and `VirtualProtect`.
     pub memory: MemoryMap,
+    /// `WSAStartup` calls not yet matched by `WSACleanup`.
+    pub winsock_starts: u32,
 }
 
 /// Why `Process::load_library` failed.
@@ -437,6 +439,7 @@ impl Process {
             tebs: Vec::new(),
             tls_slots: [false; 64],
             memory: MemoryMap::default(),
+            winsock_starts: 0,
         }
     }
 

@@ -14,6 +14,7 @@ mod psapi;
 mod shlwapi;
 mod text;
 mod wintrust;
+mod wsock32;
 
 /// What we implement for `dll`. System DLLs with nothing implemented yet
 /// return an empty list; their imports become gaps.
@@ -27,6 +28,7 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "psapi.dll" => (psapi::exports(), Vec::new()),
         "shlwapi.dll" => (shlwapi::exports(), Vec::new()),
         "wintrust.dll" => (wintrust::exports(), Vec::new()),
+        "wsock32.dll" => (wsock32::exports(), Vec::new()),
         _ => (Vec::new(), Vec::new()),
     };
     let functions = functions.into_iter().map(|(n, a)| (n, EmuExport::Code(a)));

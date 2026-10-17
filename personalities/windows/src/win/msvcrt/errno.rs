@@ -9,6 +9,7 @@ pub(super) const EMFILE: i32 = 24;
 pub(super) const ENOTDIR: i32 = 20;
 pub(super) const EINVAL: i32 = 22;
 pub(super) const ERANGE: i32 = 34;
+pub(super) const EOVERFLOW: i32 = 132;
 pub(super) const ENOMEM: i32 = 12;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {

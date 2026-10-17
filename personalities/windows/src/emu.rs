@@ -4,12 +4,20 @@
 //! The functions themselves are Rust. Each emulated DLL also gets a small
 //! PE image, so `GetModuleHandle`, `GetProcAddress` and code that walks
 //! module headers find a real DLL. Every export points at a thunk in the
-//! image's `.text` that jumps to the Rust function:
+//! image's `.text`:
 //!
 //! ```text
 //! B8 imm32    mov eax, target
-//! FF E0       jmp eax
+//! E9 rel32    jmp trampoline
 //! ```
+//!
+//! Windows i386 code keeps the stack only 4-byte aligned, while our Rust
+//! functions, built for i686 Linux, assume 16 bytes and use aligned SSE
+//! stores. The trampoline, at the start of `.text`, bridges the two: it
+//! aligns the stack, copies the caller's argument area (256 bytes, enough
+//! for varargs functions such as `printf`), and calls the target. Then it
+//! returns popping exactly as many argument bytes as the target popped:
+//! none for cdecl, all of them for stdcall. `eax` and `edx` pass through.
 //!
 //! Data exports (variables such as `msvcrt!__initenv`) get a zeroed slot in
 //! the image's writable `.data`, which the agent and our Rust code share.
@@ -56,7 +64,40 @@ pub fn is_system_dll(name: &str) -> bool {
 }
 
 const PAGE: u32 = 0x1000;
-const THUNK_SIZE: u32 = 8;
+const THUNK_SIZE: u32 = 16;
+
+/// The realigning trampoline every thunk jumps to, with the target in eax.
+const TRAMPOLINE: [u8; 56] = [
+    0x55, // push ebp
+    0x89, 0xe5, // mov ebp, esp
+    0x56, // push esi
+    0x57, // push edi
+    0x53, // push ebx
+    0x81, 0xec, 0x00, 0x01, 0x00, 0x00, // sub esp, 256
+    0x83, 0xe4, 0xf0, // and esp, -16
+    0x89, 0xe7, // mov edi, esp
+    0x8d, 0x75, 0x08, // lea esi, [ebp+8]
+    0xb9, 0x40, 0x00, 0x00, 0x00, // mov ecx, 64
+    0xfc, // cld
+    0xf3, 0xa5, // rep movsd
+    0x89, 0xe3, // mov ebx, esp
+    0xff, 0xd0, // call eax
+    0x89, 0xe1, // mov ecx, esp
+    0x29, 0xd9, // sub ecx, ebx
+    0x8d, 0x65, 0xf4, // lea esp, [ebp-12]
+    0x5b, // pop ebx
+    0x5f, // pop edi
+    0x5e, // pop esi
+    0x5d, // pop ebp
+    0x50, // push eax
+    0x8b, 0x44, 0x24, 0x04, // mov eax, [esp+4]
+    0x89, 0x44, 0x0c, 0x04, // mov [esp+ecx+4], eax
+    0x58, // pop eax
+    0x01, 0xcc, // add esp, ecx
+    0xc3, // ret
+];
+/// Thunks start after the trampoline, 16-byte aligned.
+const TRAMPOLINE_SPACE: u32 = (TRAMPOLINE.len() as u32).div_ceil(16) * 16;
 const PE_OFFSET: usize = 0x40;
 const OPTIONAL_SIZE: u16 = 0xe0;
 const SUBSYSTEM_WINDOWS_CUI: u16 = 3;
@@ -89,7 +130,7 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, EmuExport)]) -> 
 
     // Where each export lives: a thunk in .text or a slot in .data.
     let text_rva = PAGE;
-    let mut text_size = 0;
+    let mut text_size = TRAMPOLINE_SPACE;
     let mut data_size = 0;
     let mut placed = Vec::new();
     for (_, export) in &sorted {
@@ -191,6 +232,7 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, EmuExport)]) -> 
     w.u32(d + 32, names);
     w.u32(d + 36, ordinals);
     w.bytes(dll_name_rva as usize, dll_name.as_bytes());
+    w.bytes(text_rva as usize, &TRAMPOLINE);
 
     for (i, ((name, export), offset)) in sorted.iter().zip(placed).enumerate() {
         let i = i as u32;
@@ -199,7 +241,9 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, EmuExport)]) -> 
                 let thunk = text_rva + offset;
                 w.bytes(thunk as usize, &[0xb8]);
                 w.u32(thunk as usize + 1, *target);
-                w.bytes(thunk as usize + 5, &[0xff, 0xe0, 0xcc]);
+                w.bytes(thunk as usize + 5, &[0xe9]);
+                let rel = text_rva.wrapping_sub(thunk + 10);
+                w.u32(thunk as usize + 6, rel);
                 thunk
             }
             EmuExport::Data(_) => data_rva + offset,
@@ -280,10 +324,16 @@ mod tests {
                 panic!("{name} is a forwarder");
             };
             assert!(rva >= text.virtual_address && rva < text.virtual_address + text.virtual_size);
-            let thunk = &image.memory[rva as usize..rva as usize + 7];
+            let thunk = &image.memory[rva as usize..rva as usize + 10];
             assert_eq!(thunk[0], 0xb8);
             assert_eq!(u32::from_le_bytes(thunk[1..5].try_into().unwrap()), target);
-            assert_eq!(&thunk[5..], [0xff, 0xe0]);
+            assert_eq!(thunk[5], 0xe9);
+            let rel = u32::from_le_bytes(thunk[6..10].try_into().unwrap());
+            assert_eq!(
+                rva.wrapping_add(10).wrapping_add(rel),
+                text.virtual_address,
+                "jumps to the trampoline"
+            );
         }
 
         let data = &image.headers.sections[1];
@@ -314,5 +364,97 @@ mod tests {
     fn system_dll_names_match_case_insensitively() {
         assert!(is_system_dll("KERNEL32.dll"));
         assert!(!is_system_dll("libwazuhext.dll"));
+    }
+
+    /// How far a 16-byte aligned local is from 16-byte alignment, in the
+    /// high half, and a + b in the low half.
+    #[cfg(target_arch = "x86")]
+    extern "stdcall" fn probe_stdcall(a: u32, b: u32) -> u32 {
+        #[repr(align(16))]
+        struct Aligned(u128);
+        let local = Aligned(a as u128);
+        let on_stack = std::hint::black_box(&local);
+        let misalign = (on_stack as *const Aligned as usize % 16) as u32;
+        misalign << 16 | (on_stack.0 as u32 + b)
+    }
+
+    #[cfg(target_arch = "x86")]
+    extern "C" fn probe_cdecl(a: u32, b: u32) -> u32 {
+        probe_stdcall(a, b)
+    }
+
+    /// Call `f(a, b)` with esp 4 bytes off the alignment i686 code
+    /// expects, as Windows code may. Returns the result and how far esp
+    /// moved over the call (8 if the callee left the arguments).
+    #[cfg(target_arch = "x86")]
+    fn call_misaligned(f: u32, a: u32, b: u32) -> (u32, u32) {
+        let result: u32;
+        let moved: u32;
+        // SAFETY: f takes two 32-bit arguments. The original stack pointer
+        // is kept in a slot above the arguments; edi, which callees
+        // preserve, marks where the arguments start.
+        unsafe {
+            std::arch::asm!(
+                "mov edi, esp",
+                "and esp, -16",
+                "push edi",
+                "sub esp, 8",
+                "push eax",
+                "push ecx",
+                "mov edi, esp",
+                "call edx",
+                "mov ecx, esp",
+                "sub ecx, edi",
+                "mov esp, [edi + 16]",
+                in("edx") f,
+                in("ecx") a,
+                in("eax") b,
+                out("edi") _,
+                lateout("eax") result,
+                lateout("ecx") moved,
+                clobber_abi("C"),
+            );
+        }
+        (result, moved)
+    }
+
+    #[cfg(target_arch = "x86")]
+    #[test]
+    fn trampoline_aligns_the_stack_for_both_conventions() {
+        use crate::map::Mapped;
+
+        // Without the trampoline the probe sees the misaligned stack, so
+        // the test can tell the difference.
+        let (direct, _) = call_misaligned(probe_stdcall as *const () as u32, 1, 2);
+        assert_ne!(direct >> 16, 0, "direct call should be misaligned");
+
+        let exports = [
+            ("cdecl", EmuExport::Code(probe_cdecl as *const () as u32)),
+            (
+                "stdcall",
+                EmuExport::Code(probe_stdcall as *const () as u32),
+            ),
+        ];
+        let len = build_image("probe.dll", 0, &exports).len();
+        let mapped = Mapped::anonymous(0, len).unwrap();
+        let bytes = build_image("probe.dll", mapped.base(), &exports);
+        let image = Image::layout("probe.dll", &bytes).unwrap();
+        mapped.commit(&image).unwrap();
+        let table = image.exports().unwrap().unwrap();
+        let thunk = |n: &str| match table.by_name(n).unwrap().target {
+            ExportTarget::Rva(rva) => mapped.base() + rva,
+            ref other => panic!("{other:?}"),
+        };
+
+        assert_eq!(
+            call_misaligned(thunk("stdcall"), 40, 2),
+            (42, 8),
+            "aligned, args popped"
+        );
+        assert_eq!(
+            call_misaligned(thunk("cdecl"), 5, 6),
+            (11, 0),
+            "aligned, args left"
+        );
     }
 }

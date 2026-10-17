@@ -56,7 +56,7 @@ Loader status:
 | Mapping into a 32-bit process and running code | Done |
 | TEB, `fs` segment, implicit TLS, TLS callbacks | Done (fields in `docs/api/windows.md`) |
 | Module table: dependency order, bundled DLLs from the agent directory, forwarders | Done (`process.rs`) |
-| Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`) |
+| Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`). Calls pass through a trampoline that realigns the stack to 16 bytes |
 | Start-up: TLS callbacks, `DllMain`, entry point (`runtime.rs`, `xvm-windows-run`) | Done |
 | Host profiles, Windows path mapping, command line and environment (`profile.rs`, `paths.rs`, `cmdline.rs`) | Done. Example: `control/profiles/example-windows.toml` |
 | Windows threads with attach and detach notifications (`Runtime::spawn`) | Done. `CreateThread` not started |
@@ -68,8 +68,8 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 130 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its options; loads and initialises `sysinfo.dll` and its bundled DLLs. Next gap: `wsock32!WSAStartup` (networking) |
+| Emulated functions | 133 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock. Next gap: `kernel32!GetEnvironmentVariableW` |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
