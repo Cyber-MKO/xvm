@@ -17,4 +17,5 @@ pub mod protocol;
 pub mod registry;
 pub mod runtime;
 pub mod server;
+pub mod software;
 pub mod store;

@@ -117,8 +117,9 @@ def test_accounts_and_software_details(tmp_path):
         "version": "1.2.3",
         "vendor": "Example Corp",
         "install_date": "2026-01-02",
+        "uninstall_key": "{A}",
     }
-    assert legacy["architecture"] == "x86"
+    assert (legacy["architecture"], legacy["uninstall_key"]) == ("x86", "{X}")
     w32 = base["services"][1]
     assert w32["state"] == "stopped" and w32["start_mode"] == "manual"
     assert w32["account"] == "NT AUTHORITY\\LocalService"

@@ -306,3 +306,77 @@ fn evt_wait_errors() {
         "not_found"
     );
 }
+
+#[test]
+fn uninstall_keys_come_from_the_software_list() {
+    let (socket, _) = start();
+    let mut w = Client::connect(&socket, "win-web-01").unwrap();
+    let root = r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+    let wow = r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
+    // The example host's software entry, as Windows lists it.
+    assert_eq!(
+        w.reg_enum_subkeys(root).unwrap(),
+        json!(["Example Web Server"])
+    );
+    let key = format!(r"{root}\Example Web Server");
+    assert_eq!(
+        w.reg_query_value(&key, "DisplayVersion").unwrap(),
+        json!({"name": "DisplayVersion", "type": "REG_SZ", "data": "2.4.1"})
+    );
+    assert_eq!(
+        w.reg_query_value(&key, "Publisher").unwrap()["data"],
+        "Example Corp"
+    );
+    // A package installed at run time appears at once; 32-bit ones under WOW6432Node.
+    w.call(
+        "list.upsert",
+        json!({"name": "software", "item": {"name": "Old Tool", "version": "1.0",
+            "architecture": "x86", "uninstall_key": "{1234}", "install_date": "2026-03-04"}}),
+    )
+    .unwrap();
+    let old = format!(r"{wow}\{{1234}}");
+    assert_eq!(
+        w.reg_query_value(&old, "DisplayName").unwrap()["data"],
+        "Old Tool"
+    );
+    assert_eq!(
+        w.reg_query_value(&old, "InstallDate").unwrap()["data"],
+        "20260304"
+    );
+    assert!(w.call("reg.key_exists", json!({"key": wow})).unwrap() == json!(true));
+    // Removing the package removes its key.
+    w.call(
+        "list.remove",
+        json!({"name": "software", "item": "Old Tool"}),
+    )
+    .unwrap();
+    assert_eq!(
+        engine_code(w.reg_query_value(&old, "DisplayName").unwrap_err()),
+        "not_found"
+    );
+    // The resolved host stays the profile: derived keys are not listed there.
+    let resolved = w.call("resolved", json!({})).unwrap();
+    assert!(
+        !resolved["registry"]["keys"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .any(|k| k.contains("Uninstall\\Example"))
+    );
+    // A key the host writes at the same path replaces the derived one. Agents
+    // only read these keys; a write starts a run-time key of its own.
+    w.reg_set_value(
+        &key,
+        "DisplayVersion",
+        &json!({"type": "REG_SZ", "data": "9.9"}),
+    )
+    .unwrap();
+    assert_eq!(
+        w.reg_query_value(&key, "DisplayVersion").unwrap()["data"],
+        "9.9"
+    );
+    assert_eq!(
+        engine_code(w.reg_query_value(&key, "Publisher").unwrap_err()),
+        "not_found"
+    );
+}

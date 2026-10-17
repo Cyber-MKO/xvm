@@ -88,6 +88,7 @@ Windows keeps these in the registry, so the profile does too. The capture kit ex
 | Code pages | `HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage` | `ACP` (ANSI), `OEMCP` (OEM), as `REG_SZ` |
 | Product type | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` | `InstallationType` (`Server`, `Client`) |
 | The 32-bit view | `HKLM\SOFTWARE\WOW6432Node\...` | A 32-bit process on 64-bit Windows reads `HKLM\SOFTWARE` here. The capture kit exports `WOW6432Node\Microsoft\Windows NT\CurrentVersion`. Keys missing from the 32-bit view fall back to the 64-bit one in the personality, as a logged gap. |
+| Installed programs | `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\KEY` and its `WOW6432Node` twin | Not in the profile's registry: the engine derives them from `software`, so the two never disagree. An entry's optional `uninstall_key` names the key (an MSI product code, for example); the golden converter keeps the captured name. |
 
 Where the agent's files live on the real disk (the drive mapping) is not part of the profile. It is a launch setting, so a profile describes the emulated host on any machine.
 

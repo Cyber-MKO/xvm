@@ -221,6 +221,9 @@ fn parent(nk: &str) -> Option<&str> {
 pub struct Live<'a> {
     pub lower: View<'a>,
     pub rt: &'a Runtime,
+    /// Keys the engine derives from other host state, such as the Uninstall
+    /// keys from `software`. Below both profile and run-time keys; not in `materialize`.
+    pub synth: crate::software::Synth,
 }
 
 impl Live<'_> {
@@ -229,7 +232,10 @@ impl Live<'_> {
         match self.rt.reg.get(nk) {
             Some(Some(k)) => Some(k.path.clone()),
             Some(None) => None,
-            None => self.lower.listed(nk),
+            None => self
+                .lower
+                .listed(nk)
+                .or_else(|| self.synth.get(nk).map(|(p, _)| p.clone())),
         }
     }
 
@@ -242,6 +248,14 @@ impl Live<'_> {
             .filter(|(k, _)| !matches!(self.rt.reg.get(k), Some(None)))
             .collect();
         let start = format!("{nk}\\");
+        for (k, (path, _)) in self.synth.range(start.clone()..) {
+            if !k.starts_with(&start) {
+                break;
+            }
+            if !matches!(self.rt.reg.get(k), Some(None)) {
+                out.entry(k.clone()).or_insert_with(|| path.clone());
+            }
+        }
         for (k, v) in self.rt.reg.range(start.clone()..) {
             if !k.starts_with(&start) {
                 break;
@@ -278,7 +292,8 @@ impl Live<'_> {
                 if !self.key_exists(path) {
                     return None;
                 }
-                Some(self.lower.values(path).unwrap_or_default())
+                let synth = || self.synth.get(&nk).map(|(_, v)| v.clone());
+                Some(self.lower.values(path).or_else(synth).unwrap_or_default())
             }
         }
     }
@@ -519,6 +534,7 @@ impl Writer<'_> {
                 delta: self.lower.delta,
             },
             rt: self.rt,
+            synth: Default::default(),
         }
     }
 
