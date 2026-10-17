@@ -13,6 +13,7 @@ xvm-census = "xvm_census.cli:main"
 xvm-golden = "xvm_golden.cli:main"
 xvm-profile = "xvm_control.cli:main"
 xvm-scenario = "xvm_scenario.cli:main"
+xvm-msi-install = "xvm_msi.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -24,11 +25,12 @@ packages = [
     "scenarios/xvm_golden",
     "scenarios/xvm_scenario",
     "control/xvm_control",
+    "personalities/windows/installer/xvm_msi",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["census", "scenarios", "control"]
+pythonpath = ["census", "scenarios", "control", "personalities/windows/installer"]
 
 [tool.ruff]
 line-length = 100
@@ -38,4 +40,4 @@ target-version = "py311"
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["xvm_census", "xvm_golden", "xvm_scenario", "xvm_control"]
+known-first-party = ["xvm_census", "xvm_golden", "xvm_scenario", "xvm_control", "xvm_msi"]

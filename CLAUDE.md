@@ -86,14 +86,14 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 156 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Code pages come from the profile. With a manager address it resolves the name (`getaddrinfo`). Reads its version from the engine, logs "Started" and starts its threads. Gets random bytes through CryptoAPI. Then it cannot open `queue\logcollector\file_status.json`: the MSI creates that empty folder, and our unpacked copy has no empty folders. Next: the MSI installer step, and `msvcrt!strerror` |
+| Emulated functions | 158 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install`, it runs as `WazuhSvc`, reads its version from the engine, registers its PID, logs "Started", starts its threads and gets random bytes. Next gap: the registry (`advapi32!RegOpenKeyExA`), to be served by the engine |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
 | Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME`) | Started: `os_info` and registry values |
 | The agent in the engine's process list (`registration.rs`) | Done: `proc.start` with the profile's PID and the real PID, parent `services.exe` for a service; `proc.exit` on every exit path |
-| MSI installer step | Not started |
+| MSI installer step (`installer/xvm_msi`, `xvm-msi-install`) | Done: folders, files and components from the MSI tables, AppSearch registry searches, conditions from the host profile, `WAZUH_MANAGER` and enrollment properties in `ossec.conf`. Custom actions, registry, services, shortcuts and permissions are reported as gaps |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
 

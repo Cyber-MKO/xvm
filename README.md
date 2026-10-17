@@ -32,7 +32,8 @@ Phase 1: the Windows personality's PE32 loader, in [personalities/windows/](pers
 | Rust lint | `cargo fmt --check && cargo clippy --all-targets -- -D warnings` |
 | Rust tests | `cargo test` |
 | List a Windows image's import gaps | `cargo run --target i686-unknown-linux-gnu --bin xvm-windows-load -- IMAGE` |
+| Install a Windows agent MSI onto a host's drive folder | `xvm-msi-install --msi MSI --host-profile HOST.yaml --bases DIR --drive C=FOLDER --program-files 'C:\Program Files (x86)'` |
 | Run a host profile's agent until its first gap | `cargo run --target i686-unknown-linux-gnu --bin xvm-windows-run -- [--engine SOCKET --host NAME] PROFILE` (see `docs/host-profiles.md`) |
 | Rust tests, 32-bit (runs PE code) | `rustup target add i686-unknown-linux-gnu && cargo test --target i686-unknown-linux-gnu` |
 
-System tools for the census, the loader and their tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm gcc-multilib jq`. Tests that need a missing tool are skipped. Set `XVM_REQUIRE_FIXTURES=1` to make the Rust loader tests fail instead.
+System tools for the census, the loader and their tests (Ubuntu): `msitools wixl libarchive-tools rpm2cpio cpio clang lld llvm gcc-multilib jq` (msitools and libarchive-tools also for `xvm-msi-install`). Tests that need a missing tool are skipped. Set `XVM_REQUIRE_FIXTURES=1` to make the Rust loader tests fail instead.
