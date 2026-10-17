@@ -67,7 +67,7 @@ Kasim reviewed the census, accepted the four decisions in `docs/phase1-sizing.md
 | Component | Where | Notes |
 | --- | --- | --- |
 | Host profiles | `control/`, `docs/host-profiles.md` | YAML base images plus per-host deltas; `xvm-profile validate`, `resolve`, `compile`, `base-from-golden` |
-| Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes; run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
+| Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes, Windows event logs (query subset, XML, message templates); run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
 | Golden capture kit | `scenarios/golden/windows/` | `capture.ps1`, `manager-capture.sh`, `xvm-golden` |
 
 Every host fact a personality reports must come from the engine (rule 5). Every write it makes goes through the engine's ops.
