@@ -83,6 +83,7 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | The loader asks the engine for the agent's PID | Decided | Kasim (2026-10-17), option A. The loader registers the agent with `proc.start` and requests the profile's PID; the engine records it instead of assigning one. |
 | The manager address reaches `ossec.conf` through our MSI installer step | Decided | Kasim (2026-10-17), option A. Install properties (such as `WAZUH_MANAGER`) come from the host profile; the step writes them into the configuration as the real installer does. |
 | Name resolution: the host's `hosts` file, then the real resolver | Decided | Kasim (2026-10-17), option B. `getaddrinfo` reads the emulated host's `C:\Windows\System32\drivers\etc\hosts` first, as Windows does, then asks the real machine's resolver. |
+| The runner connects to the engine from its arguments | Decided | Kasim (2026-10-17), option A. `xvm-windows-run --engine SOCKET --host NAME PROFILE`; the control plane picks the host. Host facts come from the engine; the TOML profile keeps loader settings only. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

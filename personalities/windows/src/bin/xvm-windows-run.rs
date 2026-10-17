@@ -6,13 +6,19 @@
 //! `SERVICE_CONTROL_STOP`, any other process exits at once. A second
 //! signal always exits at once.
 //!
-//! Usage: xvm-windows-run PROFILE
+//! With `--engine` and `--host`, host facts come from the host-state
+//! engine on that socket, for that host; without them, functions that
+//! need host facts fail and log a gap.
+//!
+//! Usage: xvm-windows-run [--engine SOCKET --host NAME] PROFILE
 
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 fn main() -> std::process::ExitCode {
     use std::path::PathBuf;
     use std::process::ExitCode;
 
+    use std::sync::{Arc, Mutex};
+    use xvm_engine::client::Client;
     use xvm_windows::cmdline;
     use xvm_windows::process::{Process, ProcessParams};
     use xvm_windows::profile::Profile;
@@ -22,10 +28,30 @@ fn main() -> std::process::ExitCode {
         eprintln!("error: {msg}");
         ExitCode::FAILURE
     };
-    let mut args = std::env::args_os().skip(1).map(PathBuf::from);
-    let (Some(profile_path), None) = (args.next(), args.next()) else {
-        eprintln!("usage: xvm-windows-run PROFILE");
-        return ExitCode::from(2);
+    let usage = || {
+        eprintln!("usage: xvm-windows-run [--engine SOCKET --host NAME] PROFILE");
+        ExitCode::from(2)
+    };
+    let (mut engine, mut host, mut profile_path) = (None, None, None);
+    let mut args = std::env::args_os().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.to_str() {
+            Some("--engine") => engine = args.next().map(PathBuf::from),
+            Some("--host") => host = args.next().and_then(|h| h.into_string().ok()),
+            _ if profile_path.is_none() => profile_path = Some(PathBuf::from(arg)),
+            _ => return usage(),
+        }
+    }
+    let Some(profile_path) = profile_path else {
+        return usage();
+    };
+    let engine = match (engine, host) {
+        (Some(socket), Some(host)) => match Client::connect(&socket, &host) {
+            Ok(client) => Some(Arc::new(Mutex::new(client))),
+            Err(e) => return fail(format!("{}: {e}", socket.display())),
+        },
+        (None, None) => None,
+        _ => return usage(),
     };
     let profile = match Profile::load(&profile_path) {
         Ok(p) => p,
@@ -45,6 +71,7 @@ fn main() -> std::process::ExitCode {
 
     let mut process = Process::new(search);
     process.params = params;
+    process.engine = engine;
     if let Err(e) = process.load(&image) {
         return fail(e.to_string());
     }

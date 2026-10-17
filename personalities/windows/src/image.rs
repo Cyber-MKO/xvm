@@ -8,8 +8,8 @@ use std::collections::HashMap;
 
 use crate::gap::{Gap, GapKind};
 use crate::pe::{
-    DIR_BASERELOC, DIR_DELAY_IMPORT, DIR_EXPORT, DIR_IMPORT, DIR_TLS, Headers, PeError, u16_at,
-    u32_at,
+    DIR_BASERELOC, DIR_DELAY_IMPORT, DIR_EXPORT, DIR_IMPORT, DIR_RESOURCE, DIR_TLS, Headers,
+    PeError, u16_at, u32_at,
 };
 
 /// Base relocation types (PE format, "Base Relocation Types").
@@ -366,6 +366,50 @@ impl Image {
             characteristics: self.u32(d + 20)?,
             callbacks,
         }))
+    }
+
+    /// The application manifest: the first `RT_MANIFEST` (24) resource,
+    /// following the resource directory layout in the PE format
+    /// specification (type, then name, then language).
+    pub fn manifest(&self) -> Result<Option<Vec<u8>>, PeError> {
+        const RT_MANIFEST: u32 = 24;
+        let dir = self.headers.directory(DIR_RESOURCE);
+        if !dir.is_present() {
+            return Ok(None);
+        }
+        let root = dir.rva;
+        // Entries follow a 16-byte header with the named and ID counts.
+        let entries = |table: u32| -> Result<Vec<(u32, u32)>, PeError> {
+            let counts = self.u32(table + 12)?;
+            let n = (counts & 0xffff) + (counts >> 16);
+            (0..n.min(4096))
+                .map(|i| Ok((self.u32(table + 16 + 8 * i)?, self.u32(table + 20 + 8 * i)?)))
+                .collect()
+        };
+        const SUBDIRECTORY: u32 = 0x8000_0000;
+        let Some(&(_, types)) = entries(root)?.iter().find(|e| e.0 == RT_MANIFEST) else {
+            return Ok(None);
+        };
+        let mut offset = types;
+        // Two levels of subdirectories: name, then language.
+        for _ in 0..2 {
+            if offset & SUBDIRECTORY == 0 {
+                return Err(PeError::Malformed("manifest resource directory".into()));
+            }
+            let Some(&(_, next)) = entries(root + (offset & !SUBDIRECTORY))?.first() else {
+                return Ok(None);
+            };
+            offset = next;
+        }
+        if offset & SUBDIRECTORY != 0 {
+            return Err(PeError::Malformed("manifest resource data".into()));
+        }
+        let (rva, size) = (self.u32(root + offset)?, self.u32(root + offset + 4)?);
+        let bytes = self
+            .memory
+            .get(rva as usize..rva as usize + size as usize)
+            .ok_or(PeError::Truncated("manifest"))?;
+        Ok(Some(bytes.to_vec()))
     }
 
     pub fn va_to_rva(&self, va: u32) -> Result<u32, PeError> {

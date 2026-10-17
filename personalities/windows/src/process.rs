@@ -14,6 +14,7 @@ use std::ffi::{CString, c_char};
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use crate::emu;
 use crate::gap::{Gap, GapKind};
@@ -72,6 +73,8 @@ pub struct Module {
     /// this is the main module.
     pub stack_reserve: u32,
     pub size_of_image: u32,
+    /// The application manifest, for images that embed one.
+    pub manifest: Option<String>,
     mapped: Mapped,
 }
 
@@ -416,6 +419,9 @@ pub struct Process {
     /// `getaddrinfo` results not yet freed, by the address of their first
     /// `ADDRINFOA`.
     pub addrinfo: BTreeMap<u32, Box<[u32]>>,
+    /// The host-state engine connection for this host's facts. None in
+    /// tests that need no host facts.
+    pub engine: Option<Arc<Mutex<xvm_engine::client::Client>>>,
 }
 
 /// Why `Process::load_library` failed.
@@ -451,6 +457,7 @@ impl Process {
             memory: MemoryMap::default(),
             winsock_starts: 0,
             addrinfo: BTreeMap::new(),
+            engine: None,
         }
     }
 
@@ -618,6 +625,10 @@ impl Process {
             size_of_image: image.headers.size_of_image,
             is_dll: image.headers.is_dll(),
             entry_point: image.entry_point(),
+            manifest: image
+                .manifest()
+                .map_err(pe)?
+                .map(|m| String::from_utf8_lossy(&m).into_owned()),
             exports: image
                 .exports()
                 .map_err(pe)?
@@ -671,6 +682,7 @@ impl Process {
             size_of_image: image.headers.size_of_image,
             is_dll: true,
             entry_point: None,
+            manifest: None,
             exports: image
                 .exports()
                 .map_err(pe)?

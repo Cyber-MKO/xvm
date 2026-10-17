@@ -157,7 +157,7 @@ extern "stdcall" fn ResetEvent(handle: u32) -> i32 {
 }
 
 #[allow(non_snake_case)]
-extern "stdcall" fn WaitForSingleObject(handle: u32, ms: u32) -> u32 {
+pub(crate) extern "stdcall" fn WaitForSingleObject(handle: u32, ms: u32) -> u32 {
     let runtime = current().expect("emulated call from a thread outside any process");
     let waitable = runtime
         .lock()

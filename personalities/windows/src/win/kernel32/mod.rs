@@ -16,6 +16,7 @@ pub(crate) mod sync;
 pub(crate) mod thread;
 mod timezone;
 mod tls;
+mod version;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     [
@@ -35,6 +36,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         thread::exports(),
         sync::exports(),
         process::exports(),
+        version::exports(),
     ]
     .concat()
 }

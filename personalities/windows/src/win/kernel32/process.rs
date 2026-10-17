@@ -29,7 +29,7 @@ extern "stdcall" fn GetCurrentThread() -> u32 {
 /// The Linux thread ID times 4: unique while the thread lives, and a
 /// multiple of 4 like every Windows thread ID.
 #[allow(non_snake_case)]
-extern "stdcall" fn GetCurrentThreadId() -> u32 {
+pub(crate) extern "stdcall" fn GetCurrentThreadId() -> u32 {
     // SAFETY: gettid has no preconditions.
     (unsafe { libc::gettid() } as u32) << 2
 }

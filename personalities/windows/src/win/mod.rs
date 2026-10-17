@@ -7,6 +7,7 @@ use crate::emu::EmuExport;
 
 mod advapi32;
 mod crypt32;
+pub(crate) mod facts;
 pub(crate) mod kernel32;
 pub(crate) mod msvcrt;
 mod ntdll;

@@ -149,8 +149,10 @@ A Windows path maps to the host through the drive table. Existing components mat
 ### Running
 
 ```
-cargo run --target i686-unknown-linux-gnu --bin xvm-windows-run -- PROFILE
+cargo run --target i686-unknown-linux-gnu --bin xvm-windows-run -- [--engine SOCKET --host NAME] PROFILE
 ```
+
+With `--engine` and `--host`, host facts (such as the OS version) come from `xvm-engined` on that socket, for that host. Without them, functions that need host facts fail and log a gap.
 
 The drive must already hold the agent's files. The MSI installer step will put them there.
 

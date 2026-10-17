@@ -182,16 +182,32 @@ impl Runtime {
     where
         F: FnOnce() -> u32 + Send + 'static,
     {
+        self.spawn_thread(0, start).map(|(handle, _)| handle)
+    }
+
+    /// As `spawn`, with a stack of at least `stack` bytes. Returns once
+    /// the thread exists, with the object other threads wait on.
+    pub fn spawn_thread<F>(
+        &self,
+        stack: usize,
+        start: F,
+    ) -> io::Result<(JoinHandle<u32>, Arc<ThreadObject>)>
+    where
+        F: FnOnce() -> u32 + Send + 'static,
+    {
         let runtime = self.clone();
         let stack = self
             .lock()
             .main_module()
             .map_or(0, |m| m.stack_reserve as usize)
+            .max(stack)
             .max(MIN_STACK);
-        std::thread::Builder::new()
+        let (tell, told) = std::sync::mpsc::channel();
+        let handle = std::thread::Builder::new()
             .stack_size(stack)
             .spawn(move || {
                 let thread = runtime.attach().expect("thread environment");
+                let _ = tell.send(thread.thread().clone());
                 let steps = runtime.lock().thread_steps();
                 for step in &steps {
                     // SAFETY: initialised modules, and this thread has a TEB.
@@ -207,7 +223,11 @@ impl Runtime {
                 runtime.sync().finish_thread(thread.thread(), code);
                 drop(thread);
                 code
-            })
+            })?;
+        let object = told
+            .recv()
+            .map_err(|_| io::Error::other("the new thread could not enter the process"))?;
+        Ok((handle, object))
     }
 
     /// Initialise every module that is not yet initialised.

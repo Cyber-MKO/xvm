@@ -20,6 +20,7 @@ pub const SCN_MEM_WRITE: u32 = 0x8000_0000;
 /// Data directory indexes used by the loader.
 pub const DIR_EXPORT: usize = 0;
 pub const DIR_IMPORT: usize = 1;
+pub const DIR_RESOURCE: usize = 2;
 pub const DIR_BASERELOC: usize = 5;
 pub const DIR_TLS: usize = 9;
 pub const DIR_DELAY_IMPORT: usize = 13;

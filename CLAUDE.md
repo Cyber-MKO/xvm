@@ -77,7 +77,7 @@ Loader status:
 | Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`). Calls pass through a trampoline that realigns the stack to 16 bytes |
 | Start-up: TLS callbacks, `DllMain`, entry point (`runtime.rs`, `xvm-windows-run`) | Done |
 | Host profiles, Windows path mapping, command line and environment (`profile.rs`, `paths.rs`, `cmdline.rs`) | Done. Example: `control/profiles/example-windows.toml`. TOML is a stopgap for loader-only settings until the profile decision; host facts move to the engine |
-| Windows threads with attach and detach notifications (`Runtime::spawn`) | Done. `CreateThread` not started |
+| Windows threads with attach and detach notifications (`Runtime::spawn`) | Done, with `CreateThread` |
 | Service Control Manager, service side (`win/advapi32/service.rs`) | Done. SIGTERM stops a service |
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
 | Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
@@ -86,11 +86,12 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 147 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Code pages come from the profile. With a manager address it resolves the name (`getaddrinfo`). Next gap: `kernel32!GetVersionExA`, which needs the loader to read `os_info` from the engine |
+| Emulated functions | 149 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Code pages come from the profile. With a manager address it resolves the name (`getaddrinfo`). Reads its version from the engine, logs "Started" and starts its threads. Next gaps: `CreateMutexA`, `WaitForMultipleObjects` |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
+| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME`) | Started: `os_info` and registry values |
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
