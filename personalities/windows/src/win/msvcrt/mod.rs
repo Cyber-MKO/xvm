@@ -5,6 +5,7 @@ mod convert;
 mod ctype;
 mod dir;
 mod errno;
+mod fullpath;
 mod heap;
 mod locale;
 mod locks;
@@ -38,6 +39,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         time::exports(),
         random::exports(),
         strerror::exports(),
+        fullpath::exports(),
     ]
     .concat()
 }

@@ -1,5 +1,6 @@
 //! `kernel32.dll`, one submodule per API area.
 
+mod attributes;
 mod codepage;
 pub(crate) mod critsec;
 pub(crate) mod env;
@@ -21,6 +22,7 @@ mod version;
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     [
         error::exports(),
+        attributes::exports(),
         critsec::exports(),
         codepage::exports(),
         env::exports(),

@@ -19,7 +19,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
     ]
 }
 
-extern "C" fn malloc(size: usize) -> *mut c_void {
+pub(super) extern "C" fn malloc(size: usize) -> *mut c_void {
     // SAFETY: plain allocation.
     unsafe { libc::malloc(size) }
 }

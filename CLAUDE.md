@@ -86,12 +86,12 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 158 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install`, it runs as `WazuhSvc`, reads its version from the engine, registers its PID, logs "Started", starts its threads and gets random bytes. Next gap: the registry (`advapi32!RegOpenKeyExA`), to be served by the engine |
+| Emulated functions | 163 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install`, it runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity from the engine, reads the registry, sets up file integrity monitoring and starts log collection. Next gap: the Event Log API (`wevtapi!EvtSubscribe`) |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
-| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME`) | Started: `os_info` and registry values |
+| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME`) | Started: `os_info` and the registry (open, query, close) |
 | The agent in the engine's process list (`registration.rs`) | Done: `proc.start` with the profile's PID and the real PID, parent `services.exe` for a service; `proc.exit` on every exit path |
 | MSI installer step (`installer/xvm_msi`, `xvm-msi-install`) | Done: folders, files and components from the MSI tables, AppSearch registry searches, conditions from the host profile, `WAZUH_MANAGER` and enrollment properties in `ossec.conf`. Custom actions, registry, services, shortcuts and permissions are reported as gaps |
 

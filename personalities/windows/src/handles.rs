@@ -32,6 +32,9 @@ pub enum Object {
     Thread(Arc<ThreadObject>),
     Semaphore(Arc<SemaphoreObject>),
     Mutex(Arc<MutexObject>),
+    /// An open registry key: its path in the engine, such as
+    /// `HKLM\SOFTWARE\WOW6432Node\Wazuh`.
+    RegKey(String),
 }
 
 impl Object {
@@ -42,7 +45,7 @@ impl Object {
             Object::Thread(t) => Some(Waitable::Thread(t.clone())),
             Object::Semaphore(s) => Some(Waitable::Semaphore(s.clone())),
             Object::Mutex(m) => Some(Waitable::Mutex(m.clone())),
-            Object::File(_) => None,
+            Object::File(_) | Object::RegKey(_) => None,
         }
     }
 }
