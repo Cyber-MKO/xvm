@@ -86,12 +86,13 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 155 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| Emulated functions | 156 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
 | `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Code pages come from the profile. With a manager address it resolves the name (`getaddrinfo`). Reads its version from the engine, logs "Started" and starts its threads. Gets random bytes through CryptoAPI. Then it cannot open `queue\logcollector\file_status.json`: the MSI creates that empty folder, and our unpacked copy has no empty folders. Next: the MSI installer step, and `msvcrt!strerror` |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
 | Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME`) | Started: `os_info` and registry values |
+| The agent in the engine's process list (`registration.rs`) | Done: `proc.start` with the profile's PID and the real PID, parent `services.exe` for a service; `proc.exit` on every exit path |
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
@@ -103,6 +104,7 @@ Build and test the loader for both targets: `cargo test` and `cargo test --targe
 | Host profiles | `control/`, `docs/host-profiles.md` | YAML base images plus per-host deltas; `xvm-profile validate`, `resolve`, `compile`, `base-from-golden` |
 | Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes, Windows event logs (query subset, XML, message templates); run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
 | Golden capture kit | `scenarios/golden/windows/` | `capture.ps1`, `manager-capture.sh`, `xvm-golden` |
+| Scenario runner | `scenarios/xvm_scenario/`, `scenarios/README.md` | `xvm-scenario validate`, `run`; YAML steps with named actions, a seeded clock per host, JSON Lines run log; `library/golden-windows.yaml` mirrors the capture |
 
 Every host fact a personality reports must come from the engine (rule 5). Every write it makes goes through the engine's ops.
 

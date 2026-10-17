@@ -1,0 +1,6 @@
+schema: 1
+kind: host-profile
+name: scn-b
+base: scenario-base
+os: windows
+identity: {hostname: SCN-B, domain: WORKGROUP}

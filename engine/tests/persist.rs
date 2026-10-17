@@ -165,7 +165,7 @@ fn workload(e: &mut Engine) {
     );
     let pid = e.ok(
         "proc.start",
-        json!({"image": "wazuh-agent.exe", "native_pid": 4242}),
+        json!({"image": "wazuh-agent.exe", "native_pid": 4242, "pid": 1000}),
     )["pid"]
         .clone();
     e.ok("proc.start", json!({"image": "cmd.exe", "parent_pid": pid}));

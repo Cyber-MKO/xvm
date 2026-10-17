@@ -22,6 +22,7 @@ fn main() -> std::process::ExitCode {
     use xvm_windows::cmdline;
     use xvm_windows::process::{Process, ProcessParams};
     use xvm_windows::profile::Profile;
+    use xvm_windows::registration;
     use xvm_windows::runtime::Runtime;
 
     let fail = |msg: String| {
@@ -75,6 +76,9 @@ fn main() -> std::process::ExitCode {
     if let Err(e) = process.load(&image) {
         return fail(e.to_string());
     }
+    if let Err(e) = registration::start(&mut process) {
+        return fail(e);
+    }
     let runtime = Runtime::new(process);
     if let Err(e) = stop_on_signal(runtime.clone()) {
         return fail(format!("signal handling: {e}"));
@@ -83,7 +87,9 @@ fn main() -> std::process::ExitCode {
         Ok(thread) => thread,
         Err(e) => return fail(format!("entering the process: {e}")),
     };
-    match runtime.run_main(&thread) {
+    let result = runtime.run_main(&thread);
+    registration::exit(&mut runtime.lock(), *result.as_ref().unwrap_or(&1));
+    match result {
         // Exit codes above 255 are truncated, as a Linux exit status is.
         Ok(code) => ExitCode::from(code as u8),
         Err(e) => fail(e.to_string()),
@@ -119,6 +125,7 @@ fn stop_on_signal(runtime: xvm_windows::runtime::Runtime) -> std::io::Result<()>
                 }
                 let is_service = runtime.lock().params.service.is_some();
                 if stopping || !is_service {
+                    xvm_windows::registration::exit(&mut runtime.lock(), 128 + signal as u32);
                     std::process::exit(128 + signal);
                 }
                 eprintln!("signal {signal}: sending SERVICE_CONTROL_STOP");

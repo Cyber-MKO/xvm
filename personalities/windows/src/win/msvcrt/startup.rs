@@ -116,13 +116,17 @@ extern "C" fn exit(status: i32) -> ! {
             GapKind::Feature,
             "msvcrt.dll",
             "DLL_PROCESS_DETACH at process exit",
-        )
+        );
+        crate::registration::exit(p, status as u32);
     });
     std::process::exit(status)
 }
 
 /// Ends the process at once, without `exit_steps`.
 extern "C" fn _exit(status: i32) -> ! {
+    if crate::runtime::current().is_some() {
+        with_current(|p| crate::registration::exit(p, status as u32));
+    }
     // SAFETY: _exit has no preconditions.
     unsafe { libc::_exit(status) }
 }

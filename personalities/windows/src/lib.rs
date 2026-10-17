@@ -24,6 +24,8 @@ pub mod pe;
 pub mod process;
 pub mod profile;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
+pub mod registration;
+#[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod runtime;
 pub mod sha256;
 pub mod sync;

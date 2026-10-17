@@ -1,4 +1,5 @@
-//! The process environment: `GetEnvironmentVariableA/W`.
+//! The process environment: `GetEnvironmentVariableA/W`,
+//! `ExpandEnvironmentStringsA`.
 //!
 //! The variables come from the host profile, as `NAME=value` strings
 //! (`ProcessParams::environment`). Names match without regard to case.
@@ -21,6 +22,10 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         (
             "GetEnvironmentVariableW",
             GetEnvironmentVariableW as *const () as u32,
+        ),
+        (
+            "ExpandEnvironmentStringsA",
+            ExpandEnvironmentStringsA as *const () as u32,
         ),
     ]
 }
@@ -87,9 +92,85 @@ extern "stdcall" fn GetEnvironmentVariableA(
     unsafe { copy_out(value.as_bytes(), out.cast(), out_len) }
 }
 
+/// `text` with each `%NAME%` of a defined variable replaced by its
+/// value. Undefined names and a lone `%` stay as written.
+fn expand(text: &str) -> String {
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find('%') {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + 1..];
+        match after.find('%') {
+            Some(end) => match lookup(&after[..end]) {
+                Some(value) => {
+                    out.push_str(&value);
+                    rest = &after[end + 1..];
+                }
+                None => {
+                    // Keep the first % and look for a name from the second.
+                    out.push('%');
+                    rest = after;
+                }
+            },
+            None => {
+                out.push_str(&rest[start..]);
+                rest = "";
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Returns the length with the NUL, also when `out` is too small (then
+/// nothing is written); 0 on error.
+#[allow(non_snake_case)]
+extern "stdcall" fn ExpandEnvironmentStringsA(text: *const c_char, out: *mut u8, size: u32) -> u32 {
+    // SAFETY: a NUL-terminated string (the API's contract).
+    let Some(text) = (unsafe { ansi(text) }) else {
+        set_last_error(super::error::ERROR_INVALID_PARAMETER);
+        return 0;
+    };
+    let expanded = expand(&text);
+    let needed = expanded.len() as u32 + 1;
+    if !out.is_null() && size >= needed {
+        // SAFETY: out holds `size` bytes (the API's contract).
+        unsafe {
+            std::ptr::copy_nonoverlapping(expanded.as_ptr(), out, expanded.len());
+            *out.add(expanded.len()) = 0;
+        }
+    }
+    needed
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn expands_defined_variables_only() {
+        let runtime = crate::runtime::Runtime::new(crate::process::Process::new(Vec::new()));
+        runtime.lock().params.environment = vec![
+            r"SystemRoot=C:\Windows".into(),
+            r"ProgramFiles=C:\Program Files".into(),
+        ];
+        let _thread = runtime.attach().unwrap();
+        let mut buf = [0xaau8; 64];
+        let n = ExpandEnvironmentStringsA(
+            c"%systemroot%\\x %NOPE% 50% %ProgramFiles%".as_ptr(),
+            buf.as_mut_ptr(),
+            64,
+        );
+        let want = r"C:\Windows\x %NOPE% 50% C:\Program Files";
+        assert_eq!(n as usize, want.len() + 1);
+        assert_eq!(&buf[..want.len() + 1], format!("{want}\0").as_bytes());
+        let mut small = [0xaau8; 4];
+        assert_eq!(
+            ExpandEnvironmentStringsA(c"%SystemRoot%".as_ptr(), small.as_mut_ptr(), 4),
+            11
+        );
+        assert_eq!(small, [0xaa; 4], "nothing written");
+    }
     use crate::process::Process;
     use crate::runtime::Runtime;
 

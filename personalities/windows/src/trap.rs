@@ -100,5 +100,10 @@ extern "C" fn trap_called(id: u32, caller: u32) -> ! {
         ),
         None => eprintln!("gap call with unknown trap id {id} at 0x{caller:08x}"),
     }
+    // The process ends here, so it leaves the engine's process list with
+    // `abort`'s documented exit code.
+    if crate::runtime::current().is_some() {
+        crate::runtime::with_current(|p| crate::registration::exit(p, 3));
+    }
     std::process::abort()
 }

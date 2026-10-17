@@ -4,7 +4,8 @@
 //! the host name), so a host gets the same PIDs every time it starts, and
 //! different hosts get different PIDs, like a real fleet. Windows PIDs are
 //! multiples of 4; Linux and macOS PIDs count up. A profile may pin a PID, for
-//! example System at 4.
+//! example System at 4, and `proc.start` may ask for one, for example the
+//! agent's PID from the loader profile.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -14,8 +15,9 @@ use crate::protocol::code;
 use crate::runtime::Rejected;
 
 /// Fields a caller may give when starting a process.
-const START_FIELDS: [&str; 8] = [
+const START_FIELDS: [&str; 9] = [
     "image",
+    "pid",
     "path",
     "command_line",
     "user",
@@ -266,10 +268,18 @@ impl ProcTable {
                 p
             }
         };
-        let pid = self
-            .pids
-            .next(&self.live)
-            .ok_or_else(|| Rejected(code::BAD_REQUEST, "no free PID".into()))?;
+        let pid = match params.get("pid") {
+            Some(v) => {
+                let pid = v
+                    .as_u64()
+                    .ok_or_else(|| bad("pid must be a whole number".into()))?;
+                self.requested_pid(pid)?
+            }
+            None => self
+                .pids
+                .next(&self.live)
+                .ok_or_else(|| Rejected(code::BAD_REQUEST, "no free PID".into()))?,
+        };
         let mut fields = Map::new();
         for k in ["path", "command_line", "user", "session", "native_pid"] {
             if let Some(v) = params.get(k) {
@@ -286,6 +296,31 @@ impl ProcTable {
         };
         self.live.insert(pid, p.clone());
         Ok(p)
+    }
+
+    /// Check a PID the caller asked for and claim it.
+    fn requested_pid(&mut self, pid: u64) -> Result<u64, Rejected> {
+        let valid = if self.pids.windows {
+            pid != 0 && pid.is_multiple_of(4) && pid < WINDOWS_PID_MAX
+        } else {
+            pid != 0 && pid < UNIX_PID_MAX
+        };
+        if !valid {
+            let rule = if self.pids.windows {
+                "a non-zero multiple of 4 below 65536"
+            } else {
+                "between 1 and 4194303"
+            };
+            return Err(Rejected(
+                code::BAD_REQUEST,
+                format!("pid {pid} is not valid: it must be {rule}"),
+            ));
+        }
+        if self.live.contains_key(&pid) {
+            return Err(Rejected(code::EXISTS, format!("pid {pid} is in use")));
+        }
+        self.pids.reserve(pid);
+        Ok(pid)
     }
 
     /// End a process. Its children keep running and keep their parent PID, as on Windows.

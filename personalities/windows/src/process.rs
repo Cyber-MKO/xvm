@@ -426,6 +426,8 @@ pub struct Process {
     pub named_mutexes: BTreeMap<String, std::sync::Weak<crate::sync::MutexObject>>,
     /// `CryptAcquireContext` provider handles in use; the last one given.
     pub crypt_providers: Vec<u32>,
+    /// The engine's process list holds this process (`registration`).
+    pub registered: bool,
 }
 
 /// Why `Process::load_library` failed.
@@ -464,6 +466,7 @@ impl Process {
             engine: None,
             named_mutexes: BTreeMap::new(),
             crypt_providers: Vec::new(),
+            registered: false,
         }
     }
 

@@ -1,0 +1,32 @@
+# Illustrative Windows base for scenario tests. Not captured from a real host.
+schema: 1
+kind: base-image
+name: scenario-base
+os: windows
+os_info:
+  product_name: Windows Server 2022 Standard Evaluation
+  version: "10.0"
+  build: "20348"
+  timezone: UTC
+  last_boot: "2026-10-17T08:00:00Z"
+users:
+  - {name: Administrator, sid: S-1-5-21-1111-2222-3333-500, enabled: true, groups: [Administrators]}
+  - {name: Guest, sid: S-1-5-21-1111-2222-3333-501, enabled: false, groups: [Guests]}
+groups:
+  - {name: Administrators, sid: S-1-5-32-544}
+  - {name: Users, sid: S-1-5-32-545}
+  - {name: Guests, sid: S-1-5-32-546}
+services:
+  - {name: W32Time, display_name: Windows Time, state: running, start_mode: manual}
+  - {name: Spooler, display_name: Print Spooler, state: stopped, start_mode: manual}
+registry:
+  keys:
+    HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Security: {}
+    HKLM\SYSTEM\CurrentControlSet\Services\EventLog\System: {}
+    HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Application: {}
+files:
+  - {path: C:\Windows, type: dir}
+processes:
+  - {id: system, image: System, pid: 4}
+  - {id: services, image: services.exe, parent: system, start_offset_s: 2}
+  - {id: lsass, image: lsass.exe, parent: system, start_offset_s: 2}
