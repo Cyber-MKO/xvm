@@ -4,7 +4,7 @@ Control plane: CLI and API, host profiles, Habeny provider (Phase 4). See docs/B
 
 | Path | Contents |
 | --- | --- |
-| `xvm_control/` | `xvm-profile` and `xvm-host` tools, the host profile schema, the `.reg` parser and the golden capture converter |
+| `xvm_control/` | `xvm-profile`, `xvm-host` and `xvm-check` tools, the host profile schema, the `.reg` parser and the golden capture converter |
 | `profiles/bases/` | Base images built from golden captures |
 | `profiles/examples/` | Illustrative base and host profile |
 
@@ -53,3 +53,20 @@ The profile folders (`--bases`, `--hosts`) are saved in the run folder on first 
 Binaries: `xvm-engined` from `target/release` or `target/debug`, and `xvm-windows-run` from `target/i686-unknown-linux-gnu/release` or `debug`. `XVM_ENGINED` and `XVM_RUNNER` override them. `ProgramFiles` for the installer comes from the profile's `agent.environment`.
 
 The engine loads profiles when it starts. After changing a profile, run `xvm-host engine restart`; a changed profile discards that host's saved state (see `engine/README.md`, Persistence).
+
+## Phase 1 checks: `xvm-check`
+
+`xvm-check` runs T2 and T3 (docs/BRIEF.md section 11) against the Wazuh manager's REST API. The API password comes from `$WAZUH_API_PASSWORD` (`--password-env` names another variable), never from the command line. `--insecure` accepts the manager's default self-signed certificate; `--ca FILE` checks it instead.
+
+```
+export WAZUH_API_PASSWORD=...
+xvm-check t2 --manager https://manager:55000 --insecure --agent WIN-WEB-01 --log run/t2.jsonl
+xvm-check t3 --manager https://manager:55000 --insecure --profile control/profiles/examples/hosts/win-web-01.yaml
+```
+
+| Test | Pass condition | How |
+| --- | --- | --- |
+| T2 | Agent Active with no disconnects over 24 hours | Samples `GET /agents?name=NAME` every `--interval` (60 s). The agent must reach `active` within `--enroll-timeout` (10 min), then stay `active` for `--duration` (24 h) from that moment, with no keepalive older than `--max-keepalive` (120 s) and no gap between samples over three intervals. API errors are counted, not taken as disconnects. |
+| T3 | Manager shows the OS name and version from the host profile | `os.name` contains `os_info.product_name`; `os.version` starts with `os_info.version` and `build` (such as `10.0.20348`); `os.platform` is the profile's `os`; the agent version is `agent.version` |
+
+T2 writes every sample to `--log`; `--from-log` scores a recorded log again. Both commands exit 0 on a pass, 1 on a fail and 2 when they cannot run, and take `--json` for a result file. Agent fields follow Wazuh's public API reference. The first run against a real manager confirms them.
