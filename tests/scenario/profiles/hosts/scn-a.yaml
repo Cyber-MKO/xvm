@@ -1,0 +1,8 @@
+schema: 1
+kind: host-profile
+name: scn-a
+base: scenario-base
+os: windows
+identity: {hostname: SCN-A, domain: WORKGROUP}
+users:
+  - {name: alice, sid: S-1-5-21-1111-2222-3333-1004, enabled: true, groups: [Users]}

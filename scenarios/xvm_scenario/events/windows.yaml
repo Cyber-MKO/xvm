@@ -1,0 +1,258 @@
+# Windows events the scenario actions write.
+#
+# Field names, order, and the constant values follow the public Microsoft Learn
+# event reference ("4720(S): A user account was created" and its siblings, and
+# the Service Control Manager event 7036). Nothing here comes from a Microsoft
+# binary (CLAUDE.md rule 1).
+#
+# A value in {braces} is filled from host state or the action's parameters when
+# the event is written. A field with no default must be filled, or the write
+# fails. Data fields are written out in full, not merged from an anchor: YAML
+# merge keys would move them to the front and change the field order. Check these against the golden capture once it exists: the fidelity
+# diff, not this file, is the authority on what Windows writes.
+
+security: &security
+  provider: Microsoft-Windows-Security-Auditing
+  provider_guid: "{54849625-5478-4994-A5BA-3E3B0328C30D}"
+  channel: Security
+  level: 0
+  opcode: 0
+  process: lsass.exe
+
+events:
+  "4720":
+    <<: *security
+    task: 13824
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{user_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+      SamAccountName: "{user}"
+      DisplayName: "%%1793"
+      UserPrincipalName: "-"
+      HomeDirectory: "%%1793"
+      HomePath: "%%1793"
+      ScriptPath: "%%1793"
+      ProfilePath: "%%1793"
+      UserWorkstations: "%%1793"
+      PasswordLastSet: "%%1794"
+      AccountExpires: "%%1794"
+      PrimaryGroupId: "513"
+      AllowedToDelegateTo: "-"
+      OldUacValue: "0x0"
+      NewUacValue: "0x15"
+      UserAccountControl: "\r\n\t\t%%2080\r\n\t\t%%2082\r\n\t\t%%2084"
+      UserParameters: "%%1793"
+      SidHistory: "-"
+      LogonHours: "%%1797"
+
+  "4722":
+    <<: *security
+    task: 13824
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{user_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+
+  "4724":
+    <<: *security
+    task: 13824
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{user_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+
+  "4726":
+    <<: *security
+    task: 13824
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{user_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+
+  "4738":
+    <<: *security
+    task: 13824
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      Dummy: "-"
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{user_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+      SamAccountName: "-"
+      DisplayName: "-"
+      UserPrincipalName: "-"
+      HomeDirectory: "-"
+      HomePath: "-"
+      ScriptPath: "-"
+      ProfilePath: "-"
+      UserWorkstations: "-"
+      PasswordLastSet: "-"
+      AccountExpires: "-"
+      PrimaryGroupId: "-"
+      AllowedToDelegateTo: "-"
+      OldUacValue: "0x15"
+      NewUacValue: "0x10"
+      UserAccountControl: "\r\n\t\t%%2048"
+      UserParameters: "-"
+      SidHistory: "-"
+      LogonHours: "-"
+
+  "4732":
+    <<: *security
+    task: 13826
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      MemberName: "-"
+      MemberSid: "{user_sid}"
+      TargetUserName: "{group}"
+      TargetDomainName: "{group_domain}"
+      TargetSid: "{group_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+
+  "4733":
+    <<: *security
+    task: 13826
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      MemberName: "-"
+      MemberSid: "{user_sid}"
+      TargetUserName: "{group}"
+      TargetDomainName: "{group_domain}"
+      TargetSid: "{group_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+
+  "4625":
+    <<: *security
+    task: 12544
+    version: 0
+    keywords: "0x8010000000000000"
+    data:
+      SubjectUserSid: "S-1-0-0"
+      SubjectUserName: "-"
+      SubjectDomainName: "-"
+      SubjectLogonId: "0x0"
+      TargetUserSid: "S-1-0-0"
+      TargetUserName: "{user}"
+      TargetDomainName: "{target_domain}"
+      Status: "{status}"
+      FailureReason: "%%2313"
+      SubStatus: "{sub_status}"
+      LogonType: "{logon_type}"
+      LogonProcessName: "NtLmSsp "
+      AuthenticationPackageName: "NTLM"
+      WorkstationName: "{workstation}"
+      TransactionId: "{00000000-0000-0000-0000-000000000000}"
+      LmPackageName: "-"
+      KeyLength: "0"
+      ProcessId: "0x0"
+      ProcessName: "-"
+      IpAddress: "{ip_address}"
+      IpPort: "{ip_port}"
+
+  "4624":
+    <<: *security
+    task: 12544
+    version: 2
+    keywords: "0x8020000000000000"
+    data:
+      SubjectUserSid: "S-1-0-0"
+      SubjectUserName: "-"
+      SubjectDomainName: "-"
+      SubjectLogonId: "0x0"
+      TargetUserSid: "{user_sid}"
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetLogonId: "{logon_id}"
+      LogonType: "{logon_type}"
+      LogonProcessName: "NtLmSsp "
+      AuthenticationPackageName: "NTLM"
+      WorkstationName: "{workstation}"
+      LogonGuid: "{00000000-0000-0000-0000-000000000000}"
+      TransmittedServices: "-"
+      LmPackageName: "NTLM V2"
+      KeyLength: "128"
+      ProcessId: "0x0"
+      ProcessName: "-"
+      IpAddress: "{ip_address}"
+      IpPort: "{ip_port}"
+      ImpersonationLevel: "%%1833"
+      RestrictedAdminMode: "-"
+      TargetOutboundUserName: "-"
+      TargetOutboundDomainName: "-"
+      VirtualAccount: "%%1843"
+      TargetLinkedLogonId: "0x0"
+      ElevatedToken: "%%1843"
+
+  "7036":
+    provider: Service Control Manager
+    provider_guid: "{555908d1-a6d7-4695-8e1e-26931d2012f4}"
+    event_source: Service Control Manager
+    channel: System
+    qualifiers: 16384
+    level: 4
+    task: 0
+    opcode: 0
+    version: 0
+    keywords: "0x8080000000000000"
+    process: services.exe
+    data:
+      param1: "{display_name}"
+      param2: "{state}"
+
+  # eventcreate.exe: a classic Application event from a named source.
+  marker:
+    provider: "{source}"
+    event_source: "{source}"
+    event_id: "{event_id}"
+    channel: "{log}"
+    qualifiers: 0
+    level: 4
+    task: 0
+    opcode: 0
+    version: 0
+    keywords: "0x80000000000000"
+    data:
+      - "{description}"
