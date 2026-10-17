@@ -12,6 +12,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("__getmainargs", __getmainargs as *const () as u32),
         ("__p__acmdln", __p__acmdln as *const () as u32),
         ("_onexit", _onexit as *const () as u32),
+        ("_getpid", _getpid as *const () as u32),
         ("_initterm", _initterm as *const () as u32),
         ("__set_app_type", __set_app_type as *const () as u32),
         ("__p__fmode", __p__fmode as *const () as u32),
@@ -75,6 +76,11 @@ extern "C" fn __p__acmdln() -> *mut *mut c_char {
         });
         &mut *acmdln.variable as *mut *mut c_char
     })
+}
+
+/// The process ID from the host profile, as `GetCurrentProcessId`.
+extern "C" fn _getpid() -> i32 {
+    with_current(|p| p.params.pid as i32)
 }
 
 /// Registers `function` to be called at normal process exit, after
@@ -237,6 +243,13 @@ mod tests {
         let text = unsafe { std::ffi::CStr::from_ptr(*variable) };
         assert_eq!(text.to_str().unwrap(), line);
         assert_eq!(__p__acmdln(), variable);
+    }
+
+    #[test]
+    fn getpid_reports_the_profile_pid() {
+        let (runtime, _thread) = attached_with("prog", &[]);
+        runtime.lock().params.pid = 1234 * 4;
+        assert_eq!(_getpid(), 4936);
     }
 
     #[test]

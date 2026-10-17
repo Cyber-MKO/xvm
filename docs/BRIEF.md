@@ -55,6 +55,7 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Certificate stores come from the host profile | Decided | Kasim (2026-10-16), option A. DER files per store; read with our own reader (X.690, RFC 5280) for only the fields the census needs. |
 | Signature verdicts come from a trusted-file list in the profile | Decided | Kasim (2026-10-16), option B. SHA-256 per file; emulated system DLLs count as signed. The profile also names the directory emulated system DLLs report. |
 | `ntdll.dll` and `kernel32.dll` are mapped into every process | Decided | As on Windows, whether imported or not. The agent looks up `ntdll!LdrRegisterDllNotification` at run time. |
+| The agent's process ID comes from the host profile | Decided | Kasim (2026-10-17), option A. `windows.agent.pid`, a non-zero multiple of 4. The state engine's process list will include it. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

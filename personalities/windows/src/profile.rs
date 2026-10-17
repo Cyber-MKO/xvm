@@ -85,6 +85,10 @@ pub struct AgentProcess {
     /// The full command line, as `GetCommandLine` returns it.
     pub command_line: String,
     pub current_directory: String,
+    /// The agent's process ID: not 0 and a multiple of 4, as Windows
+    /// process IDs are. The host-state engine's process list will include
+    /// it.
+    pub pid: u32,
     /// The service the Service Control Manager starts the agent as. Absent
     /// for an agent started from a console.
     #[serde(default)]
@@ -195,6 +199,12 @@ impl Profile {
         if stores.windows(2).any(|w| w[0] == w[1]) {
             return invalid("certificate store names must differ ignoring case".into());
         }
+        if windows.agent.pid == 0 || windows.agent.pid % 4 != 0 {
+            return invalid(format!(
+                "agent pid {} is not a non-zero multiple of 4",
+                windows.agent.pid
+            ));
+        }
         if stores.iter().any(|s| s.is_empty() || !s.is_ascii()) {
             return invalid("certificate store names must be non-empty ASCII".into());
         }
@@ -236,6 +246,7 @@ mod tests {
         [windows.agent]
         command_line = '"C:\Program Files\app\app.exe" -f'
         current_directory = 'C:\Windows\system32'
+        pid = 4812
 
         [windows.environment]
         windir = 'C:\Windows'
@@ -265,6 +276,9 @@ mod tests {
         assert!(bad("{ C = ", "{ c = "));
         assert!(bad("{ C = ", "{ CD = "));
         assert!(bad("schema = 1", "schema = 2"));
+        assert!(bad("pid = 4812", "pid = 4813"));
+        assert!(bad("pid = 4812", "pid = 0"));
+        assert!(bad("pid = 4812\n", ""));
         assert!(bad("[windows.agent]", "[windows.agent]\nextra = 1"));
         assert!(bad(
             "TEST-HOST\"\n        os = \"windows\"",

@@ -54,6 +54,9 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("_fdopen", _fdopen as *const () as u32),
         ("fgets", fgets as *const () as u32),
+        ("fgetc", fgetc as *const () as u32),
+        ("getc", fgetc as *const () as u32),
+        ("ungetc", ungetc as *const () as u32),
         ("feof", feof as *const () as u32),
         ("ferror", ferror as *const () as u32),
         ("fclose", fclose as *const () as u32),
@@ -258,6 +261,42 @@ extern "C" fn fgets(buf: *mut c_char, n: i32, file: u32) -> *mut c_char {
     buf
 }
 
+/// The next byte as an unsigned value, or EOF at the end of the file or
+/// on an error. `getc` is the same function.
+extern "C" fn fgetc(file: u32) -> i32 {
+    let readable = with_current(|p| stream_mut(p, file).map(|s| s.read));
+    match readable {
+        Some(true) => next_byte(file).map_or(EOF, i32::from),
+        Some(false) => {
+            with_current(|p| stream_mut(p, file).map(|s| s.error = true));
+            EOF
+        }
+        None => {
+            errno::set(EINVAL);
+            EOF
+        }
+    }
+}
+
+/// Pushes `c` back so the next read returns it, and clears end of file.
+/// Pushing back EOF fails, as the C standard says.
+extern "C" fn ungetc(c: i32, file: u32) -> i32 {
+    if c == EOF {
+        return EOF;
+    }
+    with_current(|p| match stream_mut(p, file) {
+        Some(s) => {
+            s.pending.push_front(c as u8);
+            s.eof = false;
+            c & 0xff
+        }
+        None => {
+            errno::set(EINVAL);
+            EOF
+        }
+    })
+}
+
 extern "C" fn feof(file: u32) -> i32 {
     with_current(|p| stream_mut(p, file).is_some_and(|s| s.eof && s.pending.is_empty())) as i32
 }
@@ -334,6 +373,24 @@ mod tests {
         assert_eq!(ferror(f), 0);
         assert_eq!(fclose(f), 0);
         assert_eq!(fclose(f), EOF);
+    }
+
+    #[test]
+    fn fgetc_ungetc_and_end_of_file() {
+        let (_r, _t, fd) = with_file("getc", b"ab\r\n");
+        let f = _fdopen(fd, c"r".as_ptr());
+        assert_eq!(fgetc(f), b'a' as i32);
+        assert_eq!(ungetc(b'z' as i32, f), b'z' as i32);
+        assert_eq!(fgetc(f), b'z' as i32);
+        assert_eq!(fgetc(f), b'b' as i32);
+        assert_eq!(fgetc(f), b'\n' as i32, "text mode");
+        assert_eq!(fgetc(f), EOF);
+        assert_eq!(feof(f), 1);
+        assert_eq!(ungetc(0xe9, f), 0xe9);
+        assert_eq!(feof(f), 0, "ungetc clears end of file");
+        assert_eq!(fgetc(f), 0xe9, "bytes come back unsigned");
+        assert_eq!(ungetc(EOF, f), EOF);
+        fclose(f);
     }
 
     #[test]

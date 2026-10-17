@@ -26,6 +26,7 @@ drives = {{ C = "{}" }}
 [windows.agent]
 command_line = 'C:\service.exe'
 current_directory = 'C:\'
+pid = 4812
 service = 'XvmTestSvc'
 "#,
             dir.display()

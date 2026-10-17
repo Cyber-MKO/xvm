@@ -176,6 +176,8 @@ pub struct ProcessParams {
     /// The service the Service Control Manager started this process as,
     /// or `None` for a process started any other way.
     pub service: Option<String>,
+    /// The process ID the agent sees.
+    pub pid: u32,
     /// System certificate stores by upper-case name.
     pub cert_stores: BTreeMap<String, Vec<Certificate>>,
     /// Where emulated system DLLs say they were loaded from.
@@ -192,6 +194,7 @@ impl ProcessParams {
             current_directory: windows.agent.current_directory.clone(),
             drives: DriveMap::new(&windows.drives),
             service: windows.agent.service.clone(),
+            pid: windows.agent.pid,
             cert_stores: windows.certificates.clone(),
             system_module_directory: windows.system_module_directory.clone(),
             trusted_files: windows

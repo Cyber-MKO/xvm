@@ -5,7 +5,17 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("GetCurrentProcess", GetCurrentProcess as *const () as u32),
         ("GetCurrentThreadId", GetCurrentThreadId as *const () as u32),
         ("GetCurrentThread", GetCurrentThread as *const () as u32),
+        (
+            "GetCurrentProcessId",
+            GetCurrentProcessId as *const () as u32,
+        ),
     ]
+}
+
+/// The process ID from the host profile (`windows.agent.pid`).
+#[allow(non_snake_case)]
+extern "stdcall" fn GetCurrentProcessId() -> u32 {
+    crate::runtime::with_current(|p| p.params.pid)
 }
 
 /// The pseudo-handle for the calling thread, `(HANDLE)-2`, as documented.
@@ -41,6 +51,15 @@ mod tests {
     fn current_process_is_the_documented_pseudo_handle() {
         assert_eq!(GetCurrentProcess(), u32::MAX);
         assert_eq!(GetCurrentThread(), u32::MAX - 1);
+    }
+
+    #[test]
+    fn process_id_comes_from_the_profile() {
+        let mut process = crate::process::Process::new(Vec::new());
+        process.params.pid = 4812;
+        let runtime = crate::runtime::Runtime::new(process);
+        let _thread = runtime.attach().unwrap();
+        assert_eq!(GetCurrentProcessId(), 4812);
     }
 
     #[test]

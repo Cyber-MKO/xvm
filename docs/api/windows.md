@@ -4,6 +4,11 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 
 | DLL | Function | Called by (census) | Test | Notes |
 | --- | --- | --- | --- | --- |
+| `kernel32.dll` | `GetCurrentProcessId` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/process.rs` tests | `windows.agent.pid` from the host profile |
+| `msvcrt.dll` | `_getpid` | Wazuh 4.14.2: 8 images, including `wazuh-agent.exe` | `src/win/msvcrt/startup.rs` tests | As `GetCurrentProcessId` |
+| `msvcrt.dll` | `fgetc` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Unsigned byte or EOF |
+| `msvcrt.dll` | `getc` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Same function as `fgetc` |
+| `msvcrt.dll` | `ungetc` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/msvcrt/stdio.rs` tests | Clears end of file; pushing back EOF fails |
 | `kernel32.dll` | `GetThreadPriority` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/thread.rs` tests | Kept on the thread object |
 | `kernel32.dll` | `SetThreadPriority` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/thread.rs` tests | Kept, not applied to the host scheduler. Background mode is a logged gap |
 | `kernel32.dll` | `CreateSemaphoreA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/sync.rs` tests | A name is a logged gap |

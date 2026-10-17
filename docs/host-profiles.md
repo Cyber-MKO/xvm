@@ -13,6 +13,7 @@ Profiles are where host facts live (CLAUDE.md rule 5). An example is in `control
 | `host.os` | string | `windows`, `macos` or `linux` |
 | `windows.drives` | table | Drive letter (one upper-case letter) to host directory. Relative directories are resolved against the profile file. |
 | `windows.agent.command_line` | string | The agent process's full command line, as `GetCommandLine` returns it. Its program name picks the executable to load. |
+| `windows.agent.pid` | integer | The agent's process ID: not 0 and a multiple of 4. `GetCurrentProcessId` and `_getpid` return it |
 | `windows.agent.current_directory` | string | The agent's starting directory, as a Windows path |
 | `windows.agent.service` | string, optional | The service the Service Control Manager started the agent as. Without it, `StartServiceCtrlDispatcherA` fails as it does for a console process. |
 | `windows.cert_stores` | table, optional | System certificate store name (`ROOT`, `CA`, `MY`) to a list of DER certificate files, relative to the profile. Read and checked when the profile loads. Store names are compared ignoring case. |

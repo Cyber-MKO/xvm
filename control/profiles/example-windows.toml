@@ -21,6 +21,8 @@ system_module_directory = 'C:\Windows\SysWOW64'
 command_line = '"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe"'
 # Services start in the system directory.
 current_directory = 'C:\Windows\system32'
+# The agent's process ID. Example value; Windows IDs are multiples of 4.
+pid = 4812
 # The Service Control Manager starts the agent as this service.
 service = 'WazuhSvc'
 

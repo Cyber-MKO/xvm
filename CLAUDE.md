@@ -68,11 +68,11 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 125 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its options; loads `sysinfo.dll` and its bundled DLLs, which initialise fully. Next gap: `msvcrt!_getpid` (waits on the process-ID decision) |
+| Emulated functions | 130 of 617 plus `ntdll!LdrRegisterDllNotification`, and 1 data export. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its options; loads and initialises `sysinfo.dll` and its bundled DLLs. Next gap: `wsock32!WSAStartup` (networking) |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
-| `GetModuleHandle`, `GetProcAddress` | Done. `LoadLibrary` not started |
+| `GetModuleHandle`, `GetProcAddress` | Done |
 | MSI installer step | Not started |
 
 Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
