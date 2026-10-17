@@ -96,6 +96,10 @@
      "type": "REG_SZ",
      "data": "Windows Server 2022 Standard Evaluation"
     },
+    "InstallationType": {
+     "type": "REG_SZ",
+     "data": "Server"
+    },
     "CurrentBuildNumber": {
      "type": "REG_SZ",
      "data": "20348"
@@ -116,7 +120,117 @@
      "type": "REG_SZ",
      "data": "21H2"
     }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation": {
+    "Bias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "StandardName": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    },
+    "StandardBias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "StandardStart": {
+     "type": "REG_BINARY",
+     "data": "00000000000000000000000000000000"
+    },
+    "DaylightName": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    },
+    "DaylightBias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "DaylightStart": {
+     "type": "REG_BINARY",
+     "data": "00000000000000000000000000000000"
+    },
+    "ActiveTimeBias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "TimeZoneKeyName": {
+     "type": "REG_SZ",
+     "data": "UTC"
+    },
+    "DynamicDaylightTimeDisabled": {
+     "type": "REG_DWORD",
+     "data": 0
+    }
+   },
+   "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones\\UTC": {
+    "Display": {
+     "type": "REG_SZ",
+     "data": "(UTC) Coordinated Universal Time"
+    },
+    "Std": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    },
+    "Dlt": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage": {
+    "ACP": {
+     "type": "REG_SZ",
+     "data": "1252"
+    },
+    "OEMCP": {
+     "type": "REG_SZ",
+     "data": "437"
+    }
    }
   }
- }
+ },
+ "processes": [
+  {
+   "id": "system",
+   "image": "System",
+   "pid": 4,
+   "user": "NT AUTHORITY\\SYSTEM"
+  },
+  {
+   "id": "smss",
+   "image": "smss.exe",
+   "path": "C:\\Windows\\System32\\smss.exe",
+   "parent": "system",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 1
+  },
+  {
+   "id": "wininit",
+   "image": "wininit.exe",
+   "path": "C:\\Windows\\System32\\wininit.exe",
+   "parent": "smss",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 3
+  },
+  {
+   "id": "services",
+   "image": "services.exe",
+   "path": "C:\\Windows\\System32\\services.exe",
+   "parent": "wininit",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 4
+  },
+  {
+   "id": "lsass",
+   "image": "lsass.exe",
+   "path": "C:\\Windows\\System32\\lsass.exe",
+   "parent": "wininit",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 4
+  }
+ ]
 }

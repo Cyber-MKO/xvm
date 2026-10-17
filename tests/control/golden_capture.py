@@ -158,6 +158,11 @@ def files() -> dict[str, bytes]:
             r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\TimeZoneInformation]",
             '"TimeZoneKeyName"="UTC"',
         ),
+        "registry/codepage.reg": _reg(
+            r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Nls\CodePage]",
+            '"ACP"="1252"',
+            '"OEMCP"="437"',
+        ),
         "registry/eventlog-security.reg": _reg(
             r"[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Security]",
             '"MaxSize"=dword:01400000',

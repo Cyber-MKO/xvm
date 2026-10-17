@@ -20,7 +20,9 @@ use crate::runtime::{Live, Runtime, Writer};
 /// Lists that merge entry by entry, keyed by `name`.
 pub const KEYED_LISTS: [&str; 4] = ["users", "groups", "software", "services"];
 /// Object sections a host can ask for whole.
-pub const SECTIONS: [&str; 5] = ["identity", "os_info", "hardware", "network", "agent"];
+pub const SECTIONS: [&str; 6] = [
+    "identity", "os_info", "hardware", "network", "agent", "windows",
+];
 /// Sections with their own layering, kept out of the generic object merge.
 const LAYERED: [&str; 5] = [
     "network",

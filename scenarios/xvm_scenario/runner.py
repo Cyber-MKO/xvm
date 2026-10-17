@@ -167,13 +167,21 @@ def run(
             conns[h] = Engine(socket_path, h)
             if conns[h].hello.get("os") != sc.os:
                 raise ScenarioInvalid([f"host {h} is {conns[h].hello.get('os')}, not {sc.os}"])
+        for h in hosts:
+            contexts[h] = _context(conns[h], h, sc, log)
         log.write(
             {
                 "record": "start",
                 "scenario": sc.name,
                 "start": format_time(start),
                 "seed": seed or sc.name,
-                "hosts": {h: {"skew_s": round(c.skew, 3)} for h, c in clocks.items()},
+                "hosts": {
+                    h: {
+                        "skew_s": round(c.skew, 3),
+                        "identity": contexts[h].host_identity().to_json(),
+                    }
+                    for h, c in clocks.items()
+                },
             }
         )
         for p in plan(sc, clocks):
@@ -181,9 +189,7 @@ def run(
                 wait = (p.at - start).total_seconds() / speed - (systime.monotonic() - t0)
                 if wait > 0:
                     systime.sleep(wait)
-            ctx = contexts.get(p.host)
-            if ctx is None:
-                ctx = contexts[p.host] = _context(conns[p.host], p.host, sc, log)
+            ctx = contexts[p.host]
             ctx._step = p.step.index  # for the log records the action makes
             base = {"host": p.host, "step": p.step.index, "name": p.step.name}
             try:

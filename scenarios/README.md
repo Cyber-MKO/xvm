@@ -5,9 +5,34 @@ Scenario engine and golden corpora. See docs/BRIEF.md.
 | Path | Contents |
 | --- | --- |
 | `golden/windows/` | Capture kit for the Windows golden baseline (Phase 0) |
-| `xvm_golden/` | `xvm-golden` tool: verify a baseline, import manager events |
+| `xvm_golden/` | `xvm-golden` tool: verify a baseline, import manager events, manager-side checks (fidelity, T5, T6) |
 | `xvm_scenario/` | `xvm-scenario` tool: check scenarios and play them on emulated hosts |
 | `library/` | Ready-made scenarios |
+
+## Manager-side checks
+
+These compare what the Wazuh manager received from an emulated host with the golden run. Copy the emulated agent's events with `golden/windows/manager-capture.sh`, as for the golden VM.
+
+| Command | Checks |
+| --- | --- |
+| `xvm-golden diff-manager GOLDEN --archives A --alerts L --run-log R [--agent NAME]` | The fidelity test, T6 and T5 together |
+| `xvm-golden delivery --archives A --run-log R [--agent NAME]` | T5 only, for any run (a scenario or a corpus replay) |
+
+| Check | Pass condition | How |
+| --- | --- | --- |
+| Fidelity | Only host-identity fields differ | Windows events in `archives.json` pair by log, provider and ID, in order, and compare field by field. Identity becomes `{computer}` and `{machine_sid}` on both sides. Skipped: `timestamp`, `id`, `agent.*`, `manager.name`, `full_log`, and `systemTime`, `eventRecordID`, `computer`, `processID`, `threadID` under `data.win.system`. Logon IDs, ports and GUIDs compare by shape. |
+| T6 detection parity | Same rule IDs, same counts | `rule.id` counts in `alerts.json` |
+| T5 event delivery | Every injected event arrives exactly once | Each event the run log wrote (log and record ID) appears once in `archives.json` |
+
+| Finding | Severity |
+| --- | --- |
+| A field differs, is missing or is extra on a paired Windows event | error |
+| More Windows events of a kind than the golden run | error |
+| Fewer Windows events of a kind, or a different count of other agent output (FIM, inventory) | warning |
+| A rule fires a different number of times | error |
+| An event missing or arriving more than once | error |
+
+Field names follow Wazuh's `windows_eventchannel` output (`data.win.system`, `data.win.eventdata`) as Wazuh documents it. The golden run is the authority. Both commands exit 1 on any error and take `--json` for a report file.
 
 ## Scenario runner
 
@@ -43,6 +68,8 @@ The schema is `xvm_scenario/schema/scenario.schema.json`.
 | `xvm-scenario validate FILE...` | Checks files against the schema and each action's parameters |
 | `xvm-scenario run FILE --socket S --host H [--host H2...]` | Plays the scenario |
 | `xvm-scenario run FILE --host H --dry-run` | Prints the timeline only |
+| `xvm-scenario replay CAPTURE --socket S --host H...` | Replays a golden capture's events (below) |
+| `xvm-scenario diff-events CAPTURE RUNLOG` | Compares a run's events with the capture, step by step (below) |
 | `xvm-scenario actions` | Lists the actions and their parameters |
 
 | `run` option | Default | Meaning |
@@ -74,6 +101,7 @@ Each host has its own clock: a fixed skew in `[-max-skew, +max-skew]` and a per-
 | `process.start`, `process.exit` | Process table. `process.start` may request a `pid`. | none: process auditing is off by default |
 | `registry.set`, `registry.delete_value`, `registry.delete_key` | Registry | none |
 | `event` | none | Any event, as given |
+| `replay.event` | none | A captured event, rewritten to name this host (used by `replay`) |
 
 Event layouts are in `xvm_scenario/events/windows.yaml`. Field names and order follow the public Microsoft Learn event reference. Every value comes from the host's state in the engine or from the step (CLAUDE.md rule 5): SIDs, the computer name, display names, and the `process_id` of `lsass.exe` or `services.exe` from the engine's process table. The golden capture is the authority: the fidelity diff checks these layouts against what Windows wrote.
 
@@ -83,13 +111,43 @@ One JSON object per line:
 
 | `record` | Holds |
 | --- | --- |
-| `start` | Scenario, start time, seed, each host's skew |
+| `start` | Scenario, start time, seed, and per host its skew and identity (computer name, machine SID, PID to image) |
 | `call` | One engine write: host, step, op, parameters, and the result or error. Reads are left out. |
 | `gap` | Something a step needed and the host lacked, such as no `lsass.exe` for `process_id` (CLAUDE.md rule 4) |
 | `step` | Host, step, action, host time, `ok`, and the error if it failed |
 | `end` | Failed steps and gaps |
 
 A failed step does not stop the run unless `--stop-on-error` is set. `run` exits 1 if any step failed.
+
+### Golden corpus replay
+
+`xvm-scenario replay` plays the events of a golden capture on emulated hosts. It reads `evtx/scenario/LOG.rendered.xml` (the scenario window, the default) or `evtx/rendered/LOG.xml` (`--source recent`, the newest events of each log). It takes the same options as `run`.
+
+| Behaviour | Detail |
+| --- | --- |
+| Timing | Each event keeps its offset from the first event. Each host plays the corpus on its own clock. |
+| Identity | The capture VM's computer name (from `manifest.json`) and machine SID (from `host/users.json`) become the emulated host's (CLAUDE.md rule 5). Whole names only: `GOLDEN-VM$` is rewritten, `GOLDEN-VMX` is not. |
+| Process IDs | A captured process ID is mapped by image name (`host/processes.json`) to the same process on the emulated host. If the host has no such process, `process_id` is left out and a gap is logged. |
+| Messages | The rendered message is kept with the event, so `EvtFormatMessage` returns what Windows showed |
+| Skipped | `UserData` events (the engine stores `EventData` only) and `Binary` data, with a note |
+
+Line ends inside data values are as the XML parser returns them (LF). The fidelity diff will show whether Windows renders CRLF there.
+
+### Event-layout diff
+
+`xvm-scenario diff-events CAPTURE RUNLOG` compares the events our actions wrote in a run of `library/golden-windows.yaml` with what Windows wrote for the same steps. Steps pair by name; golden events belong to a step by the step window in `manifest.json`. Events pair by kind (log, provider, ID) in order.
+
+| Finding | Severity |
+| --- | --- |
+| We write an event kind Windows did not write in that step, or more of them | error |
+| Header differs: version, level, task, opcode, keywords, qualifiers, provider GUID, source | error |
+| Data field names or order differ | error |
+| A data value differs, after identity becomes `{computer}` and `{machine_sid}` and line ends become LF | error |
+| A value that varies by run (`SubjectLogonId`, `TargetLogonId`, `TargetLinkedLogonId`, `LogonGuid`, `IpPort`, `ProcessId`) has a different shape (hex, decimal, GUID, `-`) | error |
+| A different process wrote the event | error |
+| Windows wrote an event kind we did not | warning: an incomplete action, or background noise |
+
+It prints a table per step and the findings, writes JSON with `--json`, and exits 1 on any error. Once Kasim's capture exists, run it on the capture to check `xvm_scenario/events/windows.yaml`.
 
 ### Library
 
@@ -104,4 +162,4 @@ A failed step does not stop the run unless `--stop-on-error` is set. `run` exits
 | macOS and Linux actions | The format takes `os: linux` and `os: macos`; there are no actions for them yet |
 | RID history | A deleted account's RID can be reused, since the engine keeps no record of it. Windows never reuses one. |
 | Per-host steps | Every step runs on every host |
-| Fidelity diff | Comparing a run with the golden capture is a later step (T5) |
+| Manager-side diff | Comparing the manager's `archives.json` and `alerts.json` with the golden run (T5, T6) |

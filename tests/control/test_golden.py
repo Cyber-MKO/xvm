@@ -49,6 +49,9 @@ def test_identity_is_left_out(tmp_path):
     assert keys[COMPUTERNAME] == {"Other": {"type": "REG_SZ", "data": "kept"}}
     assert set(keys[TCPIP]) == {"SearchList"}
     assert not any("Interfaces" in k for k in keys)
+    # The personality reads the code pages from the registry, as Windows keeps them.
+    codepage = keys["HKLM\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage"]
+    assert (codepage["ACP"]["data"], codepage["OEMCP"]["data"]) == ("1252", "437")
     text = yaml.safe_dump(base)
     for secret in (
         "GOLDEN-VM",

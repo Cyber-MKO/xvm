@@ -139,6 +139,24 @@ fn queries_over_the_socket() {
     // A second connection serves a different host on the same engine.
     let mut w = Client::connect(&socket, "win-web-01").unwrap();
     assert_eq!(w.section("identity").unwrap()["hostname"], "WIN-WEB-01");
+    // The loader's settings: the agent's launch fields and the windows section.
+    let agent = w.section("agent").unwrap();
+    assert_eq!(agent["pid"], 4812);
+    assert_eq!(agent["service"], "WazuhSvc");
+    assert_eq!(agent["environment"]["COMPUTERNAME"], "WIN-WEB-01");
+    let win = w.section("windows").unwrap();
+    assert_eq!(win["system_module_directory"], r"C:\Windows\SysWOW64");
+    assert_eq!(
+        win["cert_stores"]["ROOT"][0]["name"],
+        "DigiCert Assured ID Root CA"
+    );
+    assert_eq!(
+        w.reg_query_value(r"HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage", "ACP")
+            .unwrap()["data"],
+        "1252"
+    );
+    // A host without the section gets null.
+    assert!(c.section("windows").unwrap().is_null());
 }
 
 #[test]

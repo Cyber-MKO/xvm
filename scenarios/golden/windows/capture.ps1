@@ -58,6 +58,7 @@ $RegistryKeys = [ordered]@{
     'uninstall-wow64'     = 'HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
     'profilelist'         = 'HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList'
     'timezone'            = 'HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation'
+    'codepage'            = 'HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage'
     'wazuh-service'       = 'HKLM\SYSTEM\CurrentControlSet\Services\WazuhSvc'
     'eventlog-security'   = 'HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Security'
     'eventlog-system'     = 'HKLM\SYSTEM\CurrentControlSet\Services\EventLog\System'
