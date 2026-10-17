@@ -422,6 +422,10 @@ pub struct Process {
     /// The host-state engine connection for this host's facts. None in
     /// tests that need no host facts.
     pub engine: Option<Arc<Mutex<xvm_engine::client::Client>>>,
+    /// Named mutexes, by name without a `Global\` or `Local\` prefix.
+    pub named_mutexes: BTreeMap<String, std::sync::Weak<crate::sync::MutexObject>>,
+    /// `CryptAcquireContext` provider handles in use; the last one given.
+    pub crypt_providers: Vec<u32>,
 }
 
 /// Why `Process::load_library` failed.
@@ -458,6 +462,8 @@ impl Process {
             winsock_starts: 0,
             addrinfo: BTreeMap::new(),
             engine: None,
+            named_mutexes: BTreeMap::new(),
+            crypt_providers: Vec::new(),
         }
     }
 

@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::sync::{EventObject, SemaphoreObject, ThreadObject, Waitable};
+use crate::sync::{EventObject, MutexObject, SemaphoreObject, ThreadObject, Waitable};
 
 /// An open file or directory.
 #[derive(Debug, Clone)]
@@ -31,6 +31,7 @@ pub enum Object {
     Event(Arc<EventObject>),
     Thread(Arc<ThreadObject>),
     Semaphore(Arc<SemaphoreObject>),
+    Mutex(Arc<MutexObject>),
 }
 
 impl Object {
@@ -40,6 +41,7 @@ impl Object {
             Object::Event(e) => Some(Waitable::Event(e.clone())),
             Object::Thread(t) => Some(Waitable::Thread(t.clone())),
             Object::Semaphore(s) => Some(Waitable::Semaphore(s.clone())),
+            Object::Mutex(m) => Some(Waitable::Mutex(m.clone())),
             Object::File(_) => None,
         }
     }

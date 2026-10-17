@@ -7,7 +7,7 @@
 //! as simple as waiting on one. Waits never hold the process lock.
 
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, Ordering};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, Weak};
 use std::time::{Duration, Instant};
 
 /// An event object.
@@ -81,38 +81,75 @@ impl SemaphoreObject {
     }
 }
 
+/// A mutex: signaled when free, and for the thread that owns it, which
+/// may take it again (each wait counts; each release uncounts).
+#[derive(Debug, Default)]
+pub struct MutexObject {
+    /// Owning thread ID, 0 when free.
+    owner: AtomicU32,
+    count: AtomicU32,
+    /// Its owner ended without releasing it; the next wait reports that.
+    abandoned: AtomicBool,
+}
+
+impl MutexObject {
+    pub fn owner(&self) -> u32 {
+        self.owner.load(Ordering::SeqCst)
+    }
+}
+
 /// Something a thread can wait for.
 #[derive(Debug, Clone)]
 pub enum Waitable {
     Event(Arc<EventObject>),
     Thread(Arc<ThreadObject>),
     Semaphore(Arc<SemaphoreObject>),
+    Mutex(Arc<MutexObject>),
 }
 
 impl Waitable {
-    fn is_signaled(&self) -> bool {
+    /// Whether a wait by thread `me` would succeed now.
+    fn is_signaled(&self, me: u32) -> bool {
         match self {
             Waitable::Event(e) => e.is_signaled(),
             Waitable::Thread(t) => t.finished.load(Ordering::SeqCst),
             Waitable::Semaphore(s) => s.count() > 0,
+            Waitable::Mutex(m) => m.owner() == 0 || m.owner() == me,
         }
     }
 
-    /// What a successful wait does to the object.
-    fn consume(&self) {
+    /// What a successful wait by `me` does to the object. Returns true
+    /// for an abandoned mutex.
+    fn consume(&self, me: u32) -> bool {
         match self {
             Waitable::Event(e) if !e.manual_reset => e.signaled.store(false, Ordering::SeqCst),
             Waitable::Semaphore(s) => {
                 s.count.fetch_sub(1, Ordering::SeqCst);
             }
+            Waitable::Mutex(m) => {
+                m.owner.store(me, Ordering::SeqCst);
+                m.count.fetch_add(1, Ordering::SeqCst);
+                return m.abandoned.swap(false, Ordering::SeqCst);
+            }
             Waitable::Event(_) | Waitable::Thread(_) => {}
         }
+        false
     }
+}
+
+/// How a wait ended well: which object, and whether it was an abandoned
+/// mutex.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Woken {
+    pub index: usize,
+    pub abandoned: bool,
 }
 
 #[derive(Debug, Default)]
 pub struct SyncHub {
-    lock: Mutex<()>,
+    /// Every mutex created, so an ending thread's mutexes can be
+    /// abandoned.
+    lock: Mutex<Vec<Weak<MutexObject>>>,
     changed: Condvar,
 }
 
@@ -123,14 +160,47 @@ impl SyncHub {
         self.changed.notify_all();
     }
 
-    /// Record the thread's exit code and signal its object, once.
+    /// Record the thread's exit code and signal its object, once. Mutexes
+    /// it still owns become free and abandoned.
     pub fn finish_thread(&self, thread: &ThreadObject, exit_code: u32) {
-        let _guard = self.lock.lock().unwrap();
+        let mut mutexes = self.lock.lock().unwrap();
         if !thread.finished.load(Ordering::SeqCst) {
             thread.exit_code.store(exit_code, Ordering::SeqCst);
             thread.finished.store(true, Ordering::SeqCst);
         }
+        mutexes.retain(|m| m.strong_count() > 0);
+        for m in mutexes.iter().filter_map(Weak::upgrade) {
+            if m.owner() == thread.id {
+                m.owner.store(0, Ordering::SeqCst);
+                m.count.store(0, Ordering::SeqCst);
+                m.abandoned.store(true, Ordering::SeqCst);
+            }
+        }
         self.changed.notify_all();
+    }
+
+    /// A new mutex, owned by `owner` once if that is not 0.
+    pub fn new_mutex(&self, owner: u32) -> Arc<MutexObject> {
+        let m = Arc::new(MutexObject::default());
+        if owner != 0 {
+            m.owner.store(owner, Ordering::SeqCst);
+            m.count.store(1, Ordering::SeqCst);
+        }
+        self.lock.lock().unwrap().push(Arc::downgrade(&m));
+        m
+    }
+
+    /// Release one hold of `mutex` by `me`. False if `me` does not own it.
+    pub fn release_mutex(&self, mutex: &MutexObject, me: u32) -> bool {
+        let _guard = self.lock.lock().unwrap();
+        if me == 0 || mutex.owner() != me {
+            return false;
+        }
+        if mutex.count.fetch_sub(1, Ordering::SeqCst) == 1 {
+            mutex.owner.store(0, Ordering::SeqCst);
+            self.changed.notify_all();
+        }
+        true
     }
 
     /// Add `n` to the count and return the previous count, or None if
@@ -151,27 +221,45 @@ impl SyncHub {
         event.signaled.store(false, Ordering::SeqCst);
     }
 
-    /// Wait until one of `objects` (or, with `all`, every one) is
-    /// signaled, then consume it as a successful wait does. Returns the
-    /// index of the object (0 with `all`), or None on timeout. `None` for
-    /// `timeout` waits forever.
+    /// `wait_as` for a waiter that owns no mutex.
     pub fn wait(
         &self,
         objects: &[Waitable],
         all: bool,
         timeout: Option<Duration>,
     ) -> Option<usize> {
+        self.wait_as(0, objects, all, timeout).map(|w| w.index)
+    }
+
+    /// Wait as thread `me` until one of `objects` (or, with `all`, every
+    /// one) is signaled, then consume it as a successful wait does.
+    /// Returns the object (with `all`, the first abandoned mutex, else
+    /// 0), or None on timeout. `None` for `timeout` waits forever.
+    pub fn wait_as(
+        &self,
+        me: u32,
+        objects: &[Waitable],
+        all: bool,
+        timeout: Option<Duration>,
+    ) -> Option<Woken> {
         let deadline = timeout.map(|t| Instant::now() + t);
         let mut guard = self.lock.lock().unwrap();
         loop {
             if all {
-                if objects.iter().all(Waitable::is_signaled) {
-                    objects.iter().for_each(Waitable::consume);
-                    return Some(0);
+                if objects.iter().all(|o| o.is_signaled(me)) {
+                    let abandoned: Vec<bool> = objects.iter().map(|o| o.consume(me)).collect();
+                    let first = abandoned.iter().position(|&a| a);
+                    return Some(Woken {
+                        index: first.unwrap_or(0),
+                        abandoned: first.is_some(),
+                    });
                 }
-            } else if let Some(i) = objects.iter().position(Waitable::is_signaled) {
-                objects[i].consume();
-                return Some(i);
+            } else if let Some(i) = objects.iter().position(|o| o.is_signaled(me)) {
+                let abandoned = objects[i].consume(me);
+                return Some(Woken {
+                    index: i,
+                    abandoned,
+                });
             }
             guard = match deadline {
                 None => self.changed.wait(guard).unwrap(),

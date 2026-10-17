@@ -1,7 +1,8 @@
 //! `advapi32.dll`, one submodule per API area.
 
+mod crypt;
 mod service;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
-    service::exports()
+    [service::exports(), crypt::exports()].concat()
 }

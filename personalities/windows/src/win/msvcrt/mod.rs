@@ -10,6 +10,7 @@ mod locale;
 mod locks;
 mod lowio;
 mod msstring;
+mod random;
 mod startup;
 mod stat;
 pub(crate) mod stdio;
@@ -34,6 +35,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         locks::exports(),
         stat::exports(),
         time::exports(),
+        random::exports(),
     ]
     .concat()
 }

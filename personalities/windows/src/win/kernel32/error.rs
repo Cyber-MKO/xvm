@@ -29,7 +29,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
 
 /// Returns the calling thread's last-error code, kept in its TEB.
 #[allow(non_snake_case)]
-extern "stdcall" fn GetLastError() -> u32 {
+pub(crate) extern "stdcall" fn GetLastError() -> u32 {
     let value: u32;
     // SAFETY: fs points at this thread's TEB (thread::ThreadEnv) whenever
     // agent code runs, and the TEB covers LastErrorValue.
