@@ -141,13 +141,17 @@ def _software(root: Path, notes: list[str]) -> list[dict]:
         if not path.is_file():
             continue
         exp = regfile.parse(regfile.decode(path.read_bytes()))
-        for values in exp.keys.values():
+        for key, values in exp.keys.items():
             display = values.get("DisplayName", {}).get("data")
             if not display or values.get("SystemComponent", {}).get("data") == 1:
                 continue
             if AGENT_PACKAGES.match(display):
                 continue
             entry = {"name": display, "architecture": arch}
+            # The engine serves the Uninstall key under its captured name.
+            key_name = key.rsplit("\\", 1)[-1]
+            if key_name != display:
+                entry["uninstall_key"] = key_name
             for field, value_name in (
                 ("version", "DisplayVersion"),
                 ("vendor", "Publisher"),

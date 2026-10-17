@@ -635,6 +635,11 @@
         },
         "location": {
           "type": "string"
+        },
+        "uninstall_key": {
+          "type": "string",
+          "pattern": "^[^\\\\]{1,255}$",
+          "description": "Windows: the name of the package's Uninstall registry key, such as an MSI product code. Defaults to name."
         }
       }
     },

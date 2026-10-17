@@ -363,9 +363,21 @@ impl Host {
 
     /// The live registry: profile plus run-time changes.
     pub fn registry<'a>(&'a self, rt: &'a Runtime) -> Live<'a> {
+        let synth = if self.base.rules.windows {
+            let software = self.list_with(rt, "software").unwrap_or_default();
+            let os = self.section_with(rt, "os_info");
+            let arch = os
+                .as_ref()
+                .and_then(|o| o.get("architecture"))
+                .and_then(Value::as_str);
+            crate::software::uninstall_keys(&software, arch)
+        } else {
+            Default::default()
+        };
         Live {
             lower: self.profile_registry(),
             rt,
+            synth,
         }
     }
 

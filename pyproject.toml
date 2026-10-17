@@ -12,6 +12,8 @@ dev = ["pytest>=8", "ruff>=0.6"]
 xvm-census = "xvm_census.cli:main"
 xvm-golden = "xvm_golden.cli:main"
 xvm-profile = "xvm_control.cli:main"
+xvm-host = "xvm_control.hostcli:main"
+xvm-check = "xvm_control.checkcli:main"
 xvm-scenario = "xvm_scenario.cli:main"
 xvm-msi-install = "xvm_msi.cli:main"
 
