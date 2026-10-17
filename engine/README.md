@@ -24,7 +24,7 @@ The run-time layer copies a key, list or section the first time it changes. The 
 
 | Area | Behaviour |
 | --- | --- |
-| Sections | `identity`, `os_info`, `hardware`, `network`, `agent`. Objects merge key by key. |
+| Sections | `identity`, `os_info`, `hardware`, `network`, `agent`, `windows`. Objects merge key by key. |
 | Lists | `users`, `groups`, `software`, `services`, `interfaces`. Merge by name, ignoring case, keeping the base's spelling. |
 | Registry keys | Case-insensitive. A key exists if it is listed or a key below it is, so `HKLM\SOFTWARE` exists without being listed. |
 | Registry values | Base values first in base order, then values the host adds. A `null` in the host deletes a value. |

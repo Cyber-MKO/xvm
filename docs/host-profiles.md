@@ -27,7 +27,8 @@ Examples live in [control/profiles/examples/](../control/profiles/examples/). Th
 | `files` | Files and directories: path, type, size, sha256, times, attributes (Windows), owner, mode (Unix), and `content` for bytes we author |
 | `processes` | Processes running at boot: id, image, path, command line, user, session, parent (an id), optional pinned pid, `start_offset_s` after boot |
 | `event_messages` | Windows only. Event message templates: provider name, then `"ID"` or `"ID/VERSION"`, then text with `%1`, `%2`... for the event's data values |
-| `agent` | SIEM agent product, version, manager and group |
+| `agent` | SIEM agent product, version, manager and group; how the agent is started (see below) |
+| `windows` | Windows only. Settings that are neither registry values nor files (see below) |
 
 ## Merge rules
 
@@ -54,6 +55,39 @@ A base image may not use `remove`, `null` values or `delete_keys`.
 `xvm-profile compile` moves content into the blob store (`blobs/SHA256`), stores identical bytes once, and fills in `size` and `sha256`. A declared `size` or `sha256` that does not match the content is an error. Never put vendor bytes in a profile (CLAUDE.md rule 1).
 
 Process owners written as `.\user` name a local account on the host itself, whatever the host is called.
+
+## Agent launch settings
+
+The personality starts the agent from these `agent` fields and registers it with the engine under `pid` (`proc.start`).
+
+| Field | Meaning |
+| --- | --- |
+| `pid` | The agent's process ID. On Windows a non-zero multiple of 4. `GetCurrentProcessId` returns it. |
+| `command_line` | The full command line, as `GetCommandLine` returns it. Its program name picks the executable. |
+| `current_directory` | The starting directory |
+| `service` | Windows: the service the Service Control Manager starts the agent as. Without it, the agent runs as a console process. |
+| `environment` | Environment variables. Windows sorts them by name, ignoring case. Merges key by key. |
+
+## The `windows` section
+
+| Field | Meaning |
+| --- | --- |
+| `system_module_directory` | Where emulated system DLLs report they were loaded from, such as `C:\Windows\SysWOW64` for a 32-bit process on 64-bit Windows |
+| `cert_stores` | System store name (`ROOT`, `CA`, `MY`) to a list of `{name, der}`, with `der` the certificate in base64. A host's list replaces the base's for that store. |
+| `trusted_files` | Windows path to the SHA-256 of a file whose signature is valid on this host. `WinVerifyTrust` answers from it. Merges path by path. |
+
+## Facts read from the registry
+
+Windows keeps these in the registry, so the profile does too. The capture kit exports the keys, and the personality reads them through the engine.
+
+| Fact | Key | Values |
+| --- | --- | --- |
+| Time zone rules | `HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation` | `Bias`, `StandardBias`, `DaylightBias` (signed minutes stored as `REG_DWORD`; UTC = local + bias), `StandardStart`, `DaylightStart` (16-byte `SYSTEMTIME`), `TimeZoneKeyName`, `DynamicDaylightTimeDisabled` |
+| Time zone names | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\KEY` | `Std`, `Dlt`. `StandardName` in `TimeZoneInformation` is often a resource reference (`@tzres.dll,-NNN`), so the names come from here. |
+| Code pages | `HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage` | `ACP` (ANSI), `OEMCP` (OEM), as `REG_SZ` |
+| Product type | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` | `InstallationType` (`Server`, `Client`) |
+
+Where the agent's files live on the real disk (the drive mapping) is not part of the profile. It is a launch setting, so a profile describes the emulated host on any machine.
 
 ## Registry values
 
@@ -114,7 +148,18 @@ The `.reg` parser follows Microsoft's public description of the format. It reads
 
 ## Loader profile (TOML, stopgap)
 
-The Windows loader (`xvm-windows-run`) still reads its own TOML file (`personalities/windows/src/profile.rs`; example `control/profiles/example-windows.toml`). It holds settings the engine does not model yet: drives, certificate stores, signature verdicts, the system module directory, the time zone rules and the code pages. It stays until Kasim decides where these settings go. Host facts the engine serves move to the engine as the loader connects to it.
+The Windows loader (`xvm-windows-run`) still reads its own TOML file (`personalities/windows/src/profile.rs`; example `control/profiles/example-windows.toml`). Kasim decided (2026-10-17) that its settings move to the YAML profile, served by the engine:
+
+| TOML key | Moves to |
+| --- | --- |
+| `host.name`, `host.os` | `identity.hostname`, `os` |
+| `windows.agent.*`, `windows.environment` | `agent.pid`, `command_line`, `current_directory`, `service`, `environment` |
+| `windows.system_module_directory`, `cert_stores`, `trusted_files` | The `windows` section (certificates inline as base64 DER) |
+| `windows.time_zone` | Registry: `TimeZoneInformation` and `Time Zones\KEY` |
+| `windows.ansi_code_page`, `oem_code_page` | Registry: `Nls\CodePage` |
+| `windows.drives` | A launch setting, not part of the profile |
+
+The TOML file goes once the loader reads these from the engine. Until then its format is:
 
 ### Schema 1
 

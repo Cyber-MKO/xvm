@@ -76,7 +76,9 @@ def test_registry_delete_keys(host, base):
     base["registry"]["keys"][KEY_CV + r"\Sub"] = {"X": {"type": "REG_SZ", "data": "1"}}
     host["registry"] = {"delete_keys": [KEY_CV]}
     r = profile.resolve(host, base)
-    assert r["registry"]["keys"] == {}
+    # The key goes with everything below it (Sub, Time Zones); other keys stay.
+    left = r["registry"]["keys"]
+    assert left and not any(k.lower().startswith(KEY_CV.lower()) for k in left)
     host["registry"] = {"delete_keys": [r"HKLM\SOFTWARE\Missing"]}
     with pytest.raises(profile.ProfileError, match="cannot delete"):
         profile.resolve(host, base)
@@ -162,3 +164,25 @@ def test_cli(capsys):
     assert '"hostname": "WIN-WEB-01"' in capsys.readouterr().out
     assert cli.main(["validate", str(WEB), "--bases", str(BASES / "missing")]) == 1
     assert "not found" in capsys.readouterr().err
+
+
+def test_loader_settings(host, base):
+    r = profile.resolve(host, base)
+    assert r["agent"]["pid"] == 4812
+    assert r["agent"]["environment"]["COMPUTERNAME"] == "WIN-WEB-01"
+    assert len(r["windows"]["trusted_files"]) == 17
+    host["agent"]["pid"] = 4810
+    with pytest.raises(profile.ProfileError, match="multiple of 4"):
+        profile.validate(host)
+    host["agent"]["pid"] = 4812
+    host["windows"]["trusted_files"] = {"relative\\x.exe": "0" * 64}
+    with pytest.raises(profile.ProfileError, match="not an absolute path"):
+        profile.validate(host)
+    host["windows"] = {"cert_stores": {"ROOT": [{"der": "AAA"}]}}
+    with pytest.raises(profile.ProfileError, match="bad base64"):
+        profile.validate(host)
+    host["windows"] = {"system_module_directory": "C:\\Windows\\SysWOW64"}
+    host["os"] = "linux"
+    host.pop("registry")
+    with pytest.raises(profile.ProfileError, match="only for os windows"):
+        profile.validate(host)

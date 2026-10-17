@@ -40,6 +40,7 @@ REGISTRY_EXPORTS = (
     "tcpip-parameters",
     "profilelist",
     "timezone",
+    "codepage",
     "eventlog-security",
     "eventlog-system",
     "eventlog-application",

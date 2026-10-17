@@ -82,6 +82,29 @@ def validate(doc: dict, where: str = "profile") -> None:
     if doc["kind"] == "base-image":
         _check_no_removals(doc, where)
     _check_unique_names(doc, where)
+    _check_windows(doc, where)
+
+
+def _check_windows(doc: dict, where: str) -> None:
+    """Rules for the agent's launch settings and the `windows` section."""
+    pid = doc.get("agent", {}).get("pid")
+    if pid is not None and doc["os"] == "windows" and pid % 4:
+        raise ProfileError(f"{where}: agent: pid {pid} is not a multiple of 4")
+    win = doc.get("windows")
+    if win is None:
+        return
+    if doc["os"] != "windows":
+        raise ProfileError(f"{where}: windows: only for os windows")
+    for store, certs in win.get("cert_stores", {}).items():
+        for i, cert in enumerate(certs):
+            try:
+                base64.b64decode(cert["der"], validate=True)
+            except binascii.Error as exc:
+                bad = f"{where}: windows: cert_stores: {store}/{i}: bad base64"
+                raise ProfileError(bad) from exc
+    for path in win.get("trusted_files", {}):
+        if not _WIN_PATH.match(path):
+            raise ProfileError(f"{where}: windows: trusted_files: {path!r} is not an absolute path")
 
 
 def _keyed_lists(doc: dict):

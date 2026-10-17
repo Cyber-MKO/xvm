@@ -86,6 +86,10 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | The runner connects to the engine from its arguments | Decided | Kasim (2026-10-17), option A. `xvm-windows-run --engine SOCKET --host NAME PROFILE`; the control plane picks the host. Host facts come from the engine; the TOML profile keeps loader settings only. |
 | Scenarios are YAML steps with named actions | Decided | Kasim (2026-10-17). Each action changes host state in the engine and writes the events the real operation writes, with values from host state. Format and actions in `scenarios/README.md`. |
 | Scenario time is one scenario clock with a per-host offset | Decided | Kasim (2026-10-17). A fixed skew per host plus jitter per step, both seeded, so runs repeat and hosts do not act in lockstep. |
+| Loader settings move from TOML into the YAML profile, served by the engine | Decided | Kasim (2026-10-17). Replaces the TOML stopgap. Mapping in `docs/host-profiles.md`. |
+| Time zone and code pages come from registry keys | Decided | Kasim (2026-10-17). `TimeZoneInformation`, `Time Zones\KEY` and `Nls\CodePage`, as Windows keeps them. The capture kit exports them. |
+| The drive mapping is a launch setting, not a profile field | Decided | Kasim (2026-10-17). A profile describes the emulated host on any machine. |
+| The agent's launch settings live in the profile's `agent` section | Decided | Kasim (2026-10-17). `pid`, `command_line`, `current_directory`, `service`, `environment`. Certificate stores, trusted files and the system module directory go in a `windows` section. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

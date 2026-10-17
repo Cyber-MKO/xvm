@@ -278,6 +278,80 @@
         },
         "group": {
           "type": "string"
+        },
+        "pid": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295,
+          "description": "The agent's process ID. On Windows a non-zero multiple of 4. The personality registers the agent with the engine under it."
+        },
+        "command_line": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The agent process's full command line. Its program name picks the executable."
+        },
+        "current_directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The agent's starting directory."
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Windows: the service the Service Control Manager starts the agent as."
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The agent's environment variables."
+        }
+      }
+    },
+    "windows": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Windows settings that are neither registry values nor files.",
+      "properties": {
+        "system_module_directory": {
+          "type": "string",
+          "pattern": "^[A-Za-z]:\\\\",
+          "description": "Where emulated system DLLs report they were loaded from, such as C:\\Windows\\SysWOW64 for a 32-bit process on 64-bit Windows."
+        },
+        "cert_stores": {
+          "type": "object",
+          "description": "System certificate store (ROOT, CA, MY) to its certificates.",
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "der"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "der": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+                  "description": "The certificate, DER in base64."
+                }
+              }
+            }
+          }
+        },
+        "trusted_files": {
+          "type": "object",
+          "description": "Windows path to the SHA-256 of a file whose signature is valid on this host.",
+          "additionalProperties": {
+            "$ref": "#/$defs/sha256"
+          }
         }
       }
     },

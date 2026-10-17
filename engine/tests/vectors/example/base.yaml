@@ -46,6 +46,28 @@ registry:
       CurrentMinorVersionNumber: {type: REG_DWORD, data: 0}
       UBR: {type: REG_DWORD, data: 1}
       DisplayVersion: {type: REG_SZ, data: 21H2}
+    # Time zone as Windows stores it. The personality reads the rules here and
+    # the names from Time Zones\KEY (Std, Dlt). Bias values are signed minutes
+    # stored as DWORDs (UTC = local + bias).
+    HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation:
+      Bias: {type: REG_DWORD, data: 0}
+      StandardName: {type: REG_SZ, data: Coordinated Universal Time}
+      StandardBias: {type: REG_DWORD, data: 0}
+      StandardStart: {type: REG_BINARY, data: "00000000000000000000000000000000"}
+      DaylightName: {type: REG_SZ, data: Coordinated Universal Time}
+      DaylightBias: {type: REG_DWORD, data: 0}
+      DaylightStart: {type: REG_BINARY, data: "00000000000000000000000000000000"}
+      ActiveTimeBias: {type: REG_DWORD, data: 0}
+      TimeZoneKeyName: {type: REG_SZ, data: UTC}
+      DynamicDaylightTimeDisabled: {type: REG_DWORD, data: 0}
+    HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\UTC:
+      Display: {type: REG_SZ, data: (UTC) Coordinated Universal Time}
+      Std: {type: REG_SZ, data: Coordinated Universal Time}
+      Dlt: {type: REG_SZ, data: Coordinated Universal Time}
+    # ANSI and OEM code pages (GetACP, GetOEMCP), for an English (United States) install.
+    HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage:
+      ACP: {type: REG_SZ, data: "1252"}
+      OEMCP: {type: REG_SZ, data: "437"}
 # Boot processes, so services can name services.exe as their parent. PIDs other
 # than System's are assigned by the engine.
 processes:

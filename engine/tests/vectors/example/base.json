@@ -120,6 +120,72 @@
      "type": "REG_SZ",
      "data": "21H2"
     }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation": {
+    "Bias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "StandardName": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    },
+    "StandardBias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "StandardStart": {
+     "type": "REG_BINARY",
+     "data": "00000000000000000000000000000000"
+    },
+    "DaylightName": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    },
+    "DaylightBias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "DaylightStart": {
+     "type": "REG_BINARY",
+     "data": "00000000000000000000000000000000"
+    },
+    "ActiveTimeBias": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "TimeZoneKeyName": {
+     "type": "REG_SZ",
+     "data": "UTC"
+    },
+    "DynamicDaylightTimeDisabled": {
+     "type": "REG_DWORD",
+     "data": 0
+    }
+   },
+   "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones\\UTC": {
+    "Display": {
+     "type": "REG_SZ",
+     "data": "(UTC) Coordinated Universal Time"
+    },
+    "Std": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    },
+    "Dlt": {
+     "type": "REG_SZ",
+     "data": "Coordinated Universal Time"
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage": {
+    "ACP": {
+     "type": "REG_SZ",
+     "data": "1252"
+    },
+    "OEMCP": {
+     "type": "REG_SZ",
+     "data": "437"
+    }
    }
   }
  },
