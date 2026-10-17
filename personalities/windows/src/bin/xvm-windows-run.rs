@@ -74,6 +74,7 @@ fn main() -> std::process::ExitCode {
     let mut process = Process::new(search);
     process.params = params;
     process.engine = engine;
+    process.engine_addr = Some((socket.clone(), host.clone()));
     if let Err(e) = process.load(&image) {
         return fail(e.to_string());
     }

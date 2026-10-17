@@ -1,4 +1,5 @@
-//! Streams: `fopen`, `_fdopen`, reading, writing, `fflush`, `fclose`.
+//! Streams: `fopen`, `_fdopen`, reading, writing, positioning, `fflush`,
+//! `fclose`.
 //!
 //! `stdin`, `stdout` and `stderr` are the first three of the 20 `FILE`s
 //! in `msvcrt!_iob`. A service has no standard handles, so they have no
@@ -21,6 +22,12 @@
 //! Output is buffered, as in `msvcrt`: bytes reach the file when
 //! `_INTERNAL_BUFSIZ` (4096, stdio.h) are waiting, and at `fflush` and
 //! `fclose`.
+//!
+//! Positions are file offsets, as `fgetpos` and `ftell` give them on
+//! Microsoft Learn. Each byte waiting to be read remembers how many file
+//! bytes it came from (2 for a text-mode LF that was CR LF), so the
+//! position stays right in text mode. Moving the position writes waiting
+//! output, drops read-ahead and pushed-back bytes, and clears end of file.
 
 use std::collections::VecDeque;
 use std::ffi::c_char;
@@ -65,8 +72,9 @@ pub struct Stream {
     pub text: bool,
     pub eof: bool,
     pub error: bool,
-    /// Bytes read from the descriptor and not yet consumed.
-    pub pending: VecDeque<u8>,
+    /// Bytes read from the descriptor and not yet consumed, each with the
+    /// number of file bytes it stands for.
+    pub pending: VecDeque<(u8, u8)>,
     /// A CR at the end of the last read, waiting to see if LF follows.
     pub held_cr: bool,
     /// Bytes written and not yet passed to the descriptor.
@@ -111,6 +119,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("getc", fgetc as *const () as u32),
         ("ungetc", ungetc as *const () as u32),
         ("feof", feof as *const () as u32),
+        ("_fileno", _fileno as *const () as u32),
         ("ferror", ferror as *const () as u32),
         ("fputc", fputc as *const () as u32),
         ("putc", fputc as *const () as u32),
@@ -118,6 +127,12 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("fwrite", fwrite as *const () as u32),
         ("fflush", fflush as *const () as u32),
         ("fclose", fclose as *const () as u32),
+        ("fread", fread as *const () as u32),
+        ("fseek", fseek as *const () as u32),
+        ("ftell", ftell as *const () as u32),
+        ("fgetpos", fgetpos as *const () as u32),
+        ("fsetpos", fsetpos as *const () as u32),
+        ("clearerr", clearerr as *const () as u32),
     ]
 }
 
@@ -163,13 +178,9 @@ fn open_stream(p: &mut Process, fd: i32, mode: &Mode) -> u32 {
         errno::set(EBADF);
         return 0;
     };
-    let text = mode.text.unwrap_or(if entry.flags & O_BINARY != 0 {
-        false
-    } else if entry.flags & O_TEXT != 0 {
-        true
-    } else {
-        *p.crt.fmode & O_BINARY == 0
-    });
+    let text = mode
+        .text
+        .unwrap_or_else(|| super::lowio::is_text(p, entry.flags));
     let mut block = Box::new([0u32; 14]);
     block[3] = match (mode.read, mode.write) {
         (true, true) => IORW,
@@ -278,54 +289,70 @@ fn fill(file: u32) -> bool {
         return false;
     };
     let mut buf = [0u8; 4096];
-    let read = match file_of(handle) {
-        Ok((f, true, _, false)) => (&*f).read(&mut buf).ok(),
-        _ => None,
+    let Ok((f, true, _, false)) = file_of(handle) else {
+        return fill_result(file, None).0;
     };
+    let read = (&*f).read(&mut buf).ok().map(|n| &buf[..n]);
+    let (got, unread) = fill_result(file, read);
+    if unread > 0 {
+        // CTRL+Z ends a text file: leave what follows it unread.
+        let _ = (&*f).seek(SeekFrom::Current(-(unread as i64)));
+    }
+    got
+}
+
+/// Queues the bytes of one read. Returns whether bytes came, and how many
+/// read bytes follow a CTRL+Z and were dropped.
+fn fill_result(file: u32, read: Option<&[u8]>) -> (bool, usize) {
     with_current(|p| {
         let Some(s) = stream_mut(p, file) else {
-            return false;
+            return (false, 0);
         };
         match read {
             None => {
                 s.error = true;
-                false
+                (false, 0)
             }
-            Some(0) => {
+            Some([]) => {
                 if std::mem::take(&mut s.held_cr) {
-                    s.pending.push_back(b'\r');
-                    return true;
+                    s.pending.push_back((b'\r', 1));
+                    return (true, 0);
                 }
                 s.eof = true;
-                false
+                (false, 0)
             }
-            Some(n) if !s.text => {
-                s.pending.extend(&buf[..n]);
-                true
+            Some(read) if !s.text => {
+                s.pending.extend(read.iter().map(|&b| (b, 1)));
+                (true, 0)
             }
-            Some(n) => {
-                let mut bytes: Vec<u8> = Vec::with_capacity(n + 1);
+            Some(read) => {
+                let mut bytes: Vec<u8> = Vec::with_capacity(read.len() + 1);
                 if std::mem::take(&mut s.held_cr) {
                     bytes.push(b'\r');
                 }
-                bytes.extend(&buf[..n]);
+                bytes.extend(read);
                 let mut out = Vec::with_capacity(bytes.len());
+                let mut unread = 0;
                 let mut i = 0;
                 while i < bytes.len() {
                     match bytes[i] {
                         CTRL_Z => {
                             s.eof = true;
+                            unread = bytes.len() - i;
                             break;
                         }
                         b'\r' if i + 1 == bytes.len() => s.held_cr = true,
-                        b'\r' if bytes[i + 1] == b'\n' => {}
-                        b => out.push(b),
+                        b'\r' if bytes[i + 1] == b'\n' => {
+                            out.push((b'\n', 2));
+                            i += 1;
+                        }
+                        b => out.push((b, 1)),
                     }
                     i += 1;
                 }
                 let got = !out.is_empty() || s.held_cr;
                 s.pending.extend(out);
-                got || !s.eof
+                (got || !s.eof, unread)
             }
         }
     })
@@ -336,7 +363,7 @@ fn next_byte(file: u32) -> Option<u8> {
     loop {
         let (byte, eof) = with_current(|p| {
             let s = stream_mut(p, file)?;
-            Some((s.pending.pop_front(), s.eof))
+            Some((s.pending.pop_front().map(|(b, _)| b), s.eof))
         })?;
         if let Some(b) = byte {
             return Some(b);
@@ -409,13 +436,25 @@ extern "C" fn ungetc(c: i32, file: u32) -> i32 {
     }
     with_current(|p| match stream_mut(p, file) {
         Some(s) => {
-            s.pending.push_front(c as u8);
+            s.pending.push_front((c as u8, 1));
             s.eof = false;
             c & 0xff
         }
         None => {
             errno::set(EINVAL);
             EOF
+        }
+    })
+}
+
+/// The stream's descriptor: -2 for a standard stream without one, as the
+/// `_fileno` page documents; -1 with EINVAL for something else.
+extern "C" fn _fileno(file: u32) -> i32 {
+    with_current(|p| match stream_mut(p, file) {
+        Some(s) => s.fd,
+        None => {
+            errno::set(EINVAL);
+            -1
         }
     })
 }
@@ -544,6 +583,184 @@ pub(super) fn flush_all() -> bool {
     all.into_iter().filter(|&f| !flush(f)).count() == 0
 }
 
+/// Reads up to `count` items of `size` bytes. Returns the number of whole
+/// items read; fewer at the end of the file or on an error.
+extern "C" fn fread(buf: *mut u8, size: u32, count: u32, file: u32) -> u32 {
+    let readable = with_current(|p| stream_mut(p, file).map(|s| s.read));
+    match readable {
+        Some(true) => {}
+        Some(false) => {
+            with_current(|p| stream_mut(p, file).map(|s| s.error = true));
+            return 0;
+        }
+        None => {
+            errno::set(EINVAL);
+            return 0;
+        }
+    }
+    let Some(total) = (size as usize).checked_mul(count as usize) else {
+        errno::set(EINVAL);
+        return 0;
+    };
+    if total == 0 || buf.is_null() {
+        return 0;
+    }
+    let mut done = 0;
+    while done < total {
+        let (taken, eof) = with_current(|p| {
+            let s = stream_mut(p, file).expect("checked above");
+            let n = s.pending.len().min(total - done);
+            for (i, (b, _)) in s.pending.drain(..n).enumerate() {
+                // SAFETY: buf holds size * count bytes (the contract).
+                unsafe { *buf.add(done + i) = b };
+            }
+            (n, s.eof)
+        });
+        done += taken;
+        if done < total && (eof || !fill(file)) {
+            break;
+        }
+    }
+    (done / size as usize) as u32
+}
+
+/// The descriptor's file and how many file bytes the stream holds back:
+/// read-ahead not yet consumed (negative) and output not yet written.
+fn position(file: u32) -> Option<(std::sync::Arc<std::fs::File>, i64)> {
+    let (handle, held) = with_current(|p| {
+        let s = stream_mut(p, file)?;
+        let behind: i64 =
+            s.pending.iter().map(|&(_, w)| i64::from(w)).sum::<i64>() + i64::from(s.held_cr);
+        let ahead = s.out.len() as i64
+            + if s.text {
+                s.out.iter().filter(|&&b| b == b'\n').count() as i64
+            } else {
+                0
+            };
+        let fd = s.fd;
+        Some((p.crt.fd(fd)?.handle, ahead - behind))
+    })?;
+    let (f, ..) = file_of(handle).ok()?;
+    Some((f, held))
+}
+
+/// The stream's position, or None with `errno` set.
+fn tell(file: u32) -> Option<i64> {
+    let Some((f, held)) = position(file) else {
+        errno::set(EINVAL);
+        return None;
+    };
+    match (&*f).stream_position() {
+        Ok(at) => Some(at as i64 + held),
+        Err(_) => {
+            errno::set(EINVAL);
+            None
+        }
+    }
+}
+
+/// Moves the stream to `offset` from `origin` (0 start, 1 current, 2
+/// end). Returns false with `errno` set on failure.
+fn seek(file: u32, offset: i64, origin: i32) -> bool {
+    let target = match origin {
+        0 => SeekFrom::Start(offset.max(0) as u64),
+        1 => match tell(file) {
+            Some(at) => SeekFrom::Start((at + offset).max(0) as u64),
+            None => return false,
+        },
+        2 => SeekFrom::End(offset),
+        _ => {
+            errno::set(EINVAL);
+            return false;
+        }
+    };
+    if offset < 0 && origin == 0 {
+        errno::set(EINVAL);
+        return false;
+    }
+    let writes = with_current(|p| stream_mut(p, file).map(|s| s.write));
+    if writes.is_none() {
+        errno::set(EINVAL);
+        return false;
+    }
+    if writes == Some(true) && !flush(file) {
+        return false;
+    }
+    let Some((f, _)) = position(file) else {
+        errno::set(EINVAL);
+        return false;
+    };
+    with_current(|p| {
+        if let Some(s) = stream_mut(p, file) {
+            s.pending.clear();
+            s.held_cr = false;
+            s.eof = false;
+        }
+    });
+    if (&*f).seek(target).is_err() {
+        errno::set(EINVAL);
+        return false;
+    }
+    true
+}
+
+extern "C" fn fseek(file: u32, offset: i32, origin: i32) -> i32 {
+    if seek(file, offset.into(), origin) {
+        0
+    } else {
+        -1
+    }
+}
+
+/// The position as a `long`, or -1 with `errno` set.
+extern "C" fn ftell(file: u32) -> i32 {
+    match tell(file).map(i32::try_from) {
+        Some(Ok(at)) => at,
+        Some(Err(_)) => {
+            errno::set(EINVAL);
+            -1
+        }
+        None => -1,
+    }
+}
+
+/// Stores the position in `*pos`, an `fpos_t` (64 bits in `msvcrt`).
+extern "C" fn fgetpos(file: u32, pos: *mut i64) -> i32 {
+    if pos.is_null() {
+        errno::set(EINVAL);
+        return -1;
+    }
+    match tell(file) {
+        Some(at) => {
+            // SAFETY: writable (the function's contract).
+            unsafe { pos.write_unaligned(at) };
+            0
+        }
+        None => -1,
+    }
+}
+
+/// Moves to a position `fgetpos` gave.
+extern "C" fn fsetpos(file: u32, pos: *const i64) -> i32 {
+    if pos.is_null() {
+        errno::set(EINVAL);
+        return -1;
+    }
+    // SAFETY: readable (the function's contract).
+    let at = unsafe { pos.read_unaligned() };
+    if seek(file, at, 0) { 0 } else { -1 }
+}
+
+/// Clears the end-of-file and error indicators.
+extern "C" fn clearerr(file: u32) {
+    with_current(|p| {
+        if let Some(s) = stream_mut(p, file) {
+            s.eof = false;
+            s.error = false;
+        }
+    });
+}
+
 /// Writes waiting output; with NULL, for every stream. Returns 0, or EOF
 /// if a write failed. `msvcrt` drops an input stream's read-ahead here;
 /// that is a logged gap, and the read-ahead is kept.
@@ -642,6 +859,41 @@ mod tests {
         assert_eq!(ferror(f), 0);
         assert_eq!(fclose(f), 0);
         assert_eq!(fclose(f), EOF);
+    }
+
+    #[test]
+    fn positions_count_file_bytes_in_text_mode() {
+        let (_r, _t, fd) = with_file("pos", b"ab\r\ncd\r\n\x1azz");
+        let f = _fdopen(fd, c"r".as_ptr());
+        let mut line = [0 as c_char; 8];
+        assert!(!fgets(line.as_mut_ptr(), 8, f).is_null());
+        assert_eq!(ftell(f), 4, "CR LF is two file bytes");
+        let mut at = 0i64;
+        assert_eq!(fgetpos(f, &mut at), 0);
+        assert_eq!(at, 4);
+        assert_eq!(lines(f, 64), ["cd\n"]);
+        assert_eq!(feof(f), 1);
+        assert_eq!(ftell(f), 8, "stopped at CTRL+Z");
+        assert_eq!(fsetpos(f, &at), 0);
+        assert_eq!(feof(f), 0);
+        assert_eq!(lines(f, 64), ["cd\n"]);
+        assert_eq!(fseek(f, 0, 0), 0);
+        let mut buf = [0u8; 8];
+        assert_eq!(
+            fread(buf.as_mut_ptr(), 2, 4, f),
+            3,
+            "six bytes, three items"
+        );
+        assert_eq!(&buf[..6], b"ab\ncd\n");
+        assert_eq!(feof(f), 1);
+        clearerr(f);
+        assert_eq!(feof(f), 0);
+        assert_eq!(fseek(f, -2, 1), 0);
+        assert_eq!(fgetc(f), i32::from(b'\n'), "CR LF from offset 6");
+        assert_eq!(fseek(f, 0, 7), -1);
+        assert_eq!(fseek(f, -1, 0), -1);
+        assert_eq!(errno::get(), EINVAL);
+        assert_eq!(fclose(f), 0);
     }
 
     #[test]
@@ -802,6 +1054,8 @@ mod tests {
         assert_eq!(iob[16 + 3..16 + 5], [IOWRT, NO_DESCRIPTOR as u32]);
         let (stdin, stdout, stderr) = (base, base + 32, base + 64);
         assert_eq!(fgetc(stdin), EOF);
+        assert_eq!(_fileno(stderr), -2);
+        assert_eq!(_fileno(0x1234), -1);
         assert_eq!(fputs(c"buffered".as_ptr(), stdout), 0);
         assert_eq!(fflush(stdout), EOF);
         assert_eq!(fputc(b'x' as i32, stderr), EOF, "stderr is unbuffered");
@@ -823,6 +1077,7 @@ mod tests {
 
         let f = fopen(c"state.txt".as_ptr(), c"w".as_ptr());
         assert_ne!(f, 0);
+        assert!(_fileno(f) >= 0);
         fputs(c"one\n".as_ptr(), f);
         assert_eq!(fclose(f), 0);
         assert_eq!(std::fs::read(&host).unwrap(), b"one\r\n");
@@ -838,6 +1093,16 @@ mod tests {
         let f = fopen(c"state.txt".as_ptr(), c"w".as_ptr());
         fclose(f);
         assert_eq!(std::fs::read(&host).unwrap(), b"", "w truncates");
+        // Waiting output counts toward the position; seeking writes it.
+        let f = fopen(c"state.txt".as_ptr(), c"w+".as_ptr());
+        fputs(c"x\n".as_ptr(), f);
+        assert_eq!(ftell(f), 3);
+        assert_eq!(fseek(f, 0, 0), 0);
+        assert_eq!(std::fs::read(&host).unwrap(), b"x\r\n");
+        let mut buf = [0u8; 4];
+        assert_eq!(fread(buf.as_mut_ptr(), 1, 4, f), 2);
+        assert_eq!(&buf[..2], b"x\n");
+        fclose(f);
         assert_eq!(fopen(c"missing.txt".as_ptr(), c"r".as_ptr()), 0);
         assert_eq!(errno::get(), ENOENT);
         assert_eq!(fopen(c"state.txt".as_ptr(), c"q".as_ptr()), 0);

@@ -111,6 +111,10 @@ const SCN_CNT_INITIALIZED_DATA: u32 = 0x0000_0040;
 pub enum EmuExport {
     /// A function: the address of its Rust implementation.
     Code(u32),
+    /// A function reached without the realigning trampoline, for code
+    /// that must see the caller's own stack (`setjmp`). Its thunk is
+    /// `mov eax, target; jmp eax`.
+    Raw(u32),
     /// A variable of this many bytes, placed in the image's `.data`.
     /// Rust code reaches it through the export's address.
     Data(u32),
@@ -135,7 +139,7 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, EmuExport)]) -> 
     let mut placed = Vec::new();
     for (_, export) in &sorted {
         match export {
-            EmuExport::Code(_) => {
+            EmuExport::Code(_) | EmuExport::Raw(_) => {
                 placed.push(text_size);
                 text_size += THUNK_SIZE;
             }
@@ -244,6 +248,13 @@ pub fn build_image(dll_name: &str, base: u32, exports: &[(&str, EmuExport)]) -> 
                 w.bytes(thunk as usize + 5, &[0xe9]);
                 let rel = text_rva.wrapping_sub(thunk + 10);
                 w.u32(thunk as usize + 6, rel);
+                thunk
+            }
+            EmuExport::Raw(target) => {
+                let thunk = text_rva + offset;
+                w.bytes(thunk as usize, &[0xb8]);
+                w.u32(thunk as usize + 1, *target);
+                w.bytes(thunk as usize + 5, &[0xff, 0xe0]);
                 thunk
             }
             EmuExport::Data(_) => data_rva + offset,

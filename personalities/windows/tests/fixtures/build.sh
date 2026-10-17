@@ -6,7 +6,7 @@ SRC=$(cd "$(dirname "$0")" && pwd)
 OUT=$1
 mkdir -p "$OUT"
 cd "$OUT"
-for d in kernel32 advapi32 psapi; do
+for d in kernel32 advapi32 psapi msvcrt; do
     llvm-dlltool -m i386 -k -d "$SRC/$d.def" -l $d.lib
 done
 CC="clang --target=i686-pc-windows-msvc -O1 -fno-stack-protector -c"
@@ -32,3 +32,5 @@ $CC "$SRC/modules.c" -o modules.obj
 $LINK /entry:start /subsystem:console /out:modules.exe modules.obj psapi.lib sample.lib
 $CC "$SRC/importer.c" -o importer.obj
 $LINK /entry:start /subsystem:console /out:importer.exe importer.obj kernel32.lib sample.lib
+$CC "$SRC/jump.c" -o jump.obj
+$LINK /entry:start /subsystem:console /out:jump.exe jump.obj msvcrt.lib

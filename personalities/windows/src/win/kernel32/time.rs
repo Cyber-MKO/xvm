@@ -68,7 +68,7 @@ fn now_ms() -> i64 {
 
 /// Unix milliseconds of an ISO 8601 UTC time such as
 /// `2026-10-17T13:32:07.954Z`.
-fn parse_utc(text: &str) -> Option<i64> {
+pub(crate) fn parse_utc(text: &str) -> Option<i64> {
     let text = text.strip_suffix('Z')?;
     let (date, time) = text.split_once('T')?;
     let mut d = date.split('-').map(|p| p.parse::<i64>().ok());

@@ -1,4 +1,4 @@
-//! Time: `time`, `localtime`.
+//! Time: `time`, `localtime`, `gmtime`, `clock`.
 //!
 //! `msvcrt.dll`'s `time` is the 32-bit `_time32`: seconds since 1970 as
 //! a signed 32-bit value, and -1 once that no longer fits (January 2038).
@@ -8,6 +8,12 @@
 //! `localtime` converts with the host profile's time zone, as the CRT
 //! does through `GetTimeZoneInformation`. A `TZ` environment variable,
 //! which the CRT would follow instead, is a logged gap.
+//!
+//! `gmtime` converts to UTC. It shares `localtime`'s buffer: the `gmtime`
+//! page on Microsoft Learn says both use one `struct tm` per thread.
+//!
+//! `clock` is the wall-clock time since the CRT started, in
+//! `CLOCKS_PER_SEC` (1000) units, as the `clock` page on Learn says.
 
 use std::cell::UnsafeCell;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -22,6 +28,8 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("time", time as *const () as u32),
         ("localtime", localtime as *const () as u32),
+        ("gmtime", gmtime as *const () as u32),
+        ("clock", clock as *const () as u32),
     ]
 }
 
@@ -54,7 +62,24 @@ extern "C" fn localtime(t: *const i32) -> *mut i32 {
     }
     let tz = with_current(|p| p.params.time_zone.clone());
     let utc = t as i64;
-    let tm = Tm::from_seconds(tz.to_local(utc), tz.is_daylight(utc));
+    store(Tm::from_seconds(tz.to_local(utc), tz.is_daylight(utc)))
+}
+
+/// A pointer to this thread's `struct tm` holding UTC at `*t`, or NULL
+/// with EINVAL for a NULL pointer or a negative time.
+extern "C" fn gmtime(t: *const i32) -> *mut i32 {
+    // SAFETY: NULL or readable (the function's contract).
+    match unsafe { t.as_ref() } {
+        Some(&t) if t >= 0 => store(Tm::from_seconds(t as i64, false)),
+        _ => {
+            errno::set(EINVAL);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Fills this thread's `struct tm` and returns it.
+fn store(tm: Tm) -> *mut i32 {
     let fields = [
         tm.sec, tm.min, tm.hour, tm.mday, tm.mon, tm.year, tm.wday, tm.yday, tm.isdst,
     ];
@@ -64,6 +89,12 @@ extern "C" fn localtime(t: *const i32) -> *mut i32 {
         unsafe { *cell.get() = fields };
         cell.get().cast()
     })
+}
+
+/// Milliseconds since the CRT started, or -1 once that no longer fits.
+extern "C" fn clock() -> i32 {
+    let started = with_current(|p| p.crt.started);
+    i32::try_from(started.elapsed().as_millis()).unwrap_or(-1)
 }
 
 fn now32(now: SystemTime) -> i32 {
@@ -137,9 +168,24 @@ mod tests {
             localtime(&winter),
             "one buffer per thread"
         );
+        assert_eq!(read(gmtime(&summer)), [0, 0, 12, 15, 6, 126, 3, 195, 0]);
+        assert_eq!(gmtime(&summer), localtime(&summer), "a shared buffer");
+        assert!(gmtime(&-1).is_null());
         assert!(localtime(&-1).is_null());
         assert!(localtime(std::ptr::null()).is_null());
         assert!(runtime.lock().gaps().is_empty());
+    }
+
+    #[test]
+    fn clock_counts_milliseconds_since_the_crt_started() {
+        use crate::process::Process;
+        use crate::runtime::Runtime;
+        let runtime = Runtime::new(Process::new(Vec::new()));
+        let _thread = runtime.attach().unwrap();
+        let first = clock();
+        std::thread::sleep(Duration::from_millis(30));
+        let second = clock();
+        assert!(first >= 0 && second - first >= 30, "{first} {second}");
     }
 
     #[test]

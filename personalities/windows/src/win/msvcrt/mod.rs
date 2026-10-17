@@ -8,6 +8,7 @@ mod errno;
 pub(crate) mod find;
 mod fullpath;
 mod heap;
+mod jump;
 mod locale;
 mod locks;
 mod lowio;
@@ -46,6 +47,11 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         remove::exports(),
     ]
     .concat()
+}
+
+/// Functions that run on the caller's own stack, without the trampoline.
+pub(super) fn raw_exports() -> Vec<(&'static str, u32)> {
+    jump::exports()
 }
 
 /// Exported variables, as (name, size in bytes).

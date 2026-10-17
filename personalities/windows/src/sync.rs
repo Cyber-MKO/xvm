@@ -41,6 +41,10 @@ pub struct ThreadObject {
     exit_code: AtomicU32,
     /// `SetThreadPriority`'s value, kept but not applied to the host.
     pub priority: AtomicI32,
+    /// The suspend count: a thread created suspended waits until
+    /// `ResumeThread` brings it to 0.
+    suspended: Mutex<u32>,
+    resumed: Condvar,
 }
 
 impl ThreadObject {
@@ -50,7 +54,36 @@ impl ThreadObject {
             finished: AtomicBool::new(false),
             exit_code: AtomicU32::new(0),
             priority: AtomicI32::new(0),
+            suspended: Mutex::new(0),
+            resumed: Condvar::new(),
         }
+    }
+
+    /// Start suspended, before the thread runs any of its routine.
+    pub fn suspend_at_start(&self) {
+        *self.suspended.lock().unwrap() = 1;
+    }
+
+    /// Block the calling thread (this one) while it is suspended.
+    pub fn wait_until_resumed(&self) {
+        let mut count = self.suspended.lock().unwrap();
+        while *count > 0 {
+            count = self.resumed.wait(count).unwrap();
+        }
+    }
+
+    /// Lower the suspend count, as `ResumeThread` does. Returns the count
+    /// before.
+    pub fn resume(&self) -> u32 {
+        let mut count = self.suspended.lock().unwrap();
+        let before = *count;
+        if *count > 0 {
+            *count -= 1;
+            if *count == 0 {
+                self.resumed.notify_all();
+            }
+        }
+        before
     }
 
     /// The exit code, or None while the thread runs.

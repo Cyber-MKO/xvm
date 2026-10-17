@@ -1,4 +1,5 @@
-//! File attributes: `GetFileAttributesA`, `GetFileAttributesExW`.
+//! File attributes: `GetFileAttributesA`, `GetFileAttributesW`,
+//! `GetFileAttributesExW`, `GetFileInformationByHandle`.
 //!
 //! The drive folders hold no Windows attributes, so they are derived, as
 //! the "File Attribute Constants" page on Microsoft Learn defines them:
@@ -12,6 +13,11 @@
 //! Hidden and system attributes are not modelled for drive files.
 //! `GetFileAttributesExW` adds the creation (or, where the host has none,
 //! change), access and write times as FILETIMEs, and the size.
+//!
+//! `GetFileInformationByHandle` adds the link count and a file index
+//! from the host inode, which, like the Windows index, stays the same
+//! while the file exists. The volume serial number is not in the host
+//! profile yet: it is 0, a logged gap.
 
 use std::ffi::c_char;
 
@@ -32,9 +38,14 @@ const EPOCH_DIFFERENCE: i64 = 11_644_473_600;
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("GetFileAttributesA", GetFileAttributesA as *const () as u32),
+        ("GetFileAttributesW", GetFileAttributesW as *const () as u32),
         (
             "GetFileAttributesExW",
             GetFileAttributesExW as *const () as u32,
+        ),
+        (
+            "GetFileInformationByHandle",
+            GetFileInformationByHandle as *const () as u32,
         ),
     ]
 }
@@ -55,6 +66,10 @@ fn lookup(name: &str, function: &str) -> Result<(u32, std::fs::Metadata), u32> {
             ERROR_PATH_NOT_FOUND
         });
     };
+    Ok((attributes_of_meta(&meta), meta))
+}
+
+fn attributes_of_meta(meta: &std::fs::Metadata) -> u32 {
     let mut attributes = if meta.is_dir() {
         FILE_ATTRIBUTE_DIRECTORY
     } else {
@@ -63,7 +78,29 @@ fn lookup(name: &str, function: &str) -> Result<(u32, std::fs::Metadata), u32> {
     if meta.permissions().readonly() {
         attributes |= FILE_ATTRIBUTE_READONLY;
     }
-    Ok((attributes, meta))
+    attributes
+}
+
+/// WIN32_FILE_ATTRIBUTE_DATA for `meta` (36 bytes): attributes, creation,
+/// access and write FILETIMEs, size high and low.
+fn attribute_data(meta: &std::fs::Metadata) -> [u8; 36] {
+    use std::os::unix::fs::MetadataExt;
+    let created = meta
+        .created()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or(filetime(meta.ctime(), meta.ctime_nsec()), |d| {
+            filetime(d.as_secs() as i64, d.subsec_nanos() as i64)
+        });
+    let size = if meta.is_dir() { 0 } else { meta.len() };
+    let mut buf = [0u8; 36];
+    buf[0..4].copy_from_slice(&attributes_of_meta(meta).to_le_bytes());
+    buf[4..12].copy_from_slice(&created.to_le_bytes());
+    buf[12..20].copy_from_slice(&filetime(meta.atime(), meta.atime_nsec()).to_le_bytes());
+    buf[20..28].copy_from_slice(&filetime(meta.mtime(), meta.mtime_nsec()).to_le_bytes());
+    buf[28..32].copy_from_slice(&((size >> 32) as u32).to_le_bytes());
+    buf[32..36].copy_from_slice(&(size as u32).to_le_bytes());
+    buf
 }
 
 /// The attributes of a file or directory, or INVALID_FILE_ATTRIBUTES with
@@ -85,6 +122,26 @@ extern "stdcall" fn GetFileAttributesA(name: *const c_char) -> u32 {
     }
 }
 
+fn attributes_of(name: Option<String>, function: &str) -> u32 {
+    let Some(name) = name else {
+        set_last_error(ERROR_PATH_NOT_FOUND);
+        return INVALID_FILE_ATTRIBUTES;
+    };
+    match lookup(&name, function) {
+        Ok((attributes, _)) => attributes,
+        Err(code) => {
+            set_last_error(code);
+            INVALID_FILE_ATTRIBUTES
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+extern "stdcall" fn GetFileAttributesW(name: *const u16) -> u32 {
+    // SAFETY: a NUL-terminated string (the API's contract).
+    attributes_of(unsafe { wide(name) }, "GetFileAttributesW")
+}
+
 /// Fills WIN32_FILE_ATTRIBUTE_DATA (36 bytes): attributes, creation,
 /// access and write FILETIMEs, size high and low. Only the standard
 /// level exists.
@@ -99,30 +156,51 @@ extern "stdcall" fn GetFileAttributesExW(name: *const u16, level: u32, out: *mut
         set_last_error(ERROR_PATH_NOT_FOUND);
         return 0;
     };
-    let (attributes, meta) = match lookup(&name, "GetFileAttributesExW") {
-        Ok(found) => found,
+    let meta = match lookup(&name, "GetFileAttributesExW") {
+        Ok((_, meta)) => meta,
         Err(code) => {
             set_last_error(code);
             return 0;
         }
     };
-    use std::os::unix::fs::MetadataExt;
-    let created = meta
-        .created()
-        .ok()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-        .map_or(filetime(meta.ctime(), meta.ctime_nsec()), |d| {
-            filetime(d.as_secs() as i64, d.subsec_nanos() as i64)
-        });
-    let size = if meta.is_dir() { 0 } else { meta.len() };
-    let mut buf = [0u8; 36];
-    buf[0..4].copy_from_slice(&attributes.to_le_bytes());
-    buf[4..12].copy_from_slice(&created.to_le_bytes());
-    buf[12..20].copy_from_slice(&filetime(meta.atime(), meta.atime_nsec()).to_le_bytes());
-    buf[20..28].copy_from_slice(&filetime(meta.mtime(), meta.mtime_nsec()).to_le_bytes());
-    buf[28..32].copy_from_slice(&((size >> 32) as u32).to_le_bytes());
-    buf[32..36].copy_from_slice(&(size as u32).to_le_bytes());
+    let buf = attribute_data(&meta);
     // SAFETY: out holds a WIN32_FILE_ATTRIBUTE_DATA (the API's contract).
+    unsafe { std::ptr::copy_nonoverlapping(buf.as_ptr(), out, buf.len()) };
+    1
+}
+
+/// Fills BY_HANDLE_FILE_INFORMATION (52 bytes): attributes, three
+/// FILETIMEs, volume serial, size high and low, links, index high and
+/// low. FALSE with ERROR_INVALID_HANDLE for a handle that is not a file.
+#[allow(non_snake_case)]
+extern "stdcall" fn GetFileInformationByHandle(handle: u32, out: *mut u8) -> i32 {
+    use std::os::unix::fs::MetadataExt;
+    let meta = match super::file::file_of(handle) {
+        Ok((file, ..)) => file.metadata(),
+        Err(code) => {
+            set_last_error(code);
+            return 0;
+        }
+    };
+    let Ok(meta) = meta else {
+        set_last_error(super::error::ERROR_INVALID_HANDLE);
+        return 0;
+    };
+    with_current(|p| {
+        p.record_runtime_gap(
+            crate::gap::GapKind::Feature,
+            "kernel32.dll",
+            "GetFileInformationByHandle: volume serial number",
+        )
+    });
+    let data = attribute_data(&meta);
+    let mut buf = [0u8; 52];
+    buf[0..28].copy_from_slice(&data[0..28]);
+    buf[32..40].copy_from_slice(&data[28..36]);
+    buf[40..44].copy_from_slice(&(meta.nlink() as u32).to_le_bytes());
+    buf[44..48].copy_from_slice(&((meta.ino() >> 32) as u32).to_le_bytes());
+    buf[48..52].copy_from_slice(&(meta.ino() as u32).to_le_bytes());
+    // SAFETY: out holds a BY_HANDLE_FILE_INFORMATION (the API's contract).
     unsafe { std::ptr::copy_nonoverlapping(buf.as_ptr(), out, buf.len()) };
     1
 }
@@ -174,6 +252,8 @@ mod tests {
             INVALID_FILE_ATTRIBUTES
         );
         assert_eq!(super::super::error::GetLastError(), ERROR_PATH_NOT_FOUND);
+        let queue: Vec<u16> = "C:\\agent\\QUEUE\0".encode_utf16().collect();
+        assert_eq!(GetFileAttributesW(queue.as_ptr()), FILE_ATTRIBUTE_DIRECTORY);
         let w: Vec<u16> = "ossec.conf\0".encode_utf16().collect();
         let mut data = [0u8; 36];
         assert_eq!(GetFileAttributesExW(w.as_ptr(), 0, data.as_mut_ptr()), 1);
@@ -194,6 +274,21 @@ mod tests {
             0
         );
         assert_eq!(super::super::error::GetLastError(), ERROR_FILE_NOT_FOUND);
+
+        // By handle: the same data, plus links and the inode as index.
+        let handle =
+            super::super::file::open_handle(r"C:\agent\ossec.conf", 0x8000_0000, 7, 3).unwrap();
+        let mut info = [0u8; 52];
+        assert_eq!(GetFileInformationByHandle(handle, info.as_mut_ptr()), 1);
+        assert_eq!(info[0..28], data[0..28]);
+        assert_eq!(info[32..40], data[28..36]);
+        let field = |o: usize| u32::from_le_bytes(info[o..o + 4].try_into().unwrap());
+        let meta = std::fs::metadata(c.join("agent/ossec.conf")).unwrap();
+        assert_eq!(field(40), 1);
+        assert_eq!(field(48), meta.ino() as u32);
+        assert_eq!(GetFileInformationByHandle(0x1234, info.as_mut_ptr()), 0);
+        let gaps = runtime.lock().gaps().len();
+        assert_eq!(gaps, 1, "the volume serial number");
         std::fs::remove_dir_all(&root).unwrap();
     }
 }

@@ -18,7 +18,7 @@ pub(crate) mod process;
 pub(crate) mod sync;
 mod sysinfo;
 pub(crate) mod thread;
-mod time;
+pub(crate) mod time;
 mod timezone;
 mod tls;
 mod version;

@@ -15,6 +15,7 @@ mod ntdll;
 mod psapi;
 mod shlwapi;
 mod text;
+pub(crate) mod wevtapi;
 mod wintrust;
 mod ws2_32;
 mod wsock32;
@@ -38,12 +39,19 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "ntdll.dll" => (ntdll::exports(), Vec::new()),
         "psapi.dll" => (psapi::exports(), Vec::new()),
         "shlwapi.dll" => (shlwapi::exports(), Vec::new()),
+        "wevtapi.dll" => (wevtapi::exports(), Vec::new()),
         "wintrust.dll" => (wintrust::exports(), Vec::new()),
         "ws2_32.dll" => (ws2_32::exports(), Vec::new()),
         "wsock32.dll" => (wsock32::exports(), Vec::new()),
         _ => (Vec::new(), Vec::new()),
     };
+    let raw = if dll.eq_ignore_ascii_case("msvcrt.dll") {
+        msvcrt::raw_exports()
+    } else {
+        Vec::new()
+    };
     let functions = functions.into_iter().map(|(n, a)| (n, EmuExport::Code(a)));
+    let raw = raw.into_iter().map(|(n, a)| (n, EmuExport::Raw(a)));
     let data = data.into_iter().map(|(n, size)| (n, EmuExport::Data(size)));
-    functions.chain(data).collect()
+    functions.chain(raw).chain(data).collect()
 }

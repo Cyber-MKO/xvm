@@ -202,6 +202,20 @@ impl Runtime {
     where
         F: FnOnce() -> u32 + Send + 'static,
     {
+        self.spawn_suspendable(stack, false, start)
+    }
+
+    /// As `spawn_thread`; with `suspended`, the thread does nothing, not
+    /// even its attach notifications, until it is resumed.
+    pub fn spawn_suspendable<F>(
+        &self,
+        stack: usize,
+        suspended: bool,
+        start: F,
+    ) -> io::Result<(JoinHandle<u32>, Arc<ThreadObject>)>
+    where
+        F: FnOnce() -> u32 + Send + 'static,
+    {
         let runtime = self.clone();
         let stack = self
             .lock()
@@ -214,7 +228,11 @@ impl Runtime {
             .stack_size(stack)
             .spawn(move || {
                 let thread = runtime.attach().expect("thread environment");
+                if suspended {
+                    thread.thread().suspend_at_start();
+                }
                 let _ = tell.send(thread.thread().clone());
+                thread.thread().wait_until_resumed();
                 let steps = runtime.lock().thread_steps();
                 for step in &steps {
                     // SAFETY: initialised modules, and this thread has a TEB.

@@ -1,0 +1,4 @@
+LIBRARY msvcrt.dll
+EXPORTS
+_setjmp3
+longjmp

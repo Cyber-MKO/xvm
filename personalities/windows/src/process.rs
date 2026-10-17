@@ -247,6 +247,8 @@ pub struct CrtState {
     pub locks: Box<[[u32; 6]; 64]>,
     /// `_findfirst` searches: handle to the names still to report.
     pub finds: BTreeMap<i32, crate::win::msvcrt::find::Search>,
+    /// When the CRT started, for `clock`.
+    pub started: std::time::Instant,
 }
 
 /// One CRT file descriptor.
@@ -295,6 +297,7 @@ impl Default for CrtState {
             streams: Vec::new(),
             locks: Box::new([[0; 6]; 64]),
             finds: BTreeMap::new(),
+            started: std::time::Instant::now(),
         }
     }
 }
@@ -406,6 +409,11 @@ pub struct Process {
     pub registered: bool,
     /// The host's boot time in Unix milliseconds, once read (`GetTickCount`).
     pub boot_ms: Option<i64>,
+    /// Where the engine listens, and the host's name, for code that needs
+    /// a connection of its own (event subscriptions).
+    pub engine_addr: Option<(PathBuf, String)>,
+    /// Event Log API handles (`wevtapi`).
+    pub evt: crate::win::wevtapi::EvtState,
 }
 
 /// Why `Process::load_library` failed.
@@ -446,6 +454,8 @@ impl Process {
             crypt_providers: Vec::new(),
             registered: false,
             boot_ms: None,
+            engine_addr: None,
+            evt: Default::default(),
         }
     }
 

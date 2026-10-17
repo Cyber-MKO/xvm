@@ -193,6 +193,16 @@ fn start_up_runs_dll_main_before_the_entry_point() {
 }
 
 #[test]
+fn setjmp_and_longjmp_cross_agent_frames() {
+    use xvm_windows::runtime::Runtime;
+
+    let Some(dir) = fixtures() else { return };
+    let runtime = Runtime::new(process(dir, "jump.exe"));
+    let thread = runtime.attach().unwrap();
+    assert_eq!(runtime.run_main(&thread).unwrap(), 71);
+}
+
+#[test]
 fn start_up_stops_when_dll_main_fails() {
     use xvm_windows::runtime::{Runtime, StartError};
 

@@ -2,8 +2,9 @@
 //!
 //! `CreateThread` runs the start routine on a new host thread with its own
 //! TEB, through `Runtime::spawn_thread`, so modules see the thread attach
-//! and detach. The routine's return value is the exit code. Security
-//! attributes and `CREATE_SUSPENDED` are logged gaps.
+//! and detach. The routine's return value is the exit code. A thread
+//! created with `CREATE_SUSPENDED` waits for `ResumeThread`. Security
+//! attributes are a logged gap.
 //!
 //! Priorities are kept on the thread object and reported back. They are
 //! not applied to the host: emulated hosts share the real scheduler.
@@ -24,6 +25,7 @@ const PRIORITY_ERROR: i32 = 0x7fff_ffff;
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("CreateThread", CreateThread as *const () as u32),
+        ("ResumeThread", ResumeThread as *const () as u32),
         ("GetThreadPriority", GetThreadPriority as *const () as u32),
         ("SetThreadPriority", SetThreadPriority as *const () as u32),
     ]
@@ -58,12 +60,9 @@ pub(crate) fn create_thread(
         gap(&format!("{function} security attributes"));
         return Err(ERROR_INVALID_PARAMETER);
     }
-    if flags & CREATE_SUSPENDED != 0 {
-        gap(&format!("{function} CREATE_SUSPENDED"));
-        return Err(ERROR_INVALID_PARAMETER);
-    }
     let runtime = crate::runtime::current().ok_or(ERROR_INVALID_PARAMETER)?;
-    let spawned = runtime.spawn_thread(stack_size as usize, move || {
+    let suspended = flags & CREATE_SUSPENDED != 0;
+    let spawned = runtime.spawn_suspendable(stack_size as usize, suspended, move || {
         // SAFETY: DWORD WINAPI ThreadProc(LPVOID), given by the caller.
         let f: extern "stdcall" fn(u32) -> u32 = unsafe { std::mem::transmute(start as usize) };
         f(parameter)
@@ -105,6 +104,19 @@ extern "stdcall" fn CreateThread(
         Err(code) => {
             set_last_error(code);
             0
+        }
+    }
+}
+
+/// Lowers a thread's suspend count; at 0 a thread created suspended
+/// starts. Returns the count before, or 0xffffffff for a bad handle.
+#[allow(non_snake_case)]
+extern "stdcall" fn ResumeThread(handle: u32) -> u32 {
+    match thread_of(handle) {
+        Some(t) => t.resume(),
+        None => {
+            set_last_error(ERROR_INVALID_HANDLE);
+            u32::MAX
         }
     }
 }
@@ -179,25 +191,27 @@ mod tests {
         assert_eq!(WaitForSingleObject(handle, u32::MAX), 0);
         assert_eq!(thread_of(handle).unwrap().exit_code(), Some(42));
         assert_eq!(SEEN_ID.load(Ordering::SeqCst), id);
-        assert_eq!(
-            CreateThread(
-                0,
-                0,
-                routine as *const () as u32,
-                0,
-                CREATE_SUSPENDED,
-                &mut id
-            ),
-            0
+        // Created suspended: nothing runs until ResumeThread.
+        let suspended = CreateThread(
+            0,
+            0,
+            routine as *const () as u32,
+            9,
+            CREATE_SUSPENDED,
+            &mut id,
         );
+        assert_ne!(suspended, 0);
+        assert_eq!(
+            WaitForSingleObject(suspended, 50),
+            super::super::sync::WAIT_TIMEOUT
+        );
+        assert_eq!(ResumeThread(suspended), 1);
+        assert_eq!(WaitForSingleObject(suspended, u32::MAX), 0);
+        assert_eq!(thread_of(suspended).unwrap().exit_code(), Some(10));
+        assert_eq!(ResumeThread(suspended), 0, "never suspended again");
+        assert_eq!(ResumeThread(0x1234), u32::MAX);
         assert_eq!(CreateThread(0, 0, 0, 0, 0, &mut id), 0);
-        let gaps: Vec<String> = runtime
-            .lock()
-            .gaps()
-            .iter()
-            .map(|g| g.symbol.clone())
-            .collect();
-        assert_eq!(gaps, ["CreateThread CREATE_SUSPENDED"]);
+        assert!(runtime.lock().gaps().is_empty());
     }
 
     #[test]
