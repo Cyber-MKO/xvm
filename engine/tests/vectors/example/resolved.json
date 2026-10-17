@@ -110,6 +110,10 @@
      "type": "REG_SZ",
      "data": "Windows Server 2022 Standard Evaluation"
     },
+    "InstallationType": {
+     "type": "REG_SZ",
+     "data": "Server"
+    },
     "CurrentBuildNumber": {
      "type": "REG_SZ",
      "data": "20348"
@@ -139,6 +143,50 @@
    }
   }
  },
+ "processes": [
+  {
+   "id": "system",
+   "image": "System",
+   "pid": 4,
+   "user": "NT AUTHORITY\\SYSTEM"
+  },
+  {
+   "id": "smss",
+   "image": "smss.exe",
+   "path": "C:\\Windows\\System32\\smss.exe",
+   "parent": "system",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 1
+  },
+  {
+   "id": "wininit",
+   "image": "wininit.exe",
+   "path": "C:\\Windows\\System32\\wininit.exe",
+   "parent": "smss",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 3
+  },
+  {
+   "id": "services",
+   "image": "services.exe",
+   "path": "C:\\Windows\\System32\\services.exe",
+   "parent": "wininit",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 4
+  },
+  {
+   "id": "lsass",
+   "image": "lsass.exe",
+   "path": "C:\\Windows\\System32\\lsass.exe",
+   "parent": "wininit",
+   "user": "NT AUTHORITY\\SYSTEM",
+   "session": 0,
+   "start_offset_s": 4
+  }
+ ],
  "identity": {
   "hostname": "WIN-WEB-01",
   "domain": "WORKGROUP"
