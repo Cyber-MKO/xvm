@@ -102,6 +102,7 @@ Build and test the loader for both targets: `cargo test` and `cargo test --targe
 | Host profiles | `control/`, `docs/host-profiles.md` | YAML base images plus per-host deltas; `xvm-profile validate`, `resolve`, `compile`, `base-from-golden` |
 | Host-state engine | `engine/`, `engine/README.md` | Registry, sections, lists, files, processes, Windows event logs (query subset, XML, message templates); run-time changes with a change journal; persistence with `--state`. Personalities connect with `xvm_engine::client::Client`. |
 | Golden capture kit | `scenarios/golden/windows/` | `capture.ps1`, `manager-capture.sh`, `xvm-golden` |
+| Scenario runner | `scenarios/xvm_scenario/`, `scenarios/README.md` | `xvm-scenario validate`, `run`; YAML steps with named actions, a seeded clock per host, JSON Lines run log; `library/golden-windows.yaml` mirrors the capture |
 
 Every host fact a personality reports must come from the engine (rule 5). Every write it makes goes through the engine's ops.
 

@@ -83,6 +83,8 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | The loader asks the engine for the agent's PID | Decided | Kasim (2026-10-17), option A. The loader registers the agent with `proc.start` and requests the profile's PID; the engine records it instead of assigning one. |
 | The manager address reaches `ossec.conf` through our MSI installer step | Decided | Kasim (2026-10-17), option A. Install properties (such as `WAZUH_MANAGER`) come from the host profile; the step writes them into the configuration as the real installer does. |
 | Name resolution: the host's `hosts` file, then the real resolver | Decided | Kasim (2026-10-17), option B. `getaddrinfo` reads the emulated host's `C:\Windows\System32\drivers\etc\hosts` first, as Windows does, then asks the real machine's resolver. |
+| Scenarios are YAML steps with named actions | Decided | Kasim (2026-10-17). Each action changes host state in the engine and writes the events the real operation writes, with values from host state. Format and actions in `scenarios/README.md`. |
+| Scenario time is one scenario clock with a per-host offset | Decided | Kasim (2026-10-17). A fixed skew per host plus jitter per step, both seeded, so runs repeat and hosts do not act in lockstep. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files
