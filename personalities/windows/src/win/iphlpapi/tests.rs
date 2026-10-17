@@ -16,6 +16,8 @@ fn host() -> (Runtime, crate::runtime::Attached) {
         "identity": {"hostname": "H"},
         "network": {"interfaces": [
             {"name": "Ethernet0", "mac": "02:00:00:00:01:01", "ipv4": ["192.0.2.11/24", "198.51.100.7/16"],
+             "guid": "{00000000-0000-4000-8000-000000000101}", "index": 7, "type": 6, "mtu": 1500,
+             "speed": 10_000_000_000u64, "status": "up", "metric": 15,
              "gateway": "192.0.2.1", "dns": ["192.0.2.53", "192.0.2.54"], "dhcp": false},
             {"name": "Backup", "ipv4": []},
         ]},
@@ -72,7 +74,17 @@ fn adapters_follow_the_profile() {
     );
 
     let a = base;
-    assert_eq!((u32_at(a, 0), u32_at(a, 4)), (ADAPTER_SIZE as u32, 1));
+    assert_eq!((u32_at(a, 0), u32_at(a, 4)), (ADAPTER_SIZE as u32, 7));
+    // SAFETY: a NUL-terminated string inside the buffer.
+    let guid = unsafe { std::ffi::CStr::from_ptr(u32_at(a, 12) as *const std::ffi::c_char) };
+    assert_eq!(
+        guid.to_str().unwrap(),
+        "{00000000-0000-4000-8000-000000000101}"
+    );
+    assert_eq!((u32_at(a, 60), u32_at(a, 168)), (1500, 15));
+    let speed = u64::from(u32_at(a, 144)) | (u64::from(u32_at(a, 148)) << 32);
+    assert_eq!(speed, 10_000_000_000);
+    assert_eq!(u32_at(a, 152), u32_at(a, 144), "receive speed");
     assert_eq!(wide_at(u32_at(a, 40)), "Ethernet0");
     assert_eq!(wide_at(u32_at(a, 36)), "Example NIC");
     assert_eq!(wide_at(u32_at(a, 32)), "corp.example");
@@ -84,10 +96,7 @@ fn adapters_follow_the_profile() {
         IP_ADAPTER_IPV4_ENABLED,
         "static: no DHCP flag"
     );
-    assert_eq!(
-        (u32_at(a, 64), u32_at(a, 68)),
-        (IF_TYPE_OTHER, IF_OPER_STATUS_UNKNOWN)
-    );
+    assert_eq!((u32_at(a, 64), u32_at(a, 68)), (6, 1), "Ethernet, up");
 
     let u = u32_at(a, 16);
     assert_eq!(u32_at(u, 0), UNICAST_SIZE as u32);
@@ -110,6 +119,11 @@ fn adapters_follow_the_profile() {
     assert_eq!(
         (u32_at(b, 4), u32_at(b, 8), u32_at(b, 16), u32_at(b, 52)),
         (2, 0, 0, 0)
+    );
+    assert_eq!(
+        (u32_at(b, 64), u32_at(b, 68)),
+        (IF_TYPE_OTHER, IF_OPER_STATUS_UNKNOWN),
+        "not in the profile"
     );
     assert!(b >= base && b + ADAPTER_SIZE as u32 <= base + size);
 
@@ -139,13 +153,21 @@ fn adapters_follow_the_profile() {
         .iter()
         .map(|g| g.symbol.clone())
         .collect();
-    assert_eq!(gaps.len(), 2, "{gaps:?}");
+    assert_eq!(
+        gaps,
+        [
+            "GetAdaptersAddresses: interface Backup has no guid, index, type, mtu, speed, status, metric in the host profile",
+            "GetAdaptersAddresses: IPv6 addresses are not in the host profile",
+        ]
+    );
 }
 
 #[test]
 fn malformed_interfaces_are_rejected() {
     assert!(parse_interface(&json!({"name": "x", "mac": "zz:00"})).is_none());
     assert!(parse_interface(&json!({"name": "x", "ipv4": ["10.0.0.1/40"]})).is_none());
+    assert!(parse_interface(&json!({"name": "x", "status": "sideways"})).is_none());
+    assert!(parse_interface(&json!({"name": "x", "mtu": -1})).is_none());
     assert_eq!(
         parse_interface(&json!({"name": "x"})),
         Some(Interface {

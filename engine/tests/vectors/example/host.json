@@ -15,6 +15,7 @@
   "interfaces": [
    {
     "name": "Ethernet0",
+    "guid": "{00000000-0000-4000-8000-000000000101}",
     "mac": "02:00:00:00:01:01",
     "ipv4": [
      "192.0.2.11/24"
@@ -67,6 +68,40 @@
     "ComputerName": {
      "type": "REG_SZ",
      "data": "WIN-WEB-01"
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName": {
+    "ComputerName": {
+     "type": "REG_SZ",
+     "data": "WIN-WEB-01"
+    }
+   },
+   "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{00000000-0000-4000-8000-000000000101}": {
+    "EnableDHCP": {
+     "type": "REG_DWORD",
+     "data": 0
+    },
+    "IPAddress": {
+     "type": "REG_MULTI_SZ",
+     "data": [
+      "192.0.2.11"
+     ]
+    },
+    "SubnetMask": {
+     "type": "REG_MULTI_SZ",
+     "data": [
+      "255.255.255.0"
+     ]
+    },
+    "DefaultGateway": {
+     "type": "REG_MULTI_SZ",
+     "data": [
+      "192.0.2.1"
+     ]
+    },
+    "NameServer": {
+     "type": "REG_SZ",
+     "data": "192.0.2.53"
     }
    }
   }

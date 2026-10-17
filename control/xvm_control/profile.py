@@ -3,8 +3,8 @@
 Merge rules (profile over base):
 
 - Scalars and objects: the profile value wins; objects merge key by key.
-- users, groups, software, services and network.interfaces: entries merge by
-  name (case-insensitive, keeping the base's spelling); an entry with
+- users, groups, software, hotfixes, services and network.interfaces: entries
+  merge by name (case-insensitive, keeping the base's spelling); an entry with
   `remove: true` deletes the base entry.
 - registry.keys: merge key by key, then value by value; a null value deletes it.
 - registry.delete_keys: deletes the key and every subkey from the base.
@@ -30,7 +30,7 @@ from pathlib import Path
 import jsonschema
 import yaml
 
-KEYED_LISTS = ("users", "groups", "software", "services")
+KEYED_LISTS = ("users", "groups", "software", "hotfixes", "services")
 NESTED_KEYED_LISTS = (("network", "interfaces"),)
 SPECIAL_FIELDS = (*KEYED_LISTS, "registry", "network", "files", "processes")
 _WIN_PATH = re.compile(r"^[A-Za-z]:(\\[^\\/:*?\"<>|]+)*\\?$")

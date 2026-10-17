@@ -26,6 +26,13 @@ network:
     - name: Ethernet0
       description: Example virtual NIC
       dhcp: true
+      # IANA ifType 6 is Ethernet. Speed is in bits per second.
+      index: 4
+      type: 6
+      mtu: 1500
+      speed: 1000000000
+      status: up
+      metric: 15
 users:
   - {name: Administrator, sid: S-1-5-21-1000000000-1000000000-1000000000-500, enabled: true, groups: [Administrators]}
   - {name: Guest, sid: S-1-5-21-1000000000-1000000000-1000000000-501, enabled: false, groups: [Guests]}
@@ -33,6 +40,9 @@ groups:
   - {name: Administrators, sid: S-1-5-32-544}
   - {name: Users, sid: S-1-5-32-545}
   - {name: Guests, sid: S-1-5-32-546}
+hotfixes:
+  - {name: KB5000001, description: Update, installed_on: "2026-01-01", installed_by: NT AUTHORITY\SYSTEM}
+  - {name: KB5000002, description: Security Update, installed_on: "2026-01-02", installed_by: NT AUTHORITY\SYSTEM}
 services:
   - {name: EventLog, display_name: Windows Event Log, state: running, start_mode: auto}
   - {name: W32Time, display_name: Windows Time, state: running, start_mode: manual}
@@ -77,6 +87,21 @@ registry:
     HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage:
       ACP: {type: REG_SZ, data: "1252"}
       OEMCP: {type: REG_SZ, data: "437"}
+    HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0:
+      Identifier: {type: REG_SZ, data: Intel64 Family 6 Model 85 Stepping 7}
+      ProcessorNameString: {type: REG_SZ, data: Example vCPU}
+      VendorIdentifier: {type: REG_SZ, data: GenuineIntel}
+      ~MHz: {type: REG_DWORD, data: 2400}
+    # The system environment variables.
+    HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment:
+      ComSpec: {type: REG_EXPAND_SZ, data: '%SystemRoot%\system32\cmd.exe'}
+      NUMBER_OF_PROCESSORS: {type: REG_SZ, data: "2"}
+      OS: {type: REG_SZ, data: Windows_NT}
+      Path: {type: REG_EXPAND_SZ, data: '%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem'}
+      PROCESSOR_ARCHITECTURE: {type: REG_SZ, data: AMD64}
+      TEMP: {type: REG_EXPAND_SZ, data: '%SystemRoot%\TEMP'}
+      TMP: {type: REG_EXPAND_SZ, data: '%SystemRoot%\TEMP'}
+      windir: {type: REG_EXPAND_SZ, data: '%SystemRoot%'}
 # Boot processes, so services can name services.exe as their parent. PIDs other
 # than System's are assigned by the engine.
 processes:

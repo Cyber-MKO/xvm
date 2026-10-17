@@ -19,7 +19,7 @@ use crate::registry::{BaseRegistry, RegistryDelta, View};
 use crate::runtime::{Live, Runtime, Writer};
 
 /// Lists that merge entry by entry, keyed by `name`.
-pub const KEYED_LISTS: [&str; 4] = ["users", "groups", "software", "services"];
+pub const KEYED_LISTS: [&str; 5] = ["users", "groups", "software", "hotfixes", "services"];
 /// Object sections a host can ask for whole.
 pub const SECTIONS: [&str; 6] = [
     "identity", "os_info", "hardware", "network", "agent", "windows",

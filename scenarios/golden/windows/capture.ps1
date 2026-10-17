@@ -61,6 +61,8 @@ $RegistryKeys = [ordered]@{
     'profilelist'         = 'HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList'
     'timezone'            = 'HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation'
     'codepage'            = 'HKLM\SYSTEM\CurrentControlSet\Control\Nls\CodePage'
+    'cpu0'                = 'HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0'
+    'environment'         = 'HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
     'wazuh-service'       = 'HKLM\SYSTEM\CurrentControlSet\Services\WazuhSvc'
     'eventlog-security'   = 'HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Security'
     'eventlog-system'     = 'HKLM\SYSTEM\CurrentControlSet\Services\EventLog\System'
@@ -165,8 +167,9 @@ Save-Json (Get-CimInstance Win32_BIOS |
 Save-Json (Get-CimInstance Win32_NetworkAdapterConfiguration -Filter 'IPEnabled = True' |
     Select-Object Description, MACAddress, IPAddress, IPSubnet, DefaultIPGateway,
         DNSServerSearchOrder, DHCPEnabled) (Join-Path $hostDir 'network.json')
-Save-Json (Get-CimInstance Win32_QuickFixEngineering |
-    Select-Object HotFixID, Description, InstalledOn) (Join-Path $hostDir 'hotfixes.json')
+Save-Json @(Get-CimInstance Win32_QuickFixEngineering |
+    Select-Object HotFixID, Description, InstalledOn,
+        InstalledBy) (Join-Path $hostDir 'hotfixes.json')
 # SIDs are written as text; ConvertTo-Json would otherwise expand the object.
 $sidText = @{ Name = 'SID'; Expression = { $_.SID.Value } }
 Save-Json @(Get-LocalUser | Select-Object Name, Enabled, $sidText, LastLogon,
@@ -187,8 +190,12 @@ foreach ($g in Get-LocalGroup) {
     }
 }
 Save-Json @($members) (Join-Path $hostDir 'group-members.json')
+# ifOperStatus and InterfaceType are numbers: IF_OPER_STATUS and the IANA ifType.
 Save-Json @(Get-NetAdapter | Select-Object Name, InterfaceDescription, Status,
-    MacAddress) (Join-Path $hostDir 'netadapters.json')
+    MacAddress, InterfaceGuid, ifIndex, InterfaceType, MtuSize, Speed,
+    ifOperStatus) (Join-Path $hostDir 'netadapters.json')
+Save-Json @(Get-NetIPInterface -AddressFamily IPv4 |
+    Select-Object InterfaceIndex, InterfaceMetric) (Join-Path $hostDir 'netipinterfaces.json')
 Save-Json ([ordered]@{
     culture  = (Get-Culture).Name
     timezone = (Get-TimeZone).Id

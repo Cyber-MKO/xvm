@@ -14,14 +14,17 @@
 //! | DNS servers | `dns` |
 //! | `DnsSuffix` | `network.dns_suffix` |
 //! | `Flags` | DHCP enabled with `dhcp`; IPv4 enabled |
+//! | `AdapterName` | `guid` |
+//! | `IfIndex`, `IfType`, `Mtu`, `OperStatus` | `index`, `type`, `mtu`, `status` |
+//! | `TransmitLinkSpeed`, `ReceiveLinkSpeed` | `speed` |
+//! | `Ipv4Metric` | `metric` |
 //!
-//! The profile has no adapter GUID (`AdapterName`), interface index,
-//! interface type, MTU, link speed, operational status or metric. Until
-//! it does, they are a logged gap and report nothing: an empty name,
-//! the profile position as the index, type "other", status "unknown"
-//! and zero for the numbers. The profile has no IPv6 addresses either:
-//! asking for `AF_INET6` is a logged gap and finds no adapters. Prefix
-//! and WINS lists are logged gaps; anycast and multicast lists are empty.
+//! A profile without one of the last five rows' facts is a logged gap,
+//! and the field reports nothing: an empty name, the profile position as
+//! the index, type "other", status "unknown", zero for the numbers. The
+//! profile has no IPv6 addresses: asking for `AF_INET6` is a logged gap
+//! and finds no adapters. Prefix and WINS lists are logged gaps; anycast
+//! and multicast lists are empty.
 
 use std::net::Ipv4Addr;
 
@@ -92,10 +95,56 @@ struct Interface {
     gateway: Option<Ipv4Addr>,
     dns: Vec<Ipv4Addr>,
     dhcp: bool,
+    guid: Option<String>,
+    index: Option<u32>,
+    if_type: Option<u32>,
+    mtu: Option<u32>,
+    speed: Option<u64>,
+    status: Option<u32>,
+    metric: Option<u32>,
+}
+
+impl Interface {
+    /// The adapter facts the profile does not give, by profile field name.
+    fn missing(&self) -> Vec<&'static str> {
+        let present = [
+            ("guid", self.guid.is_some()),
+            ("index", self.index.is_some()),
+            ("type", self.if_type.is_some()),
+            ("mtu", self.mtu.is_some()),
+            ("speed", self.speed.is_some()),
+            ("status", self.status.is_some()),
+            ("metric", self.metric.is_some()),
+        ];
+        present
+            .into_iter()
+            .filter(|(_, p)| !p)
+            .map(|(f, _)| f)
+            .collect()
+    }
+}
+
+/// IF_OPER_STATUS for a profile `status`.
+fn oper_status(name: &str) -> Option<u32> {
+    Some(match name {
+        "up" => 1,
+        "down" => 2,
+        "testing" => 3,
+        "unknown" => 4,
+        "dormant" => 5,
+        "not_present" => 6,
+        "lower_layer_down" => 7,
+        _ => return None,
+    })
 }
 
 fn parse_interface(v: &Value) -> Option<Interface> {
     let text = |k: &str| v.get(k).and_then(Value::as_str);
+    // Absent is Some(None); present but not a u32 is None (malformed).
+    let number = |k: &str| match v.get(k) {
+        Some(n) => n.as_u64().and_then(|n| u32::try_from(n).ok()).map(Some),
+        None => Some(None),
+    };
     let mac = match text("mac") {
         Some(m) => m
             .split(':')
@@ -134,6 +183,19 @@ fn parse_interface(v: &Value) -> Option<Interface> {
         },
         dns,
         dhcp: v.get("dhcp").and_then(Value::as_bool).unwrap_or(false),
+        guid: text("guid").map(str::to_string),
+        index: number("index")?,
+        if_type: number("type")?,
+        mtu: number("mtu")?,
+        speed: match v.get("speed") {
+            Some(n) => Some(n.as_u64()?),
+            None => None,
+        },
+        status: match text("status") {
+            Some(s) => Some(oper_status(s)?),
+            None => None,
+        },
+        metric: number("metric")?,
     })
 }
 
@@ -218,11 +280,11 @@ fn layout(interfaces: &[Interface], suffix: &str, flags: u32) -> Layout {
         .collect();
     for (i, (&a, ifc)) in adapters.iter().zip(interfaces).enumerate() {
         l.u32(a, ADAPTER_SIZE as u32);
-        l.u32(a + 4, i as u32 + 1);
+        l.u32(a + 4, ifc.index.unwrap_or(i as u32 + 1));
         if let Some(&next) = adapters.get(i + 1) {
             l.pointer(a + 8, next);
         }
-        let name = l.ansi("");
+        let name = l.ansi(ifc.guid.as_deref().unwrap_or_default());
         l.pointer(a + 12, name);
         if flags & GAA_FLAG_SKIP_UNICAST == 0 && !ifc.ipv4.is_empty() {
             let entries: Vec<usize> = ifc.ipv4.iter().map(|_| l.alloc(UNICAST_SIZE, 8)).collect();
@@ -273,8 +335,13 @@ fn layout(interfaces: &[Interface], suffix: &str, flags: u32) -> Layout {
             adapter_flags |= IP_ADAPTER_DHCP_ENABLED;
         }
         l.u32(a + 56, adapter_flags);
-        l.u32(a + 64, IF_TYPE_OTHER);
-        l.u32(a + 68, IF_OPER_STATUS_UNKNOWN);
+        l.u32(a + 60, ifc.mtu.unwrap_or(0));
+        l.u32(a + 64, ifc.if_type.unwrap_or(IF_TYPE_OTHER));
+        l.u32(a + 68, ifc.status.unwrap_or(IF_OPER_STATUS_UNKNOWN));
+        let speed = ifc.speed.unwrap_or(0);
+        l.data[a + 144..a + 152].copy_from_slice(&speed.to_le_bytes());
+        l.data[a + 152..a + 160].copy_from_slice(&speed.to_le_bytes());
+        l.u32(a + 168, ifc.metric.unwrap_or(0));
         if flags & GAA_FLAG_INCLUDE_GATEWAYS != 0
             && let Some(first) = l.address_list(ifc.gateway.as_slice(), LIST_SIZE)
         {
@@ -325,7 +392,16 @@ extern "stdcall" fn GetAdaptersAddresses(
     if interfaces.is_empty() {
         return ERROR_NO_DATA;
     }
-    gap("adapter GUID, index, type, MTU, speed, status and metric are not in the host profile");
+    for ifc in &interfaces {
+        let missing = ifc.missing();
+        if !missing.is_empty() {
+            gap(&format!(
+                "interface {} has no {} in the host profile",
+                ifc.name,
+                missing.join(", ")
+            ));
+        }
+    }
     let suffix = network
         .get("dns_suffix")
         .and_then(Value::as_str)

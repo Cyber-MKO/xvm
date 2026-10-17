@@ -42,6 +42,8 @@ REGISTRY_EXPORTS = (
     "profilelist",
     "timezone",
     "codepage",
+    "cpu0",
+    "environment",
     "eventlog-security",
     "eventlog-system",
     "eventlog-application",
@@ -245,10 +247,25 @@ def _hardware(root: Path) -> dict:
     return hw
 
 
+# IF_OPER_STATUS values (ifOperStatus) as profile names.
+OPER_STATUS = {
+    1: "up",
+    2: "down",
+    3: "testing",
+    4: "unknown",
+    5: "dormant",
+    6: "not_present",
+    7: "lower_layer_down",
+}
+
+
 def _network(root: Path) -> dict:
+    """Adapters without the facts that name this machine (GUID, MAC, addresses)."""
     adapters = _as_list(_read_json(root / "host" / "netadapters.json"))
     configs = _as_list(_read_json(root / "host" / "network.json"))
+    ipv4 = _as_list(_read_json(root / "host" / "netipinterfaces.json"))
     dhcp = {c.get("Description"): bool(c.get("DHCPEnabled")) for c in configs}
+    metric = {i.get("InterfaceIndex"): i.get("InterfaceMetric") for i in ipv4}
     interfaces = []
     for a in adapters:
         entry = {"name": a["Name"]}
@@ -256,8 +273,34 @@ def _network(root: Path) -> dict:
             entry["description"] = a["InterfaceDescription"]
             if a["InterfaceDescription"] in dhcp:
                 entry["dhcp"] = dhcp[a["InterfaceDescription"]]
+        for field, key in (("index", "ifIndex"), ("type", "InterfaceType"), ("mtu", "MtuSize")):
+            if isinstance(a.get(key), int):
+                entry[field] = a[key]
+        if isinstance(a.get("Speed"), int):
+            entry["speed"] = a["Speed"]
+        if a.get("ifOperStatus") in OPER_STATUS:
+            entry["status"] = OPER_STATUS[a["ifOperStatus"]]
+        if isinstance(metric.get(a.get("ifIndex")), int):
+            entry["metric"] = metric[a["ifIndex"]]
         interfaces.append(entry)
     return {"interfaces": interfaces} if interfaces else {}
+
+
+def _hotfixes(root: Path) -> list[dict]:
+    out = []
+    for h in _as_list(_read_json(root / "host" / "hotfixes.json")):
+        if not h.get("HotFixID"):
+            continue
+        entry = {"name": h["HotFixID"]}
+        if h.get("Description"):
+            entry["description"] = h["Description"]
+        installed = _instant(h.get("InstalledOn"))
+        if installed:
+            entry["installed_on"] = installed.strftime("%Y-%m-%d")
+        if h.get("InstalledBy"):
+            entry["installed_by"] = h["InstalledBy"]
+        out.append(entry)
+    return out
 
 
 def _accounts(root: Path) -> tuple[list[dict], list[dict]]:
@@ -462,6 +505,7 @@ def build_base(capture: Path, name: str, description: str | None = None) -> tupl
         "users": users,
         "groups": groups,
         "software": _software(capture, notes),
+        "hotfixes": _hotfixes(capture),
         "services": _services(capture),
         "files": _files(capture, notes),
         "processes": _processes(capture, manifest, notes),
