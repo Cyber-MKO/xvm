@@ -58,6 +58,9 @@ def _processes() -> list[dict]:
         _proc(950, 999, "explorer.exe", 120, SessionId=1, Owner="GOLDEN-VM\\Administrator"),
         _proc(900, 950, "powershell.exe", 3000, SessionId=1),
         _proc(905, 900, "conhost.exe", 3000.5, SessionId=1),
+        # An operator's own console, with an SSH session to the manager.
+        _proc(960, 950, "powershell.exe", 2000, SessionId=1),
+        _proc(961, 960, "ssh.exe", 2001, SessionId=1, CommandLine="ssh.exe admin@198.51.100.9"),
     ]
 
 

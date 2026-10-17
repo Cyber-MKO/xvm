@@ -42,14 +42,14 @@ tests/           T1 to T8, fidelity, resource and calibration harnesses
 
 ## Status (2026-10-17)
 
-### Phase 0 (Foundations): one exit item open
+### Phase 0 (Foundations): done
 
 | Item | State |
 | --- | --- |
 | Repo, CI, lint, tests | Done |
 | API census tool (`census/`) | Done |
 | Wazuh Windows census | Done: 4.14.2 (the target) and 4.14.9, in `census/reports/` |
-| Golden baseline | **Open.** Kasim runs the kit in `scenarios/golden/windows/` on a Windows evaluation VM |
+| Golden baseline | Done: `scenarios/golden/windows/captures/xvm-golden-20261017/` (Windows Server 2022 Standard Evaluation, Wazuh agent 4.14.2, with the manager's archives and alerts); base image `control/profiles/bases/windows-2022-golden.yaml` |
 
 ### Phase 1 (Windows personality, first boot): in progress
 

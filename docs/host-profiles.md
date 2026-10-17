@@ -76,6 +76,7 @@ The personality starts the agent from these `agent` fields and registers it with
 | `system_module_directory` | Where emulated system DLLs report they were loaded from, such as `C:\Windows\SysWOW64` for a 32-bit process on 64-bit Windows |
 | `cert_stores` | System store name (`ROOT`, `CA`, `MY`) to a list of `{name, der}`, with `der` the certificate in base64. A host's list replaces the base's for that store. |
 | `trusted_files` | Windows path to the SHA-256 of a file whose signature is valid on this host. `WinVerifyTrust` answers from it. Merges path by path. |
+| `primary_group` | Name of the SAM's global group with RID 513 that every local account joins (`None` on an English non-domain machine). Scenario events 4728 and 4729 name it. `base-from-golden` takes it from the 4728 Windows wrote in the capture. |
 
 ## Facts read from the registry
 

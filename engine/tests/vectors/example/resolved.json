@@ -433,6 +433,7 @@
  },
  "windows": {
   "system_module_directory": "C:\\Windows\\SysWOW64",
+  "primary_group": "None",
   "cert_stores": {
    "ROOT": [
     {

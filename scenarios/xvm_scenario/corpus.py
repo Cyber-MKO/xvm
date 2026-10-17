@@ -22,6 +22,8 @@ from pathlib import Path
 from .clock import parse_time
 
 LOGS = ("Security", "System", "Application")
+# Characters XML 1.0 forbids, which Windows can still write in event data.
+_XML_INVALID = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 _MACHINE_SID = re.compile(r"^(S-1-5-21-\d+-\d+-\d+)-\d+$")
 
 
@@ -44,7 +46,7 @@ def parse_events(text: str) -> tuple[list[dict], list[str]]:
     """Events from RenderedXml or plain XML event output, and notes on what was skipped."""
     notes: list[str] = []
     try:
-        root = ET.fromstring(text.lstrip("﻿"))
+        root = ET.fromstring(_XML_INVALID.sub("", text.lstrip("﻿")))
     except ET.ParseError as exc:
         return [], [f"events unreadable: {exc}"]
     elements = (
@@ -148,6 +150,15 @@ class Identity:
             text = self._name().sub("{computer}", text)
         return text
 
+    def compare_form(self, text: str) -> str:
+        """Text for comparison with another host: identity abstracted, and the
+        RID of an account created on the host (1000 and up) replaced, since it
+        depends on the host's history. Line ends become LF, as XML parsing does."""
+        text = self.abstract(text)
+        return re.sub(r"\{machine_sid\}-\d{4,}", "{machine_sid}-{new_rid}", text).replace(
+            "\r\n", "\n"
+        )
+
     def concrete(self, text: str) -> str:
         """Fill {computer} and {machine_sid} with this host's names."""
         text = text.replace("{computer}", self.computer)
@@ -187,7 +198,10 @@ def rewrite(event: dict, src: Identity, dst: Identity) -> tuple[dict, list[str]]
 
     out = {k: conv(v) for k, v in event.items() if k not in ("process_id", "thread_id")}
     pid = event.get("process_id")
-    if pid is not None:
+    if pid == 0:
+        # Process ID 0 (System Idle) is the same on every host.
+        out["process_id"] = 0
+    elif pid is not None:
         image = src.processes.get(pid)
         mapped = next(
             (p for p, img in dst.processes.items() if image and img.lower() == image.lower()), None

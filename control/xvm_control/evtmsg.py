@@ -32,6 +32,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 NS = "{http://schemas.microsoft.com/win/2004/08/events/event}"
+# Characters XML 1.0 forbids. EvtRender and ToXml can still emit them inside
+# event data (a 4739 policy value of \x01, for example).
+_XML_INVALID = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def xml_clean(text: str) -> str:
+    """Event XML as Windows wrote it, minus characters no XML parser accepts."""
+    return _XML_INVALID.sub("", text)
+
+
 _BOUNDARY_BEFORE = " \t:(\"'=\n[,"
 _BOUNDARY_AFTER = " \t\r\n.,;:)\"']"
 
@@ -54,7 +64,7 @@ def parse_rendered(text: str) -> tuple[list[Sample], list[str]]:
     notes: list[str] = []
     text = text.lstrip("﻿")
     try:
-        root = ET.fromstring(text)
+        root = ET.fromstring(xml_clean(text))
     except ET.ParseError as exc:
         return [], [f"rendered events unreadable: {exc}"]
     events = (

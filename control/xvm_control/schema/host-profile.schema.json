@@ -358,6 +358,11 @@
           "additionalProperties": {
             "$ref": "#/$defs/sha256"
           }
+        },
+        "primary_group": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the SAM's global group with RID 513 that every local account joins: None on English non-domain machines."
         }
       }
     },

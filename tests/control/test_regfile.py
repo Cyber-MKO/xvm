@@ -55,3 +55,18 @@ def test_unsupported_hive_is_reported():
 def test_errors(text, message):
     with pytest.raises(regfile.RegFileError, match=message):
         regfile.parse(text)
+
+
+def test_string_values_across_lines():
+    # reg.exe writes a string holding line breaks as it is, across lines.
+    text = (
+        "Windows Registry Editor Version 5.00\r\n\r\n"
+        "[HKEY_LOCAL_MACHINE\\SOFTWARE\\T]\r\n"
+        '"Data"="<Set>\r\n  <Status>0</Status>\r\n</Set>"\r\n'
+        '"Quoted"="a \\"b\r\nc\\" d"\r\n'
+        '"After"="x"\r\n'
+    )
+    v = regfile.parse(text).keys[r"HKLM\SOFTWARE\T"]
+    assert v["Data"]["data"] == "<Set>\r\n  <Status>0</Status>\r\n</Set>"
+    assert v["Quoted"]["data"] == 'a "b\r\nc" d'
+    assert v["After"]["data"] == "x"

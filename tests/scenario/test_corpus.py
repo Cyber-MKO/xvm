@@ -114,14 +114,14 @@ def test_replay_names_the_emulated_host(engine, tmp_path):
     assert log.errors == 0 and log.gaps == 0
 
     sec = _events(engine, "scn-b", "Security")
-    assert [x["event_id"] for x in sec][:4] == [4720, 4722, 4724, 4738]
-    created = {d["name"]: d["value"] for d in sec[0]["data"]}
+    assert [x["event_id"] for x in sec][:4] == [4728, 4720, 4722, 4738]
+    created = {d["name"]: d["value"] for d in sec[1]["data"]}
     assert created["TargetDomainName"] == "SCN-B"
     assert created["SubjectUserSid"] == "S-1-5-21-1111-2222-3333-500"
     b = Engine(engine, "scn-b")
     lsass = next(p["pid"] for p in b.call("proc.list") if p["image"] == "lsass.exe")
     b.close()
-    assert sec[0]["process_id"] == lsass
+    assert sec[1]["process_id"] == lsass
     # Replay keeps the corpus timing: the second step is 10 s after the first.
     app = _events(engine, "scn-a", "Application")
     t0, t1 = (datetime.fromisoformat(x["time"].replace("Z", "+00:00")) for x in app)

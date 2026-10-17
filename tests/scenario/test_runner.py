@@ -150,19 +150,29 @@ def test_golden_scenario_end_to_end(engine, tmp_path):
     assert (log.errors, log.gaps) == (0, 0)
 
     sec = _events(engine, "scn-a", "Security")
+    # The order the golden capture shows.
     assert [e["event_id"] for e in sec] == [
+        4728,
         4720,
         4722,
-        4724,
         4738,
+        4738,
+        4724,
         4732,
         4625,
         4625,
         4625,
         4733,
+        4729,
         4726,
     ]
-    created = _data(sec[0])
+    # The account joins the profile's primary group, RID 513 of the machine SID.
+    joined = _data(sec[0])
+    assert (joined["TargetUserName"], joined["TargetSid"]) == (
+        "None",
+        "S-1-5-21-1111-2222-3333-513",
+    )
+    created = _data(sec[1])
     # The new account takes the next RID after the host's own accounts (alice is 1004).
     assert created["TargetSid"] == "S-1-5-21-1111-2222-3333-1005"
     assert created["TargetDomainName"] == "SCN-A"
@@ -173,7 +183,7 @@ def test_golden_scenario_end_to_end(engine, tmp_path):
         "TargetSid",
         "SubjectUserSid",
     ]
-    added = _data(sec[4])
+    added = _data(sec[6])
     assert (added["TargetUserName"], added["TargetDomainName"], added["TargetSid"]) == (
         "Administrators",
         "Builtin",
@@ -192,7 +202,7 @@ def test_golden_scenario_end_to_end(engine, tmp_path):
     assert e.call("file.stat", path="C:\\xvm-golden-fim")["type"] == "dir"
     e.close()
 
-    assert _events(engine, "scn-b", "Security")[0]["data"][2]["value"].endswith("-1000")
+    assert _data(_events(engine, "scn-b", "Security")[1])["TargetSid"].endswith("-1000")
     system = _events(engine, "scn-a", "System")
     assert [_data(x)["param2"] for x in system] == ["stopped", "running"]
     assert _data(system[0])["param1"] == "Windows Time"

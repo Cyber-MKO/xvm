@@ -30,3 +30,5 @@ processes:
   - {id: system, image: System, pid: 4}
   - {id: services, image: services.exe, parent: system, start_offset_s: 2}
   - {id: lsass, image: lsass.exe, parent: system, start_offset_s: 2}
+windows:
+  primary_group: None

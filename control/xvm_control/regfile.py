@@ -47,8 +47,24 @@ def decode(raw: bytes) -> str:
     return raw.decode("utf-8-sig")
 
 
+def _ends_in_string(line: str) -> bool:
+    """Does a value line end inside a quoted string? reg.exe writes a string
+    value that holds line breaks across several lines of the file."""
+    inside = False
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if inside and c == "\\":
+            i += 2
+            continue
+        if c == '"':
+            inside = not inside
+        i += 1
+    return inside
+
+
 def _logical_lines(text: str):
-    """Yield (line_number, line) with hex continuations joined."""
+    """Yield (line_number, line) with hex continuations and multi-line strings joined."""
     lines = text.splitlines()
     i = 0
     while i < len(lines):
@@ -58,6 +74,13 @@ def _logical_lines(text: str):
             while line.endswith("\\") and i + 1 < len(lines):
                 i += 1
                 line = line[:-1] + lines[i].strip()
+        elif line.lstrip().startswith(('"', "@=")) and _ends_in_string(lines[i]):
+            # The line breaks belong to the value; the file writes them as CRLF.
+            line = lines[i]
+            while _ends_in_string(line) and i + 1 < len(lines):
+                i += 1
+                line += "\r\n" + lines[i]
+            line = line.rstrip()
         yield start, line
         i += 1
 

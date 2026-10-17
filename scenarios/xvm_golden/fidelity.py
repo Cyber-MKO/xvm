@@ -119,7 +119,7 @@ class Report:
 
 def _value(v, ident: Identity) -> str:
     text = v if isinstance(v, str) else json.dumps(v)
-    return ident.abstract(text).replace("\r\n", "\n")
+    return ident.compare_form(text)
 
 
 def compare_archive(g: dict, gi: Identity, o: dict, oi: Identity, report: Report) -> None:

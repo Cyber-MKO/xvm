@@ -78,6 +78,8 @@ agent:
     windir: 'C:\Windows'
 windows:
   system_module_directory: C:\Windows\SysWOW64
+  # The SAM's global group with RID 513: None on an English non-domain machine.
+  primary_group: None
   # A real host's ROOT store holds many more; the golden capture will list them.
   cert_stores:
     ROOT:

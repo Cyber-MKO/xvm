@@ -232,6 +232,17 @@ def _user_values(h: HostContext, user: dict) -> dict:
     return {"user": user["name"], "user_sid": user["sid"], "computer_short": h.computer_short()}
 
 
+def _primary_group(h: HostContext) -> dict | None:
+    """The SAM's global group every local account joins (RID 513), from the
+    profile's `windows.primary_group`. Without it the events are a logged gap."""
+    name = (h.call("section", name="windows") or {}).get("primary_group")
+    sid = corpus.machine_sid(u.get("sid") for u in h.users())
+    if not name or not sid:
+        h.gap("no windows.primary_group (or machine SID) in the profile; 4728 and 4729 left out")
+        return None
+    return {"primary_group": name, "primary_group_sid": f"{sid}-513"}
+
+
 def _next_sid(h: HostContext) -> str:
     """The machine's SID prefix from its local accounts, and the next free RID from 1000."""
     prefix, rid = None, 999
@@ -256,7 +267,8 @@ def _group_values(h: HostContext, group: dict) -> dict:
 
 @action("user.create", required=("name",), optional=("sid", "groups", "enabled", "actor"))
 def user_create(h: HostContext, p: dict, time: datetime) -> None:
-    """New-LocalUser: 4720 created, 4722 enabled, 4724 password set, 4738 changed."""
+    """New-LocalUser: 4728 primary group, 4720 created, 4722 enabled, two 4738 changed,
+    4724 password set."""
     name = p["name"]
     if any(u["name"].lower() == name.lower() for u in h.users()):
         raise ScenarioError(f"user {name!r} already exists on {h.host}")
@@ -264,7 +276,13 @@ def user_create(h: HostContext, p: dict, time: datetime) -> None:
     item = {"name": name, "sid": p.get("sid") or _next_sid(h), "enabled": enabled, "groups": []}
     h.call("list.upsert", name="users", item=item, time=format_time(time))
     values = {**h.actor(p), **_user_values(h, item)}
-    ids = ["4720", "4722", "4724", "4738"] if enabled else ["4720", "4724", "4738"]
+    # The order the golden capture shows. A disabled account is not checked
+    # against a capture yet: it skips the enable events.
+    ids = ["4720", "4722", "4738_enabled", "4738", "4724"] if enabled else ["4720", "4738", "4724"]
+    group = _primary_group(h)
+    if group:
+        values.update(group)
+        ids.insert(0, "4728")
     for n, key in enumerate(ids):
         h.write_event(key, values, _ms(time, n))
     for n, g in enumerate(p.get("groups", []), start=len(ids)):
@@ -277,11 +295,14 @@ def _actor_param(p: dict) -> dict:
 
 @action("user.delete", required=("name",), optional=("actor",))
 def user_delete(h: HostContext, p: dict, time: datetime) -> None:
-    """Remove-LocalUser: 4726."""
+    """Remove-LocalUser: 4729 left the primary group, 4726 deleted."""
     user = h.user(p["name"])
     values = {**h.actor(p), **_user_values(h, user)}
     h.call("list.remove", name="users", item=user["name"], time=format_time(time))
-    h.write_event("4726", values, time)
+    group = _primary_group(h)
+    if group:
+        h.write_event("4729", {**values, **group}, time)
+    h.write_event("4726", values, _ms(time, 1))
 
 
 def _membership(h: HostContext, p: dict, time: datetime, add: bool) -> None:

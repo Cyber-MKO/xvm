@@ -88,6 +88,7 @@ def test_identity_is_left_out(tmp_path):
         "02-00-00-00-00-01",
         "11111111-2222-4333-8444-555555555555",
         "SERIAL-123",
+        "198.51.100.9",  # an operator's SSH session during the capture
     ):
         assert secret not in text
 

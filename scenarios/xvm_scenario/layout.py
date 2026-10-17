@@ -10,7 +10,8 @@ Checks, from most to least severe:
 - error: a paired event's header differs (version, level, task, opcode,
   keywords, qualifiers, provider GUID, source).
 - error: data field names or their order differ.
-- error: a data value differs after host identity is replaced by placeholders
+- error: a data value differs after host identity is replaced by placeholders,
+  the RIDs of accounts created on the host by `{new_rid}`,
   and line ends by LF. Fields that vary by run (logon IDs, ports, GUIDs) are
   compared by shape only.
 - error: a different process wrote the event.
@@ -127,11 +128,15 @@ def _header(e: dict) -> dict:
 
 
 def _data(e: dict, ident: Identity) -> list[tuple[str | None, str]]:
-    # XML parsing turns CRLF into LF, so line ends are compared as LF.
-    return [
-        (d.get("name"), ident.abstract(str(d.get("value", ""))).replace("\r\n", "\n"))
-        for d in e.get("data", [])
-    ]
+    return [(d.get("name"), ident.compare_form(str(d.get("value", "")))) for d in e.get("data", [])]
+
+
+def _process(e: dict, ident: Identity) -> str | None:
+    """The image that wrote the event. Process ID 0 is the same on every host."""
+    pid = e.get("process_id")
+    if pid is None:
+        return None
+    return "(pid 0)" if pid == 0 else ident.processes.get(pid)
 
 
 def compare_pair(step: str, g: dict, gi: Identity, o: dict, oi: Identity) -> list[Finding]:
@@ -159,8 +164,7 @@ def compare_pair(step: str, g: dict, gi: Identity, o: dict, oi: Identity) -> lis
                     )
             elif gv != ov:
                 out.append(Finding(step, "error", k, f"{name}: Windows {gv!r}, ours {ov!r}"))
-    gp = gi.processes.get(g["process_id"]) if "process_id" in g else None
-    op = oi.processes.get(o["process_id"]) if "process_id" in o else None
+    gp, op = _process(g, gi), _process(o, oi)
     if (gp or "").lower() != (op or "").lower():
         out.append(Finding(step, "error", k, f"process: Windows {gp!r}, ours {op!r}"))
     return out

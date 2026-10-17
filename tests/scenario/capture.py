@@ -77,7 +77,7 @@ def build(root: Path, run_log: Path, host: str, mutate=None) -> Path:
         step = names[r["step"]]
         e = json.loads(ours.abstract(json.dumps(r["params"]["event"])))
         e = json.loads(GOLDEN.concrete(json.dumps(e)))
-        if "process_id" in e:
+        if e.get("process_id"):  # process ID 0 is the same on every host
             image = ours.processes[e["process_id"]]
             e["process_id"] = next(p for p, i in GOLDEN.processes.items() if i == image)
         e["time"] = r["params"]["time"]

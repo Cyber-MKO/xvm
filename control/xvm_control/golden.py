@@ -25,6 +25,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -58,6 +59,7 @@ IDENTITY_VALUES = (
     (r"Services\Tcpip\Parameters", "Domain"),
     (r"Services\Tcpip\Parameters", "NV Domain"),
     (r"Services\Tcpip\Parameters", "DhcpDomain"),
+    (r"Services\Tcpip\Parameters", "DhcpNameServer"),
 )
 # Per-interface keys under Tcpip\Parameters\Interfaces hold this machine's addresses.
 INTERFACE_KEYS = re.compile(r"(?i)\\Services\\Tcpip\\Parameters\\(Interfaces|Adapters)(\\|$)")
@@ -371,6 +373,10 @@ FILE_ATTRIBUTES = {
 }
 # Processes that belong to the agent, not to the OS. Lower case.
 AGENT_PROCESSES = ("wazuh-agent.exe", "ossec-agent.exe")
+# Console tools an operator ran in an interactive session during the capture.
+# They and their children are the operator's activity, not the OS (an SSH
+# session would also carry the operator's user name and addresses).
+OPERATOR_TOOLS = ("powershell.exe", "pwsh.exe", "cmd.exe", "ssh.exe", "scp.exe", "sftp.exe")
 # Pinned PIDs: fixed on every Windows host.
 FIXED_PIDS = {"system idle process": 0, "system": 4}
 
@@ -411,10 +417,18 @@ def _processes(root: Path, manifest: dict, notes: list[str]) -> list[dict]:
     for p in by_pid.values():
         children.setdefault(p.get("ParentProcessId"), []).append(p["ProcessId"])
 
-    # Drop the capture's own PowerShell tree and the agent's processes, with their children.
+    # Drop the capture's own PowerShell tree, the agent's processes, and console
+    # tools in interactive sessions, with their children.
     dropped: set[int] = set()
     roots = [manifest.get("capture_pid")] + [
-        pid for pid, p in by_pid.items() if str(p.get("Name", "")).lower() in AGENT_PROCESSES
+        pid
+        for pid, p in by_pid.items()
+        if str(p.get("Name", "")).lower() in AGENT_PROCESSES
+        or (
+            str(p.get("Name", "")).lower() in OPERATOR_TOOLS
+            and isinstance(p.get("SessionId"), int)
+            and p["SessionId"] > 0
+        )
     ]
     stack = [r for r in roots if r in by_pid]
     while stack:
@@ -484,6 +498,24 @@ def _event_messages(root: Path, notes: list[str]) -> dict:
     return templates
 
 
+def _windows(root: Path, notes: list[str]) -> dict:
+    """Settings the host's own events show. The primary group (RID 513) every
+    local account joins is named in the 4728 Windows wrote for the test user."""
+    path = root / "evtx" / "scenario" / "Security.rendered.xml"
+    if not path.is_file():
+        return {}
+    samples = ET.fromstring(evtmsg.xml_clean(path.read_text(encoding="utf-8-sig")))
+    for ev in samples.iter(f"{evtmsg.NS}Event"):
+        event_id = ev.find(f"{evtmsg.NS}System/{evtmsg.NS}EventID")
+        if event_id is None or (event_id.text or "").strip() != "4728":
+            continue
+        data = {d.get("Name"): d.text or "" for d in ev.iter(f"{evtmsg.NS}Data")}
+        if data.get("TargetSid", "").endswith("-513") and data.get("TargetUserName"):
+            return {"primary_group": data["TargetUserName"]}
+    notes.append("no 4728 in the scenario window; windows.primary_group left out")
+    return {}
+
+
 def build_base(capture: Path, name: str, description: str | None = None) -> tuple[dict, list[str]]:
     """Return (base image, notes). Raises ConvertError if the capture is unusable."""
     problems = baseline.verify(capture)
@@ -515,6 +547,7 @@ def build_base(capture: Path, name: str, description: str | None = None) -> tupl
         "processes": _processes(capture, manifest, notes),
         "registry": {"keys": keys},
         "event_messages": _event_messages(capture, notes),
+        "windows": _windows(capture, notes),
     }
     base = {k: v for k, v in base.items() if v not in ({}, [])}
     host = manifest.get("host", {})

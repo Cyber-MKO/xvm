@@ -123,3 +123,15 @@ def test_single_events_and_versions():
     assert templates["P"] == {"1/0": "Only %1 here.", "1/1": "Version one says %1."}
     # Two versions: no bare "1" key, since the engine could not tell which one an
     # event without a version means.
+
+
+def test_invalid_xml_characters_are_dropped():
+    text = (
+        "<Events><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>"
+        "<System><Provider Name='P'/><EventID>4739</EventID></System>"
+        "<EventData><Data Name='MinPasswordAge'>\x01</Data><Data Name='User'>bob</Data>"
+        "</EventData><RenderingInfo Culture='en-US'><Message>Changed by bob</Message>"
+        "</RenderingInfo></Event></Events>"
+    )
+    samples, notes = evtmsg.parse_rendered(text)
+    assert notes == [] and samples[0].values == ["", "bob"]

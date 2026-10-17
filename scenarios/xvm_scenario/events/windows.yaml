@@ -8,8 +8,12 @@
 # A value in {braces} is filled from host state or the action's parameters when
 # the event is written. A field with no default must be filled, or the write
 # fails. Data fields are written out in full, not merged from an anchor: YAML
-# merge keys would move them to the front and change the field order. Check these against the golden capture once it exists: the fidelity
-# diff, not this file, is the authority on what Windows writes.
+# merge keys would move them to the front and change the field order.
+#
+# Checked against the golden capture xvm-golden-20261017 with
+# `xvm-scenario diff-events`: every account, group, service and marker event
+# matches Windows field by field. 4625 is not checked yet: the capture's
+# failed-logon step produced none.
 
 security: &security
   provider: Microsoft-Windows-Security-Auditing
@@ -96,6 +100,43 @@ events:
       SubjectLogonId: "{actor_logon_id}"
       PrivilegeList: "-"
 
+  # Two 4738 events follow a new account, as the golden capture shows: first
+  # the account is enabled (this one), then its password is set ("4738").
+  4738_enabled:
+    <<: *security
+    event_id: 4738
+    task: 13824
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      Dummy: "-"
+      TargetUserName: "{user}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{user_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+      SamAccountName: "{user}"
+      DisplayName: "%%1793"
+      UserPrincipalName: "-"
+      HomeDirectory: "%%1793"
+      HomePath: "%%1793"
+      ScriptPath: "%%1793"
+      ProfilePath: "%%1793"
+      UserWorkstations: "%%1793"
+      PasswordLastSet: "%%1794"
+      AccountExpires: "%%1794"
+      PrimaryGroupId: "513"
+      AllowedToDelegateTo: "-"
+      OldUacValue: "0x15"
+      NewUacValue: "0x14"
+      UserAccountControl: "\r\n\t\t%%2048"
+      UserParameters: "%%1793"
+      SidHistory: "-"
+      LogonHours: "%%1797"
+
   "4738":
     <<: *security
     task: 13824
@@ -123,12 +164,48 @@ events:
       AccountExpires: "-"
       PrimaryGroupId: "-"
       AllowedToDelegateTo: "-"
-      OldUacValue: "0x15"
-      NewUacValue: "0x10"
-      UserAccountControl: "\r\n\t\t%%2048"
+      OldUacValue: "-"
+      NewUacValue: "-"
+      UserAccountControl: "-"
       UserParameters: "-"
       SidHistory: "-"
       LogonHours: "-"
+
+  # The account joins and leaves the SAM's built-in global group (RID 513),
+  # named "None" on English non-domain machines.
+  "4728":
+    <<: *security
+    task: 13826
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      MemberName: "-"
+      MemberSid: "{user_sid}"
+      TargetUserName: "{primary_group}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{primary_group_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
+
+  "4729":
+    <<: *security
+    task: 13826
+    version: 0
+    keywords: "0x8020000000000000"
+    data:
+      MemberName: "-"
+      MemberSid: "{user_sid}"
+      TargetUserName: "{primary_group}"
+      TargetDomainName: "{computer_short}"
+      TargetSid: "{primary_group_sid}"
+      SubjectUserSid: "{actor_sid}"
+      SubjectUserName: "{actor}"
+      SubjectDomainName: "{actor_domain}"
+      SubjectLogonId: "{actor_logon_id}"
+      PrivilegeList: "-"
 
   "4732":
     <<: *security
@@ -243,9 +320,10 @@ events:
       param2: "{state}"
 
   # eventcreate.exe: a classic Application event from a named source.
+  # The golden capture shows no EventSourceName and process ID 0 for these.
   marker:
     provider: "{source}"
-    event_source: "{source}"
+    process_id: 0
     event_id: "{event_id}"
     channel: "{log}"
     qualifiers: 0
