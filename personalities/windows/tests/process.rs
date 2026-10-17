@@ -240,6 +240,7 @@ fn module_handles_and_proc_addresses_through_kernel32() {
                 f("GetProcAddress"),
                 f("GetLastError"),
                 f("GetModuleHandleW"),
+                f("GetModuleHandleExW"),
             ],
             base("importer.exe"),
             base("sample.dll"),
@@ -278,6 +279,24 @@ fn module_handles_and_proc_addresses_through_kernel32() {
     let k32_base = runtime.lock().module("kernel32.dll").unwrap().base();
     assert_eq!(get_proc(k32_base, c"GetLastError".as_ptr()), k32[2] as u32);
     assert_eq!(get_proc(0x1234, c"add".as_ptr()), 0);
+
+    // GetModuleHandleExW: by an address inside the image, or by name.
+    // SAFETY: the emulated export has this stdcall signature.
+    let get_module_ex = unsafe {
+        std::mem::transmute::<usize, extern "stdcall" fn(u32, *const u16, *mut u32) -> i32>(k32[4])
+    };
+    let count = || runtime.lock().module("sample.dll").unwrap().load_count;
+    let before = count();
+    let mut found = 0;
+    assert_eq!(get_module_ex(6, add as *const u16, &mut found), 1);
+    assert_eq!((found, count()), (sample, before), "unchanged refcount");
+    assert_eq!(get_module_ex(0, wide.as_ptr(), &mut found), 1);
+    assert_eq!((found, count()), (sample, before + 1));
+    assert_eq!(get_module_ex(4, 0x10 as *const u16, &mut found), 0);
+    assert_eq!((found, get_last_error()), (0, 126));
+    found = 1;
+    assert_eq!(get_module_ex(3, wide.as_ptr(), &mut found), 0);
+    assert_eq!((found, get_last_error()), (0, 87));
 
     // Misses that Windows would answer are gaps; ordinary misses are not.
     let before = runtime.lock().gaps().len();

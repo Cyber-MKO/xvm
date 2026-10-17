@@ -39,7 +39,7 @@ use crate::process::CrtFd;
 use crate::process::{O_TEXT, Process};
 use crate::runtime::with_current;
 use crate::win::kernel32::file::{self, file_of};
-use crate::win::text::ansi;
+use crate::win::text::{ansi, wide};
 
 const O_APPEND: i32 = 0x8;
 const O_BINARY: i32 = 0x8000;
@@ -113,6 +113,7 @@ pub(crate) fn init_standard_streams(p: &mut Process, iob: u32) {
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("fopen", fopen as *const () as u32),
+        ("_wfopen", _wfopen as *const () as u32),
         ("_fdopen", _fdopen as *const () as u32),
         ("fgets", fgets as *const () as u32),
         ("fgetc", fgetc as *const () as u32),
@@ -213,14 +214,25 @@ fn open_stream(p: &mut Process, fd: i32, mode: &Mode) -> u32 {
 /// direction. Others may read and write it meanwhile (`_SH_DENYNO`).
 /// Returns the stream, or NULL with `errno` set.
 extern "C" fn fopen(name: *const c_char, mode: *const c_char) -> u32 {
+    // SAFETY: NUL-terminated strings (the function's contract).
+    let (name, mode) = unsafe { (ansi(name), ansi(mode)) };
+    open_named(name, mode)
+}
+
+/// `fopen` with UTF-16 strings.
+extern "C" fn _wfopen(name: *const u16, mode: *const u16) -> u32 {
+    // SAFETY: NUL-terminated strings (the function's contract).
+    let (name, mode) = unsafe { (wide(name), wide(mode)) };
+    open_named(name, mode)
+}
+
+fn open_named(name: Option<String>, mode_text: Option<String>) -> u32 {
     const GENERIC_READ: u32 = 0x8000_0000;
     const GENERIC_WRITE: u32 = 0x4000_0000;
     const SHARE_READ_WRITE: u32 = 3;
     const CREATE_ALWAYS: u32 = 2;
     const OPEN_EXISTING: u32 = 3;
     const OPEN_ALWAYS: u32 = 4;
-    // SAFETY: NUL-terminated strings (the function's contract).
-    let (name, mode_text) = unsafe { (ansi(name), ansi(mode)) };
     let (Some(name), Some(mode_text)) = (name, mode_text) else {
         errno::set(EINVAL);
         return 0;
@@ -1087,7 +1099,9 @@ mod tests {
         let f = fopen(c"state.txt".as_ptr(), c"r".as_ptr());
         assert_eq!(lines(f, 64), ["one\n", "two\n"]);
         fclose(f);
-        let f = fopen(c"state.txt".as_ptr(), c"rb".as_ptr());
+        let name: Vec<u16> = "STATE.txt\0".encode_utf16().collect();
+        let mode: Vec<u16> = "rb\0".encode_utf16().collect();
+        let f = _wfopen(name.as_ptr(), mode.as_ptr());
         assert_eq!(lines(f, 64), ["one\r\n", "two\r\n"]);
         fclose(f);
         let f = fopen(c"state.txt".as_ptr(), c"w".as_ptr());

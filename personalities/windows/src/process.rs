@@ -719,6 +719,13 @@ impl Process {
         self.modules.iter().find(|m| m.base() == base)
     }
 
+    /// The module whose image holds `address`.
+    pub fn module_containing(&self, address: u32) -> Option<&Module> {
+        self.modules
+            .iter()
+            .find(|m| (m.base()..m.base().saturating_add(m.size_of_image)).contains(&address))
+    }
+
     pub fn module_at_mut(&mut self, base: u32) -> Option<&mut Module> {
         self.modules.iter_mut().find(|m| m.base() == base)
     }

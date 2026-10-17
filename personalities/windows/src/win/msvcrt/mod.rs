@@ -4,6 +4,7 @@
 mod convert;
 mod ctype;
 mod dir;
+mod env;
 mod errno;
 pub(crate) mod find;
 mod fullpath;
@@ -29,6 +30,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         heap::exports(),
         string::exports(),
         dir::exports(),
+        env::exports(),
         errno::exports(),
         wide::exports(),
         locale::exports(),

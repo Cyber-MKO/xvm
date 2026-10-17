@@ -4,7 +4,7 @@ use std::ffi::{CString, c_char};
 
 use crate::cmdline;
 use crate::gap::GapKind;
-use crate::process::{AnsiCommandLine, MainArgs};
+use crate::process::{AnsiCommandLine, MainArgs, Process};
 use crate::runtime::with_current;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
@@ -54,10 +54,7 @@ extern "C" fn __getmainargs(
             // SAFETY: _startupinfo is { int newmode; }.
             p.crt.newmode = unsafe { *start_info };
         }
-        let params = &p.params;
-        let args = p.crt.main_args.get_or_insert_with(|| {
-            main_args(&cmdline::split(&params.command_line), &params.environment)
-        });
+        let args = main_args_of(p);
         // SAFETY: the caller passes writable out-pointers.
         unsafe {
             *argc = (args.argv.len() - 1) as i32;
@@ -178,6 +175,15 @@ extern "C" fn _exit(status: i32) -> ! {
     }
     // SAFETY: _exit has no preconditions.
     unsafe { libc::_exit(status) }
+}
+
+/// The CRT's `argv` and environment, built from the process parameters on
+/// first use. `__getmainargs` and `getenv` share them.
+pub(super) fn main_args_of(p: &mut Process) -> &mut MainArgs {
+    let params = &p.params;
+    p.crt.main_args.get_or_insert_with(|| {
+        main_args(&cmdline::split(&params.command_line), &params.environment)
+    })
 }
 
 fn main_args(argv: &[String], environment: &[String]) -> MainArgs {

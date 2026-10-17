@@ -9,6 +9,7 @@ mod exception;
 pub(crate) mod file;
 mod fileio;
 mod handle;
+mod heap;
 mod library;
 mod lockfile;
 mod memory;
@@ -34,6 +35,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         file::exports(),
         fileio::exports(),
         handle::exports(),
+        heap::exports(),
         library::exports(),
         lockfile::exports(),
         memory::exports(),

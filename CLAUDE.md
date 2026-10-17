@@ -86,8 +86,8 @@ Loader status:
 | `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
-| Emulated functions | 222 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
-| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install` and run from the engine's profile. It runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity, reads the registry, sets up file integrity monitoring, starts its modules (agent upgrade, SCA, syscollector with SQLite; osquery and CIS-CAT disabled), subscribes to the Application, Security and System logs (`wevtapi`, on the engine's `evt.wait`) and reads log files. Next gap: `kernel32!GetProcessHeap` from syscollector's `sysinfo.dll` |
+| Emulated functions | 229 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Installed by `xvm-msi-install` and run from the engine's profile. It runs as `WazuhSvc`, registers its PID, logs "Started" and the OS identity, reads the registry, sets up file integrity monitoring, starts its modules (agent upgrade, SCA, syscollector with SQLite; osquery and CIS-CAT disabled), subscribes to the Application, Security and System logs (`wevtapi`, on the engine's `evt.wait`) and reads log files and starts the file integrity scan. Next gap: `iphlpapi!GetAdaptersAddresses` from syscollector's `sysinfo.dll` |
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered. `_setjmp3` and `longjmp` work |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
