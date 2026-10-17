@@ -30,7 +30,7 @@ The run-time layer copies a key, list or section the first time it changes. The 
 | Registry values | Base values first in base order, then values the host adds. A `null` in the host deletes a value. |
 | Subkeys | Immediate children, sorted without regard to case. |
 | Deleted keys | `delete_keys` removes a key and everything below it. The host may re-add the key with new values. |
-| Uninstall keys | On Windows, each `software` entry also appears as `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\KEY`, or under `WOW6432Node` for `x86` entries on 64-bit Windows. KEY is `uninstall_key`, else `name`. Values: `DisplayName`, `DisplayVersion`, `Publisher`, `InstallLocation`, `InstallDate` (`YYYYMMDD`), all `REG_SZ`. They follow `list.upsert` and `list.remove` at once. A profile or run-time key at the same path replaces the derived one. They are not part of `resolved`. See `src/software.rs`. |
+| Uninstall keys | On Windows, each `software` entry also appears as `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\KEY`, or under `WOW6432Node` for `x86` entries on 64-bit Windows. KEY is `uninstall_key`, else `name`. Values: `DisplayName`, `DisplayVersion`, `Publisher`, `InstallLocation`, `InstallDate` (`YYYYMMDD`), all `REG_SZ`. Both Uninstall keys exist even when empty, as on Windows (the `WOW6432Node` one only when `os_info.architecture` is not `x86`). They follow `list.upsert` and `list.remove` at once. A profile or run-time key at the same path replaces the derived one. They are not part of `resolved`. See `src/software.rs`. |
 
 ## Protocol
 

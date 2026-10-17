@@ -105,7 +105,8 @@ fn registry_lookups() {
     assert_eq!(r.key_path(r"hklm\software"), Some(r"HKLM\SOFTWARE".into()));
     assert_eq!(
         r.subkeys(r"HKLM\SOFTWARE").unwrap(),
-        vec!["Microsoft", "Other", "Vendor"]
+        // WOW6432Node holds the 32-bit Uninstall key the engine always serves.
+        vec!["Microsoft", "Other", "Vendor", "WOW6432Node"]
     );
     assert_eq!(r.subkeys(r"HKLM\SOFTWARE\Vendor").unwrap(), vec!["App"]);
     assert_eq!(

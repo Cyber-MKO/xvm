@@ -99,7 +99,8 @@ fn queries_over_the_socket() {
     );
     assert_eq!(
         c.reg_enum_subkeys(r"HKLM\SOFTWARE").unwrap(),
-        json!(["Microsoft", "Other", "Vendor"])
+        // WOW6432Node: the 32-bit view's Uninstall key, always there on 64-bit Windows.
+        json!(["Microsoft", "Other", "Vendor", "WOW6432Node"])
     );
     assert_eq!(
         c.list("services").unwrap()[1],
@@ -326,6 +327,12 @@ fn uninstall_keys_come_from_the_software_list() {
     assert_eq!(
         w.reg_query_value(&key, "Publisher").unwrap()["data"],
         "Example Corp"
+    );
+    // The 32-bit view exists even with no 32-bit software, as on 64-bit Windows.
+    assert_eq!(w.reg_enum_subkeys(wow).unwrap(), json!([]));
+    assert_eq!(
+        w.call("reg.key_info", json!({"key": wow})).unwrap()["values"],
+        0
     );
     // A package installed at run time appears at once; 32-bit ones under WOW6432Node.
     w.call(

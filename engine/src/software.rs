@@ -16,7 +16,8 @@
 //! | `location` | `InstallLocation` |
 //! | `install_date` (`YYYY-MM-DD`) | `InstallDate` (`YYYYMMDD`) |
 //!
-//! All values are `REG_SZ`. The keys are a read-only view: a key the profile
+//! All values are `REG_SZ`. Both Uninstall keys exist even when empty, as on
+//! Windows (the `WOW6432Node` one only on 64-bit Windows). The keys are a read-only view: a key the profile
 //! or a run-time write lists at the same path wins.
 
 use std::collections::BTreeMap;
@@ -37,6 +38,14 @@ pub type Synth = BTreeMap<String, (String, Vec<(String, Value)>)>;
 pub fn uninstall_keys(software: &[Value], os_arch: Option<&str>) -> Synth {
     let wow64 = !matches!(os_arch, Some("x86"));
     let mut out = Synth::new();
+    // Windows always has the Uninstall keys, even with nothing listed under them.
+    let mut roots = vec![UNINSTALL];
+    if wow64 {
+        roots.push(UNINSTALL_WOW64);
+    }
+    for root in roots {
+        out.insert(norm(root), (root.to_string(), Vec::new()));
+    }
     for item in software {
         let Some(name) = item.get("name").and_then(Value::as_str) else {
             continue;
