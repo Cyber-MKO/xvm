@@ -1,0 +1,29 @@
+﻿[
+    {
+        "HotFixID":  "KB5008882",
+        "Description":  "Update",
+        "InstalledOn":  {
+                            "value":  "\/Date(1646294400000)\/",
+                            "DateTime":  "Thursday, March 3, 2022 12:00:00 AM"
+                        },
+        "InstalledBy":  ""
+    },
+    {
+        "HotFixID":  "KB5011497",
+        "Description":  "Security Update",
+        "InstalledOn":  {
+                            "value":  "\/Date(1646294400000)\/",
+                            "DateTime":  "Thursday, March 3, 2022 12:00:00 AM"
+                        },
+        "InstalledBy":  ""
+    },
+    {
+        "HotFixID":  "KB5010523",
+        "Description":  "Update",
+        "InstalledOn":  {
+                            "value":  "\/Date(1646294400000)\/",
+                            "DateTime":  "Thursday, March 3, 2022 12:00:00 AM"
+                        },
+        "InstalledBy":  ""
+    }
+]

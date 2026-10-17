@@ -1,0 +1,16 @@
+﻿[
+    {
+        "Name":  "QEMU Virtual CPU version 2.5+",
+        "Manufacturer":  "GenuineIntel",
+        "NumberOfCores":  1,
+        "NumberOfLogicalProcessors":  1,
+        "MaxClockSpeed":  3072
+    },
+    {
+        "Name":  "QEMU Virtual CPU version 2.5+",
+        "Manufacturer":  "GenuineIntel",
+        "NumberOfCores":  1,
+        "NumberOfLogicalProcessors":  1,
+        "MaxClockSpeed":  3072
+    }
+]

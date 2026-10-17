@@ -1,0 +1,32 @@
+﻿
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : XVM-GOLDEN
+   Primary Dns Suffix  . . . . . . . : 
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+   WINS Proxy Enabled. . . . . . . . : No
+   DNS Suffix Search List. . . . . . : lan
+
+Ethernet adapter Ethernet:
+
+   Connection-specific DNS Suffix  . : lan
+   Description . . . . . . . . . . . : Intel(R) PRO/1000 MT Network Connection
+   Physical Address. . . . . . . . . : BC-24-11-FA-EF-34
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   IPv6 Address. . . . . . . . . . . : 2605:59c0:e63:4808:54f:29a0:e598:b31e(Preferred) 
+   IPv6 Address. . . . . . . . . . . : fda1:a1bd:fba9:8:54f:29a0:e598:b31e(Preferred) 
+   Link-local IPv6 Address . . . . . : fe80::54f:29a0:e598:b31e%4(Preferred) 
+   IPv4 Address. . . . . . . . . . . : 192.168.1.138(Preferred) 
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Lease Obtained. . . . . . . . . . : Saturday, 17 October 2026 13:34:39
+   Lease Expires . . . . . . . . . . : Saturday, 17 October 2026 15:34:40
+   Default Gateway . . . . . . . . . : fe80::7624:9fff:fe1a:e167%4
+                                       192.168.1.1
+   DHCP Server . . . . . . . . . . . : 192.168.1.1
+   DHCPv6 IAID . . . . . . . . . . . : 112993297
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-32-2A-16-5D-BC-24-11-FA-EF-34
+   DNS Servers . . . . . . . . . . . : fda1:a1bd:fba9:8::1
+                                       192.168.1.1
+   NetBIOS over Tcpip. . . . . . . . : Enabled

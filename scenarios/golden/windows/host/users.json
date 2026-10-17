@@ -1,0 +1,30 @@
+﻿[
+    {
+        "Name":  "Administrator",
+        "Enabled":  true,
+        "SID":  "S-1-5-21-2531514379-2931724844-1020738132-500",
+        "LastLogon":  "\/Date(1792272652460)\/",
+        "PasswordLastSet":  "\/Date(1788341691016)\/"
+    },
+    {
+        "Name":  "DefaultAccount",
+        "Enabled":  false,
+        "SID":  "S-1-5-21-2531514379-2931724844-1020738132-503",
+        "LastLogon":  null,
+        "PasswordLastSet":  null
+    },
+    {
+        "Name":  "Guest",
+        "Enabled":  false,
+        "SID":  "S-1-5-21-2531514379-2931724844-1020738132-501",
+        "LastLogon":  null,
+        "PasswordLastSet":  null
+    },
+    {
+        "Name":  "WDAGUtilityAccount",
+        "Enabled":  false,
+        "SID":  "S-1-5-21-2531514379-2931724844-1020738132-504",
+        "LastLogon":  null,
+        "PasswordLastSet":  "\/Date(1788370430113)\/"
+    }
+]

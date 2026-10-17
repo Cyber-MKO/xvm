@@ -1,0 +1,1674 @@
+﻿[
+    {
+        "Name":  "AJRouter",
+        "DisplayName":  "AllJoyn Router Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "ALG",
+        "DisplayName":  "Application Layer Gateway Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\alg.exe",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "AppIDSvc",
+        "DisplayName":  "Application Identity",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "Appinfo",
+        "DisplayName":  "Application Information",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "AppMgmt",
+        "DisplayName":  "Application Management",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "AppReadiness",
+        "DisplayName":  "App Readiness",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k AppReadiness -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "AppVClient",
+        "DisplayName":  "Microsoft App-V Client",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\AppVClient.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "AppXSvc",
+        "DisplayName":  "AppX Deployment Service (AppXSVC)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k wsappx -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "AudioEndpointBuilder",
+        "DisplayName":  "Windows Audio Endpoint Builder",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Audiosrv",
+        "DisplayName":  "Windows Audio",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "AxInstSV",
+        "DisplayName":  "ActiveX Installer (AxInstSV)",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k AxInstSVGroup",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "BFE",
+        "DisplayName":  "Base Filtering Engine",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNoNetworkFirewall -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "BITS",
+        "DisplayName":  "Background Intelligent Transfer Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "BrokerInfrastructure",
+        "DisplayName":  "Background Tasks Infrastructure Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "bthserv",
+        "DisplayName":  "Bluetooth Support Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "camsvc",
+        "DisplayName":  "Capability Access Manager Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k appmodel -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "CDPSvc",
+        "DisplayName":  "Connected Devices Platform Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "CertPropSvc",
+        "DisplayName":  "Certificate Propagation",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "ClipSVC",
+        "DisplayName":  "Client License Service (ClipSVC)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k wsappx -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "COMSysApp",
+        "DisplayName":  "COM+ System Application",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\dllhost.exe /Processid:{02D4B3F1-FD88-11D1-960D-00805FC79235}",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "CoreMessagingRegistrar",
+        "DisplayName":  "CoreMessaging",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNoNetwork -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "CryptSvc",
+        "DisplayName":  "Cryptographic Services",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT Authority\\NetworkService"
+    },
+    {
+        "Name":  "CscService",
+        "DisplayName":  "Offline Files",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "DcomLaunch",
+        "DisplayName":  "DCOM Server Process Launcher",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "defragsvc",
+        "DisplayName":  "Optimize drives",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k defragsvc",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "DeviceAssociationService",
+        "DisplayName":  "Device Association Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "DeviceInstall",
+        "DisplayName":  "Device Install Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "DevQueryBroker",
+        "DisplayName":  "DevQuery Background Discovery Broker",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Dhcp",
+        "DisplayName":  "DHCP Client",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "diagnosticshub.standardcollector.service",
+        "DisplayName":  "Microsoft (R) Diagnostics Hub Standard Collector Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\DiagSvcs\\DiagnosticsHub.StandardCollector.Service.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "DiagTrack",
+        "DisplayName":  "Connected User Experiences and Telemetry",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k utcsvc -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "DispBrokerDesktopSvc",
+        "DisplayName":  "Display Policy Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "DmEnrollmentSvc",
+        "DisplayName":  "Device Management Enrollment Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "dmwappushservice",
+        "DisplayName":  "Device Management Wireless Application Protocol (WAP) Push message Routing Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Dnscache",
+        "DisplayName":  "DNS Client",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "DoSvc",
+        "DisplayName":  "Delivery Optimization",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT Authority\\NetworkService"
+    },
+    {
+        "Name":  "dot3svc",
+        "DisplayName":  "Wired AutoConfig",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "DPS",
+        "DisplayName":  "Diagnostic Policy Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNoNetwork -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "DsmSvc",
+        "DisplayName":  "Device Setup Manager",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "DsSvc",
+        "DisplayName":  "Data Sharing Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "EapHost",
+        "DisplayName":  "Extensible Authentication Protocol",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "edgeupdate",
+        "DisplayName":  "Microsoft Edge Update Service (edgeupdate)",
+        "State":  "Stopped",
+        "StartMode":  "Auto",
+        "PathName":  "\"C:\\Program Files (x86)\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe\" /svc",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "edgeupdatem",
+        "DisplayName":  "Microsoft Edge Update Service (edgeupdatem)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "\"C:\\Program Files (x86)\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe\" /medsvc",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "EFS",
+        "DisplayName":  "Encrypting File System (EFS)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\lsass.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "embeddedmode",
+        "DisplayName":  "Embedded Mode",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "EntAppSvc",
+        "DisplayName":  "Enterprise App Management Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k appmodel -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "EventLog",
+        "DisplayName":  "Windows Event Log",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "EventSystem",
+        "DisplayName":  "COM+ Event System",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "fdPHost",
+        "DisplayName":  "Function Discovery Provider Host",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "FDResPub",
+        "DisplayName":  "Function Discovery Resource Publication",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "FontCache",
+        "DisplayName":  "Windows Font Cache Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "FrameServer",
+        "DisplayName":  "Windows Camera Frame Server",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k Camera",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "FrameServerMonitor",
+        "DisplayName":  "Windows Camera Frame Server Monitor",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k CameraMonitor",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "gpsvc",
+        "DisplayName":  "Group Policy Client",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "GraphicsPerfSvc",
+        "DisplayName":  "GraphicsPerfSvc",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k GraphicsPerfSvcGroup",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "hidserv",
+        "DisplayName":  "Human Interface Device Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "HvHost",
+        "DisplayName":  "HV Host Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "IKEEXT",
+        "DisplayName":  "IKE and AuthIP IPsec Keying Modules",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "InstallService",
+        "DisplayName":  "Microsoft Store Install Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "iphlpsvc",
+        "DisplayName":  "IP Helper",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetSvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "KeyIso",
+        "DisplayName":  "CNG Key Isolation",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\lsass.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "KPSSVC",
+        "DisplayName":  "KDC Proxy Server service (KPS)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k KpsSvcGroup",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "KtmRm",
+        "DisplayName":  "KtmRm for Distributed Transaction Coordinator",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkServiceAndNoImpersonation -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "LanmanServer",
+        "DisplayName":  "Server",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k smbsvcs",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "LanmanWorkstation",
+        "DisplayName":  "Workstation",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "lfsvc",
+        "DisplayName":  "Geolocation Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "LicenseManager",
+        "DisplayName":  "Windows License Manager Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "lltdsvc",
+        "DisplayName":  "Link-Layer Topology Discovery Mapper",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "lmhosts",
+        "DisplayName":  "TCP/IP NetBIOS Helper",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "LSM",
+        "DisplayName":  "Local Session Manager",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "MapsBroker",
+        "DisplayName":  "Downloaded Maps Manager",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "McpManagementService",
+        "DisplayName":  "McpManagementService",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k McpManagementServiceGroup",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "MDCoreSvc",
+        "DisplayName":  "Microsoft Defender Core Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "\"C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\MpDefenderCoreService.exe\"",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "MicrosoftEdgeElevationService",
+        "DisplayName":  "Microsoft Edge Elevation Service (MicrosoftEdgeElevationService)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\155.0.4283.62\\elevation_service.exe\"",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "mpssvc",
+        "DisplayName":  "Windows Defender Firewall",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNoNetworkFirewall -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "MSDTC",
+        "DisplayName":  "Distributed Transaction Coordinator",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\msdtc.exe",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "MSiSCSI",
+        "DisplayName":  "Microsoft iSCSI Initiator Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "msiserver",
+        "DisplayName":  "Windows Installer",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\msiexec.exe /V",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "NcaSvc",
+        "DisplayName":  "Network Connectivity Assistant",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetSvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "NcbService",
+        "DisplayName":  "Network Connection Broker",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Netlogon",
+        "DisplayName":  "Netlogon",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\lsass.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Netman",
+        "DisplayName":  "Network Connections",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "netprofm",
+        "DisplayName":  "Network List Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "NetSetupSvc",
+        "DisplayName":  "Network Setup Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "NetTcpPortSharing",
+        "DisplayName":  "Net.Tcp Port Sharing Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\SMSvcHost.exe",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "NgcCtnrSvc",
+        "DisplayName":  "Microsoft Passport Container",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "NgcSvc",
+        "DisplayName":  "Microsoft Passport",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "NlaSvc",
+        "DisplayName":  "Network Location Awareness",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "nsi",
+        "DisplayName":  "Network Store Interface Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "PcaSvc",
+        "DisplayName":  "Program Compatibility Assistant Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "PerfHost",
+        "DisplayName":  "Performance Counter DLL Host",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\SysWow64\\perfhost.exe",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "pla",
+        "DisplayName":  "Performance Logs \u0026 Alerts",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNoNetwork -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "PlugPlay",
+        "DisplayName":  "Plug and Play",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "PolicyAgent",
+        "DisplayName":  "IPsec Policy Agent",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k NetworkServiceNetworkRestricted -p",
+        "StartName":  "NT Authority\\NetworkService"
+    },
+    {
+        "Name":  "Power",
+        "DisplayName":  "Power",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "PrintNotify",
+        "DisplayName":  "Printer Extensions and Notifications",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k print",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "ProfSvc",
+        "DisplayName":  "User Profile Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "PushToInstall",
+        "DisplayName":  "Windows PushToInstall Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "QWAVE",
+        "DisplayName":  "Quality Windows Audio Video Experience",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "RasAuto",
+        "DisplayName":  "Remote Access Auto Connection Manager",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "RasMan",
+        "DisplayName":  "Remote Access Connection Manager",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "RemoteAccess",
+        "DisplayName":  "Routing and Remote Access",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "RemoteRegistry",
+        "DisplayName":  "Remote Registry",
+        "State":  "Stopped",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k localService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "RmSvc",
+        "DisplayName":  "Radio Management Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "RpcEptMapper",
+        "DisplayName":  "RPC Endpoint Mapper",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k RPCSS -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "RpcLocator",
+        "DisplayName":  "Remote Procedure Call (RPC) Locator",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\locator.exe",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "RpcSs",
+        "DisplayName":  "Remote Procedure Call (RPC)",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k rpcss -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "RSoPProv",
+        "DisplayName":  "Resultant Set of Policy Provider",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\RSoPProv.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "sacsvr",
+        "DisplayName":  "Special Administration Console Helper",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SamSs",
+        "DisplayName":  "Security Accounts Manager",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\lsass.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SCardSvr",
+        "DisplayName":  "Smart Card",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "ScDeviceEnum",
+        "DisplayName":  "Smart Card Device Enumeration Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Schedule",
+        "DisplayName":  "Task Scheduler",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SCPolicySvc",
+        "DisplayName":  "Smart Card Removal Policy",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "seclogon",
+        "DisplayName":  "Secondary Logon",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SecurityHealthService",
+        "DisplayName":  "Windows Security Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\SecurityHealthService.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SEMgrSvc",
+        "DisplayName":  "Payments and NFC/SE Manager",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "SENS",
+        "DisplayName":  "System Event Notification Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Sense",
+        "DisplayName":  "Windows Defender Advanced Threat Protection Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "\"C:\\Program Files\\Windows Defender Advanced Threat Protection\\MsSense.exe\"",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SensorDataService",
+        "DisplayName":  "Sensor Data Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\SensorDataService.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SensorService",
+        "DisplayName":  "Sensor Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SensrSvc",
+        "DisplayName":  "Sensor Monitoring Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "SessionEnv",
+        "DisplayName":  "Remote Desktop Configuration",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "SgrmBroker",
+        "DisplayName":  "System Guard Runtime Monitor Broker",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\SgrmBroker.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SharedAccess",
+        "DisplayName":  "Internet Connection Sharing (ICS)",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "ShellHWDetection",
+        "DisplayName":  "Shell Hardware Detection",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "shpamsvc",
+        "DisplayName":  "Shared PC Account Manager",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "smphost",
+        "DisplayName":  "Microsoft Storage Spaces SMP",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k smphost",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "SNMPTRAP",
+        "DisplayName":  "SNMP Trap",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\snmptrap.exe",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "Spooler",
+        "DisplayName":  "Print Spooler",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\spoolsv.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "sppsvc",
+        "DisplayName":  "Software Protection",
+        "State":  "Stopped",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\sppsvc.exe",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "SSDPSRV",
+        "DisplayName":  "SSDP Discovery",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "ssh-agent",
+        "DisplayName":  "OpenSSH Authentication Agent",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\OpenSSH\\ssh-agent.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SstpSvc",
+        "DisplayName":  "Secure Socket Tunneling Protocol Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "StateRepository",
+        "DisplayName":  "State Repository Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k appmodel -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "StiSvc",
+        "DisplayName":  "Windows Image Acquisition (WIA)",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k imgsvc",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "StorSvc",
+        "DisplayName":  "Storage Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "svsvc",
+        "DisplayName":  "Spot Verifier",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "swprv",
+        "DisplayName":  "Microsoft Software Shadow Copy Provider",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k swprv",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SysMain",
+        "DisplayName":  "SysMain",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "SystemEventsBroker",
+        "DisplayName":  "System Events Broker",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "TabletInputService",
+        "DisplayName":  "Touch Keyboard and Handwriting Panel Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "tapisrv",
+        "DisplayName":  "Telephony",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "TermService",
+        "DisplayName":  "Remote Desktop Services",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k termsvcs",
+        "StartName":  "NT Authority\\NetworkService"
+    },
+    {
+        "Name":  "Themes",
+        "DisplayName":  "Themes",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "TieringEngineService",
+        "DisplayName":  "Storage Tiers Management",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\TieringEngineService.exe",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "TimeBrokerSvc",
+        "DisplayName":  "Time Broker",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "TokenBroker",
+        "DisplayName":  "Web Account Manager",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "TrkWks",
+        "DisplayName":  "Distributed Link Tracking Client",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "TrustedInstaller",
+        "DisplayName":  "Windows Modules Installer",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\servicing\\TrustedInstaller.exe",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "tzautoupdate",
+        "DisplayName":  "Auto Time Zone Updater",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "UALSVC",
+        "DisplayName":  "User Access Logging Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "UevAgentService",
+        "DisplayName":  "User Experience Virtualization Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\AgentService.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "UmRdpService",
+        "DisplayName":  "Remote Desktop Services UserMode Port Redirector",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "upnphost",
+        "DisplayName":  "UPnP Device Host",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "UserManager",
+        "DisplayName":  "User Manager",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "UsoSvc",
+        "DisplayName":  "Update Orchestrator Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "VaultSvc",
+        "DisplayName":  "Credential Manager",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\lsass.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vds",
+        "DisplayName":  "Virtual Disk",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\vds.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vmicguestinterface",
+        "DisplayName":  "Hyper-V Guest Service Interface",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vmicheartbeat",
+        "DisplayName":  "Hyper-V Heartbeat Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k ICService -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vmickvpexchange",
+        "DisplayName":  "Hyper-V Data Exchange Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vmicshutdown",
+        "DisplayName":  "Hyper-V Guest Shutdown Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vmictimesync",
+        "DisplayName":  "Hyper-V Time Synchronization Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "vmicvmsession",
+        "DisplayName":  "Hyper-V PowerShell Direct Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "vmicvss",
+        "DisplayName":  "Hyper-V Volume Shadow Copy Requestor",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "VSS",
+        "DisplayName":  "Volume Shadow Copy",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\vssvc.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "W32Time",
+        "DisplayName":  "Windows Time",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "WaaSMedicSvc",
+        "DisplayName":  "Windows Update Medic Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k wusvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WalletService",
+        "DisplayName":  "WalletService",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k appmodel -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WarpJITSvc",
+        "DisplayName":  "Warp JIT Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "WbioSrvc",
+        "DisplayName":  "Windows Biometric Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k WbioSvcGroup",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "Wcmsvc",
+        "DisplayName":  "Windows Connection Manager",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT Authority\\LocalService"
+    },
+    {
+        "Name":  "WdiServiceHost",
+        "DisplayName":  "Diagnostic Service Host",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalService -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "WdiSystemHost",
+        "DisplayName":  "Diagnostic System Host",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WdNisSvc",
+        "DisplayName":  "Microsoft Defender Antivirus Network Inspection Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "\"C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\NisSrv.exe\"",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "Wecsvc",
+        "DisplayName":  "Windows Event Collector",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "WEPHOSTSVC",
+        "DisplayName":  "Windows Encryption Provider Host Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k WepHostSvcGroup",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "wercplsupport",
+        "DisplayName":  "Problem Reports Control Panel Support",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "WerSvc",
+        "DisplayName":  "Windows Error Reporting Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k WerSvcGroup",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "WiaRpc",
+        "DisplayName":  "Still Image Acquisition Events",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WinDefend",
+        "DisplayName":  "Microsoft Defender Antivirus Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "\"C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\MsMpEng.exe\"",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WinHttpAutoProxySvc",
+        "DisplayName":  "WinHTTP Web Proxy Auto-Discovery Service",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "StartName":  "NT AUTHORITY\\LocalService"
+    },
+    {
+        "Name":  "Winmgmt",
+        "DisplayName":  "Windows Management Instrumentation",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "WinRM",
+        "DisplayName":  "Windows Remote Management (WS-Management)",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "wisvc",
+        "DisplayName":  "Windows Insider Service",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "wlidsvc",
+        "DisplayName":  "Microsoft Account Sign-in Assistant",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WLMS",
+        "DisplayName":  "Windows Licensing Monitoring Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\wlms\\wlms.exe",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "wmiApSrv",
+        "DisplayName":  "WMI Performance Adapter",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\wbem\\WmiApSrv.exe",
+        "StartName":  "localSystem"
+    },
+    {
+        "Name":  "WMPNetworkSvc",
+        "DisplayName":  "Windows Media Player Network Sharing Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "\"C:\\Program Files\\Windows Media Player\\wmpnetwk.exe\"",
+        "StartName":  "NT AUTHORITY\\NetworkService"
+    },
+    {
+        "Name":  "WPDBusEnum",
+        "DisplayName":  "Portable Device Enumerator Service",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WpnService",
+        "DisplayName":  "Windows Push Notifications System Service",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "WSearch",
+        "DisplayName":  "Windows Search",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\SearchIndexer.exe /Embedding",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "wuauserv",
+        "DisplayName":  "Windows Update",
+        "State":  "Running",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p",
+        "StartName":  "LocalSystem"
+    },
+    {
+        "Name":  "CaptureService_2e03e9",
+        "DisplayName":  "CaptureService_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p",
+        "StartName":  null
+    },
+    {
+        "Name":  "cbdhsvc_2e03e9",
+        "DisplayName":  "Clipboard User Service_2e03e9",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k ClipboardSvcGroup -p",
+        "StartName":  null
+    },
+    {
+        "Name":  "CDPUserSvc_2e03e9",
+        "DisplayName":  "Connected Devices Platform User Service_2e03e9",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k UnistackSvcGroup",
+        "StartName":  null
+    },
+    {
+        "Name":  "ConsentUxUserSvc_2e03e9",
+        "DisplayName":  "ConsentUX User Service_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DevicesFlow",
+        "StartName":  null
+    },
+    {
+        "Name":  "CredentialEnrollmentManagerUserSvc_2e03e9",
+        "DisplayName":  "CredentialEnrollmentManagerUserSvc_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\CredentialEnrollmentManager.exe",
+        "StartName":  null
+    },
+    {
+        "Name":  "DeviceAssociationBrokerSvc_2e03e9",
+        "DisplayName":  "DeviceAssociationBroker_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DevicesFlow -p",
+        "StartName":  null
+    },
+    {
+        "Name":  "DevicePickerUserSvc_2e03e9",
+        "DisplayName":  "DevicePicker_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Disabled",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DevicesFlow",
+        "StartName":  null
+    },
+    {
+        "Name":  "DevicesFlowUserSvc_2e03e9",
+        "DisplayName":  "DevicesFlow_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k DevicesFlow",
+        "StartName":  null
+    },
+    {
+        "Name":  "PimIndexMaintenanceSvc_2e03e9",
+        "DisplayName":  "Contact Data_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k UnistackSvcGroup",
+        "StartName":  null
+    },
+    {
+        "Name":  "PrintWorkflowUserSvc_2e03e9",
+        "DisplayName":  "PrintWorkflow_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k PrintWorkflow",
+        "StartName":  null
+    },
+    {
+        "Name":  "UdkUserSvc_2e03e9",
+        "DisplayName":  "Udk User Service_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k UdkSvcGroup",
+        "StartName":  null
+    },
+    {
+        "Name":  "UnistoreSvc_2e03e9",
+        "DisplayName":  "User Data Storage_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\System32\\svchost.exe -k UnistackSvcGroup",
+        "StartName":  null
+    },
+    {
+        "Name":  "UserDataSvc_2e03e9",
+        "DisplayName":  "User Data Access_2e03e9",
+        "State":  "Stopped",
+        "StartMode":  "Manual",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k UnistackSvcGroup",
+        "StartName":  null
+    },
+    {
+        "Name":  "WpnUserService_2e03e9",
+        "DisplayName":  "Windows Push Notifications User Service_2e03e9",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "C:\\Windows\\system32\\svchost.exe -k UnistackSvcGroup",
+        "StartName":  null
+    },
+    {
+        "Name":  "WazuhSvc",
+        "DisplayName":  "Wazuh",
+        "State":  "Running",
+        "StartMode":  "Auto",
+        "PathName":  "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\"",
+        "StartName":  "LocalSystem"
+    }
+]

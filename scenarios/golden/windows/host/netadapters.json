@@ -1,0 +1,14 @@
+﻿[
+    {
+        "Name":  "Ethernet",
+        "InterfaceDescription":  "Intel(R) PRO/1000 MT Network Connection",
+        "Status":  "Up",
+        "MacAddress":  "BC-24-11-FA-EF-34",
+        "InterfaceGuid":  "{34337393-81A7-49A2-9EB7-56F2696ABAFE}",
+        "ifIndex":  4,
+        "InterfaceType":  6,
+        "MtuSize":  1500,
+        "Speed":  1000000000,
+        "ifOperStatus":  1
+    }
+]

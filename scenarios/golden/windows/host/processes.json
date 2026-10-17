@@ -1,0 +1,1372 @@
+﻿[
+    {
+        "ProcessId":  0,
+        "ParentProcessId":  0,
+        "Name":  "System Idle Process",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269277332)\/",
+        "Owner":  null
+    },
+    {
+        "ProcessId":  4,
+        "ParentProcessId":  0,
+        "Name":  "System",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269277332)\/",
+        "Owner":  null
+    },
+    {
+        "ProcessId":  100,
+        "ParentProcessId":  4,
+        "Name":  "Registry",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269275631)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  308,
+        "ParentProcessId":  4,
+        "Name":  "smss.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269277338)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  408,
+        "ParentProcessId":  400,
+        "Name":  "csrss.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278425)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  480,
+        "ParentProcessId":  400,
+        "Name":  "wininit.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278633)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  488,
+        "ParentProcessId":  472,
+        "Name":  "csrss.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792269278634)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  544,
+        "ParentProcessId":  472,
+        "Name":  "winlogon.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\winlogon.exe",
+        "CommandLine":  "winlogon.exe",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792269278679)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  608,
+        "ParentProcessId":  480,
+        "Name":  "services.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278728)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  620,
+        "ParentProcessId":  480,
+        "Name":  "lsass.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\lsass.exe",
+        "CommandLine":  "C:\\Windows\\system32\\lsass.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278765)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  732,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278931)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  764,
+        "ParentProcessId":  544,
+        "Name":  "fontdrvhost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\fontdrvhost.exe",
+        "CommandLine":  "\"fontdrvhost.exe\"",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792269278947)\/",
+        "Owner":  "Font Driver Host\\UMFD-1"
+    },
+    {
+        "ProcessId":  756,
+        "ParentProcessId":  480,
+        "Name":  "fontdrvhost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\fontdrvhost.exe",
+        "CommandLine":  "\"fontdrvhost.exe\"",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278947)\/",
+        "Owner":  "Font Driver Host\\UMFD-0"
+    },
+    {
+        "ProcessId":  844,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k RPCSS -p",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269278990)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  904,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p -s LSM",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279011)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  980,
+        "ParentProcessId":  544,
+        "Name":  "dwm.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\dwm.exe",
+        "CommandLine":  "\"dwm.exe\"",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792269279082)\/",
+        "Owner":  "Window Manager\\DWM-1"
+    },
+    {
+        "ProcessId":  472,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted -p -s lmhosts",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279122)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  388,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s NcbService",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279127)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  700,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p -s TimeBrokerSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279127)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1064,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted -p -s EventLog",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279158)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1156,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s nsi",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279225)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1172,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s ProfSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279228)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1180,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s gpsvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279229)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1196,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s EventSystem",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279231)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1212,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNoNetwork -p",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279235)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1228,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p -s Themes",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279239)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1312,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p -s Dhcp",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279252)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1364,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s SENS",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279272)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1420,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279289)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1428,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k NetworkService -p -s Dnscache",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279289)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  1468,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s Schedule",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279299)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1480,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p -s ShellHWDetection",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279299)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1508,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s FontCache",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279306)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1540,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p -s NlaSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279310)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  1564,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNoNetworkFirewall -p",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279314)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1616,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p -s LanmanWorkstation",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279350)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  1776,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceNetworkRestricted -p -s WinHttpAutoProxySvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279422)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1812,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalService -p -s netprofm",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279435)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  1988,
+        "ParentProcessId":  608,
+        "Name":  "spoolsv.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\spoolsv.exe",
+        "CommandLine":  "C:\\Windows\\System32\\spoolsv.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279504)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2032,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s UserManager",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279516)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1112,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k NetworkService -p -s CryptSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279525)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  1260,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k utcsvc -p",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279527)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1296,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k NetSvcs -p -s iphlpsvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279529)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2052,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s TrkWks",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279545)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2060,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p -s SysMain",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279546)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2092,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k smbsvcs -s LanmanServer",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279558)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2120,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s Winmgmt",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279561)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2128,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k NetworkService -p -s WinRM",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279563)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  2156,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s WpnService",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279566)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2168,
+        "ParentProcessId":  608,
+        "Name":  "MpDefenderCoreService.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279569)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2180,
+        "ParentProcessId":  608,
+        "Name":  "wlms.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\wlms\\wlms.exe",
+        "CommandLine":  "C:\\Windows\\system32\\wlms\\wlms.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279573)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2204,
+        "ParentProcessId":  608,
+        "Name":  "MsMpEng.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279581)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2468,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s fdPHost",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279663)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  2688,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s DispBrokerDesktopSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279781)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  2760,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalServiceAndNoImpersonation -p -s FDResPub",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269279842)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  3100,
+        "ParentProcessId":  1260,
+        "Name":  "AggregatorHost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\AggregatorHost.exe",
+        "CommandLine":  "AggregatorHost.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269280286)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3448,
+        "ParentProcessId":  732,
+        "Name":  "dllhost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\DllHost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\DllHost.exe /Processid:{3EB3C877-1F16-487C-9050-104DBCD66683}",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269280805)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3824,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s wuauserv",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269281801)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3944,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269283297)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  4064,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269283319)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2152,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s StorSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269283391)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  4140,
+        "ParentProcessId":  608,
+        "Name":  "NisSrv.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269283619)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  4704,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s CDPSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269400894)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  4816,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalServiceNoNetwork -p -s DPS",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269401035)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  4692,
+        "ParentProcessId":  608,
+        "Name":  "msdtc.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\msdtc.exe",
+        "CommandLine":  "C:\\Windows\\System32\\msdtc.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269401366)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  4660,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p -s PcaSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269401519)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3740,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalSystemNetworkRestricted -p -s UALSVC",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269401800)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  616,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s UsoSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269404441)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1288,
+        "ParentProcessId":  732,
+        "Name":  "MoUsoCoreWorker.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\mousocoreworker.exe",
+        "CommandLine":  "C:\\Windows\\System32\\mousocoreworker.exe -Embedding",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269404480)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  4868,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k appmodel -p -s StateRepository",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269882649)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3328,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s DsSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269882767)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  1248,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s WdiSystemHost",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269930636)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2964,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k appmodel -p -s camsvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792269988521)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3716,
+        "ParentProcessId":  2204,
+        "Name":  "DefenderSessionHelper.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270012580)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4272,
+        "ParentProcessId":  2032,
+        "Name":  "sihost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\sihost.exe",
+        "CommandLine":  "sihost.exe",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270012633)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4436,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k UnistackSvcGroup -s CDPUserSvc",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270012642)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  944,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k UnistackSvcGroup -s WpnUserService",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270012671)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  3564,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s TokenBroker",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792270012716)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3048,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s TabletInputService",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792270012763)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  2884,
+        "ParentProcessId":  3048,
+        "Name":  "ctfmon.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\ctfmon.exe",
+        "CommandLine":  "\"ctfmon.exe\"",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270012799)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4336,
+        "ParentProcessId":  1468,
+        "Name":  "taskhostw.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\taskhostw.exe",
+        "CommandLine":  "taskhostw.exe {222A245B-E637-4AE9-A93F-A59CA119A75E}",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270012819)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2084,
+        "ParentProcessId":  592,
+        "Name":  "explorer.exe",
+        "ExecutablePath":  "C:\\Windows\\Explorer.EXE",
+        "CommandLine":  "C:\\Windows\\Explorer.EXE",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270013025)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  1744,
+        "ParentProcessId":  732,
+        "Name":  "StartMenuExperienceHost.exe",
+        "ExecutablePath":  "C:\\Windows\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe",
+        "CommandLine":  "\"C:\\Windows\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe\" -ServerName:App.AppXywbrabmsek0gm3tkwpr5kwzbs55tkqay.mca",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270013461)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2280,
+        "ParentProcessId":  732,
+        "Name":  "TextInputHost.exe",
+        "ExecutablePath":  "C:\\Windows\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\TextInputHost.exe",
+        "CommandLine":  "\"C:\\Windows\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\TextInputHost.exe\" -ServerName:InputApp.AppXjd5de1g66v206tj52m9d0dtpppx4cgpn.mca",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270013476)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  1344,
+        "ParentProcessId":  732,
+        "Name":  "RuntimeBroker.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\RuntimeBroker.exe",
+        "CommandLine":  "C:\\Windows\\System32\\RuntimeBroker.exe -Embedding",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270013605)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  3056,
+        "ParentProcessId":  4836,
+        "Name":  "ServerManager.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\ServerManager.exe",
+        "CommandLine":  "\"C:\\Windows\\system32\\ServerManager.exe\" ",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270013656)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  604,
+        "ParentProcessId":  732,
+        "Name":  "SearchApp.exe",
+        "ExecutablePath":  "C:\\Windows\\SystemApps\\Microsoft.Windows.Search_cw5n1h2txyewy\\SearchApp.exe",
+        "CommandLine":  "\"C:\\Windows\\SystemApps\\Microsoft.Windows.Search_cw5n1h2txyewy\\SearchApp.exe\" -ServerName:CortanaUI.AppX8z9r6jm96hw4bsbneegw0kyxx296wr9t.mca",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270013853)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2500,
+        "ParentProcessId":  732,
+        "Name":  "RuntimeBroker.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\RuntimeBroker.exe",
+        "CommandLine":  "C:\\Windows\\System32\\RuntimeBroker.exe -Embedding",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270014017)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  920,
+        "ParentProcessId":  732,
+        "Name":  "RuntimeBroker.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\RuntimeBroker.exe",
+        "CommandLine":  "C:\\Windows\\System32\\RuntimeBroker.exe -Embedding",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270014747)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5336,
+        "ParentProcessId":  5520,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --profile-directory=Default --flag-switches-begin --flag-switches-end",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270073132)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5756,
+        "ParentProcessId":  1468,
+        "Name":  "MicrosoftEdgeUpdate.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe\" /c",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792270073200)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  5752,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=crashpad-handler \"--user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\Edge\\User Data\" /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler \"--database=C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\Edge\\User Data\\Crashpad\" --annotation=IsOfficialBuild=1 --annotation=channel= --annotation=chromium-version=155.0.8059.85 \"--annotation=exe=C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --annotation=plat=Win64 --annotation=prod=Edge --annotation=ver=155.0.4283.62 --initial-client-data=0x248,0x24c,0x250,0x220,0x258,0x7fff295883e0,0x7fff295883f0,0x7fff29588400",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270073333)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  6060,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=gpu-process --gpu-recent-crash-count=0 --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --startup-read-main-dll --metrics-shmem-handle=1908,i,14252097268354912036,10071526132058366932,262144 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1920 /prefetch:2",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270073578)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  692,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --startup-read-main-dll --metrics-shmem-handle=2188,i,3569135665211705857,5666833275833605410,524288 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2192 /prefetch:3",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270073580)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2932,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --startup-read-main-dll --metrics-shmem-handle=2596,i,15432241980603317565,293352153210369601,524288 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2608 /prefetch:8",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270073755)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5408,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=6 --ram-no-pressure-read-main-dll --launch-time-ticks=798161591 --metrics-shmem-handle=3588,i,14654813642029687292,2348671840092744169,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708991934122588 --mojo-platform-channel-handle=3608 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270074051)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2176,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=7 --skip-read-main-dll --launch-time-ticks=798251879 --metrics-shmem-handle=4140,i,11082715625150681525,14435013482819147689,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=4120 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270074137)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4212,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=audio --skip-read-main-dll --metrics-shmem-handle=6036,i,13703278575584616433,6954333350660029477,524288 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190709000367499229 --mojo-platform-channel-handle=6020 /prefetch:8",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270081557)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  3312,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=12 --skip-read-main-dll --launch-time-ticks=807621636 --metrics-shmem-handle=6316,i,5475111941544683036,10882957790561672461,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708997556373682 --mojo-platform-channel-handle=6296 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270083506)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4508,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=14 --skip-read-main-dll --launch-time-ticks=812990316 --metrics-shmem-handle=6508,i,5129197006059004332,18141974646692095494,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708999430457380 --mojo-platform-channel-handle=6616 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270088876)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5596,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s Appinfo",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792270089011)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  5588,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=13 --skip-read-main-dll --launch-time-ticks=817860956 --metrics-shmem-handle=5840,i,12955251597261736028,15717813557623665947,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708998493415531 --mojo-platform-channel-handle=5928 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270093746)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5872,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=11 --skip-read-main-dll --launch-time-ticks=823002131 --metrics-shmem-handle=7716,i,15899422070652203579,350462798014178939,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708996619331833 --mojo-platform-channel-handle=7668 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270098888)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  3232,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=10 --skip-read-main-dll --launch-time-ticks=826900918 --metrics-shmem-handle=5792,i,2918176183847554272,14763080113234692254,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190708995682289984 --mojo-platform-channel-handle=5776 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270102787)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2300,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k ClipboardSvcGroup -p -s cbdhsvc",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270132700)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4092,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=utility --utility-sub-type=edge_search_indexer.mojom.SearchIndexerInterfaceBroker --lang=en-US --service-sandbox-type=search_indexer --message-loop-type-ui --skip-read-main-dll --metrics-shmem-handle=5836,i,14572456913230280890,9412107739355811971,524288 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190709010674959568 --mojo-platform-channel-handle=7948 /prefetch:8",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270133826)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  632,
+        "ParentProcessId":  4444,
+        "Name":  "win32ui.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\ossec-agent\\win32ui.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\ossec-agent\\win32ui.exe\" ",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270181079)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  1624,
+        "ParentProcessId":  632,
+        "Name":  "notepad.exe",
+        "ExecutablePath":  "C:\\Windows\\SysWOW64\\notepad.exe",
+        "CommandLine":  "notepad ossec.conf",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270236650)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4376,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=39 --skip-read-main-dll --launch-time-ticks=997969464 --metrics-shmem-handle=9112,i,13959944277890065144,13428420697587521001,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190709022856503605 --mojo-platform-channel-handle=9148 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270273860)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4892,
+        "ParentProcessId":  2084,
+        "Name":  "powershell.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "CommandLine":  "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" ",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270287903)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4160,
+        "ParentProcessId":  4892,
+        "Name":  "conhost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\conhost.exe",
+        "CommandLine":  "\\??\\C:\\Windows\\system32\\conhost.exe 0x4",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270287917)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5384,
+        "ParentProcessId":  4892,
+        "Name":  "ssh.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\OpenSSH\\ssh.exe",
+        "CommandLine":  "\"C:\\Windows\\System32\\OpenSSH\\ssh.exe\" kmustapha2@192.168.1.78",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270299746)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  3008,
+        "ParentProcessId":  1468,
+        "Name":  "taskhostw.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\taskhostw.exe",
+        "CommandLine":  "taskhostw.exe",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270603087)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5604,
+        "ParentProcessId":  2084,
+        "Name":  "powershell.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "CommandLine":  "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" ",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270682533)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  2988,
+        "ParentProcessId":  5604,
+        "Name":  "conhost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\conhost.exe",
+        "CommandLine":  "\\??\\C:\\Windows\\system32\\conhost.exe 0x4",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792270682535)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  4444,
+        "ParentProcessId":  608,
+        "Name":  "wazuh-agent.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\"",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792270717923)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  4632,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=44 --ram-no-pressure-read-main-dll --launch-time-ticks=1797939520 --metrics-shmem-handle=9108,i,52930846934781108,13820757678092811656,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190709027541712850 --mojo-platform-channel-handle=7512 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792271073829)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  5916,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k LocalService -s W32Time",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792271160892)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  2004,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s Netman",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272288441)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  5712,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k termsvcs -s TermService",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272313403)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  4008,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k LocalSystemNetworkRestricted -p -s UmRdpService",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272313502)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  5260,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\system32\\svchost.exe -k netsvcs -s CertPropSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272313528)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  752,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p -s SessionEnv",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272313536)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  6944,
+        "ParentProcessId":  6884,
+        "Name":  "csrss.exe",
+        "ExecutablePath":  null,
+        "CommandLine":  null,
+        "SessionId":  2,
+        "CreationDate":  "\/Date(1792272469259)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  7052,
+        "ParentProcessId":  6884,
+        "Name":  "winlogon.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\winlogon.exe",
+        "CommandLine":  "winlogon.exe",
+        "SessionId":  2,
+        "CreationDate":  "\/Date(1792272469281)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  4044,
+        "ParentProcessId":  7052,
+        "Name":  "fontdrvhost.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\fontdrvhost.exe",
+        "CommandLine":  "\"fontdrvhost.exe\"",
+        "SessionId":  2,
+        "CreationDate":  "\/Date(1792272469362)\/",
+        "Owner":  "Font Driver Host\\UMFD-2"
+    },
+    {
+        "ProcessId":  5324,
+        "ParentProcessId":  7052,
+        "Name":  "LogonUI.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\LogonUI.exe",
+        "CommandLine":  "\"LogonUI.exe\" /flags:0x2 /state0:0xa3c44855 /state1:0x41c64e6d",
+        "SessionId":  2,
+        "CreationDate":  "\/Date(1792272469416)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  3952,
+        "ParentProcessId":  7052,
+        "Name":  "dwm.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\dwm.exe",
+        "CommandLine":  "\"dwm.exe\"",
+        "SessionId":  2,
+        "CreationDate":  "\/Date(1792272469419)\/",
+        "Owner":  "Window Manager\\DWM-2"
+    },
+    {
+        "ProcessId":  4148,
+        "ParentProcessId":  5712,
+        "Name":  "rdpclip.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\rdpclip.exe",
+        "CommandLine":  "rdpclip",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792272469530)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  6480,
+        "ParentProcessId":  608,
+        "Name":  "WUDFHost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\WUDFHost.exe",
+        "CommandLine":  "\"C:\\Windows\\System32\\WUDFHost.exe\" -HostGUID:{193a1820-d9ac-4997-8c55-be817523f6aa} -IoEventPortName:\\UMDFCommunicationPorts\\WUDF\\HostProcess-7a01fc8e-2520-4dd5-8abb-d5c066af7a7b -SystemEventPortName:\\UMDFCommunicationPorts\\WUDF\\HostProcess-9a1878a2-3190-4499-a2a0-61fd727cc486 -IoCancelEventPortName:\\UMDFCommunicationPorts\\WUDF\\HostProcess-5d886e90-116d-4eaa-80d6-aea9a8018f21 -NonStateChangingEventPortName:\\UMDFCommunicationPorts\\WUDF\\HostProcess-efa9a1d0-c640-483b-9e20-4bc75bcba891 -LifetimeId:e07ecb2b-d460-43e1-a2a8-8ca8e45c3a4a -DeviceGroupId: -HostArg:0",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272652723)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  404,
+        "ParentProcessId":  608,
+        "Name":  "svchost.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\svchost.exe",
+        "CommandLine":  "C:\\Windows\\System32\\svchost.exe -k netsvcs -p -s NetSetupSvc",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792272768204)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  4616,
+        "ParentProcessId":  732,
+        "Name":  "WmiPrvSE.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\wbem\\wmiprvse.exe",
+        "CommandLine":  "C:\\Windows\\system32\\wbem\\wmiprvse.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792273128216)\/",
+        "Owner":  "NT AUTHORITY\\NETWORK SERVICE"
+    },
+    {
+        "ProcessId":  4900,
+        "ParentProcessId":  5336,
+        "Name":  "msedge.exe",
+        "ExecutablePath":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "CommandLine":  "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --disable-gpu-compositing --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags=--ms-user-locale=en_NG --device-scale-factor=1 --num-raster-threads=1 --renderer-client-id=47 --skip-read-main-dll --launch-time-ticks=3953226542 --metrics-shmem-handle=8276,i,6183422877377156183,17420788987999990134,1048576 --field-trial-handle=1928,i,11249072187939755184,6121343023617444465,262144 --variations-seed-version --pseudonymization-salt-handle=1932,i,12122834293742928078,3401107714306405282,4 --trace-process-track-uuid=3190709030352838397 --mojo-platform-channel-handle=8360 /prefetch:1",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792273229133)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  6520,
+        "ParentProcessId":  732,
+        "Name":  "WmiPrvSE.exe",
+        "ExecutablePath":  "C:\\Windows\\system32\\wbem\\wmiprvse.exe",
+        "CommandLine":  "C:\\Windows\\system32\\wbem\\wmiprvse.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792273250270)\/",
+        "Owner":  "NT AUTHORITY\\LOCAL SERVICE"
+    },
+    {
+        "ProcessId":  6784,
+        "ParentProcessId":  5604,
+        "Name":  "powershell.exe",
+        "ExecutablePath":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "CommandLine":  "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -ExecutionPolicy Bypass -File .\\capture.ps1 -OutDir C:\\xvm-golden-out",
+        "SessionId":  1,
+        "CreationDate":  "\/Date(1792273270444)\/",
+        "Owner":  "XVM-GOLDEN\\Administrator"
+    },
+    {
+        "ProcessId":  1548,
+        "ParentProcessId":  608,
+        "Name":  "TrustedInstaller.exe",
+        "ExecutablePath":  "C:\\Windows\\servicing\\TrustedInstaller.exe",
+        "CommandLine":  "C:\\Windows\\servicing\\TrustedInstaller.exe",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792273273344)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    },
+    {
+        "ProcessId":  6716,
+        "ParentProcessId":  732,
+        "Name":  "TiWorker.exe",
+        "ExecutablePath":  "C:\\Windows\\winsxs\\amd64_microsoft-windows-servicingstack_31bf3856ad364e35_10.0.20348.557_none_f1edaeb8515fa10d\\TiWorker.exe",
+        "CommandLine":  "C:\\Windows\\winsxs\\amd64_microsoft-windows-servicingstack_31bf3856ad364e35_10.0.20348.557_none_f1edaeb8515fa10d\\TiWorker.exe -Embedding",
+        "SessionId":  0,
+        "CreationDate":  "\/Date(1792273273359)\/",
+        "Owner":  "NT AUTHORITY\\SYSTEM"
+    }
+]

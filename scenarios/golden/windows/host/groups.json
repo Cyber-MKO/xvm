@@ -1,0 +1,102 @@
+﻿[
+    {
+        "Name":  "Access Control Assistance Operators",
+        "SID":  "S-1-5-32-579"
+    },
+    {
+        "Name":  "Administrators",
+        "SID":  "S-1-5-32-544"
+    },
+    {
+        "Name":  "Backup Operators",
+        "SID":  "S-1-5-32-551"
+    },
+    {
+        "Name":  "Certificate Service DCOM Access",
+        "SID":  "S-1-5-32-574"
+    },
+    {
+        "Name":  "Cryptographic Operators",
+        "SID":  "S-1-5-32-569"
+    },
+    {
+        "Name":  "Device Owners",
+        "SID":  "S-1-5-32-583"
+    },
+    {
+        "Name":  "Distributed COM Users",
+        "SID":  "S-1-5-32-562"
+    },
+    {
+        "Name":  "Event Log Readers",
+        "SID":  "S-1-5-32-573"
+    },
+    {
+        "Name":  "Guests",
+        "SID":  "S-1-5-32-546"
+    },
+    {
+        "Name":  "Hyper-V Administrators",
+        "SID":  "S-1-5-32-578"
+    },
+    {
+        "Name":  "IIS_IUSRS",
+        "SID":  "S-1-5-32-568"
+    },
+    {
+        "Name":  "Network Configuration Operators",
+        "SID":  "S-1-5-32-556"
+    },
+    {
+        "Name":  "Performance Log Users",
+        "SID":  "S-1-5-32-559"
+    },
+    {
+        "Name":  "Performance Monitor Users",
+        "SID":  "S-1-5-32-558"
+    },
+    {
+        "Name":  "Power Users",
+        "SID":  "S-1-5-32-547"
+    },
+    {
+        "Name":  "Print Operators",
+        "SID":  "S-1-5-32-550"
+    },
+    {
+        "Name":  "RDS Endpoint Servers",
+        "SID":  "S-1-5-32-576"
+    },
+    {
+        "Name":  "RDS Management Servers",
+        "SID":  "S-1-5-32-577"
+    },
+    {
+        "Name":  "RDS Remote Access Servers",
+        "SID":  "S-1-5-32-575"
+    },
+    {
+        "Name":  "Remote Desktop Users",
+        "SID":  "S-1-5-32-555"
+    },
+    {
+        "Name":  "Remote Management Users",
+        "SID":  "S-1-5-32-580"
+    },
+    {
+        "Name":  "Replicator",
+        "SID":  "S-1-5-32-552"
+    },
+    {
+        "Name":  "Storage Replica Administrators",
+        "SID":  "S-1-5-32-582"
+    },
+    {
+        "Name":  "System Managed Accounts Group",
+        "SID":  "S-1-5-32-581"
+    },
+    {
+        "Name":  "Users",
+        "SID":  "S-1-5-32-545"
+    }
+]

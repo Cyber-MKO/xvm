@@ -1,0 +1,9 @@
+﻿{
+    "Name":  "XVM-GOLDEN",
+    "Domain":  "WORKGROUP",
+    "Manufacturer":  "QEMU",
+    "Model":  "Standard PC (i440FX + PIIX, 1996)",
+    "NumberOfProcessors":  2,
+    "NumberOfLogicalProcessors":  2,
+    "TotalPhysicalMemory":  4294422528
+}

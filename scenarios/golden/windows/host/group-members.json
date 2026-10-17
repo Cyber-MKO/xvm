@@ -1,0 +1,44 @@
+﻿[
+    {
+        "group":  "Administrators",
+        "member":  "XVM-GOLDEN\\Administrator",
+        "sid":  "S-1-5-21-2531514379-2931724844-1020738132-500",
+        "class":  "User",
+        "source":  "Local"
+    },
+    {
+        "group":  "Guests",
+        "member":  "XVM-GOLDEN\\Guest",
+        "sid":  "S-1-5-21-2531514379-2931724844-1020738132-501",
+        "class":  "User",
+        "source":  "Local"
+    },
+    {
+        "group":  "IIS_IUSRS",
+        "member":  "NT AUTHORITY\\IUSR",
+        "sid":  "S-1-5-17",
+        "class":  "Group",
+        "source":  "Unknown"
+    },
+    {
+        "group":  "System Managed Accounts Group",
+        "member":  "XVM-GOLDEN\\DefaultAccount",
+        "sid":  "S-1-5-21-2531514379-2931724844-1020738132-503",
+        "class":  "User",
+        "source":  "Local"
+    },
+    {
+        "group":  "Users",
+        "member":  "NT AUTHORITY\\Authenticated Users",
+        "sid":  "S-1-5-11",
+        "class":  "Group",
+        "source":  "Unknown"
+    },
+    {
+        "group":  "Users",
+        "member":  "NT AUTHORITY\\INTERACTIVE",
+        "sid":  "S-1-5-4",
+        "class":  "Group",
+        "source":  "Unknown"
+    }
+]
