@@ -615,6 +615,52 @@ fn start_and_exit() {
 }
 
 #[test]
+fn start_with_a_requested_pid() {
+    let mut c = Conn::edge();
+    let boot = c.ok("proc.list", json!({}))[1]["pid"].as_u64().unwrap();
+    // The loader registers the agent under the PID its profile gives.
+    let p = c.ok(
+        "proc.start",
+        json!({"image": "wazuh-agent.exe", "pid": 1200, "native_pid": 777}),
+    );
+    assert_eq!(p["pid"], 1200);
+    assert_eq!(c.ok("proc.get", json!({"pid": 1200}))["native_pid"], 777);
+    let j = c.ok("changes", json!({}));
+    assert_eq!(j["changes"][0]["pid"], 1200);
+    // In use, by a boot process or a run-time one.
+    for pid in [boot, 1200] {
+        assert_eq!(
+            c.err("proc.start", json!({"image": "x.exe", "pid": pid})),
+            code::EXISTS
+        );
+    }
+    // Windows PIDs are non-zero multiples of 4 below 65536.
+    for pid in [
+        json!(0),
+        json!(1202),
+        json!(65536),
+        json!("1204"),
+        json!(-4),
+    ] {
+        assert_eq!(
+            c.err("proc.start", json!({"image": "x.exe", "pid": pid})),
+            code::BAD_REQUEST,
+            "{pid}"
+        );
+    }
+    // A rejected request changes nothing.
+    assert_eq!(c.ok("changes", json!({}))["last_seq"], 1);
+    // The generator never hands out a requested PID, even after it exits.
+    c.ok("proc.exit", json!({"pid": 1200}));
+    for _ in 0..3000 {
+        let pid = c.ok("proc.start", json!({"image": "w.exe"}))["pid"]
+            .as_u64()
+            .unwrap();
+        assert_ne!(pid, 1200);
+    }
+}
+
+#[test]
 fn many_processes_never_share_a_pid() {
     let mut c = Conn::edge();
     let mut seen = std::collections::BTreeSet::new();
@@ -658,6 +704,18 @@ fn linux_is_case_sensitive_with_sequential_pids() {
         .collect();
     assert_eq!(pids, [1, 2]);
     assert_eq!(c.ok("proc.start", json!({"image": "bash"}))["pid"], 3);
+    assert_eq!(
+        c.ok("proc.start", json!({"image": "agent", "pid": 4001}))["pid"],
+        4001
+    );
+    assert_eq!(
+        c.err("proc.start", json!({"image": "x", "pid": 1})),
+        code::EXISTS
+    );
+    assert_eq!(
+        c.err("proc.start", json!({"image": "x", "pid": 0})),
+        code::BAD_REQUEST
+    );
     assert_eq!(
         c.err(
             "file.set",

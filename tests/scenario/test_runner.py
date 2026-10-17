@@ -262,7 +262,12 @@ def test_processes_and_files(engine, tmp_path):
         {
             "at": "0s",
             "action": "process.start",
-            "params": {"image": "tool.exe", "parent": "services.exe", "command_line": "tool -x"},
+            "params": {
+                "image": "tool.exe",
+                "parent": "services.exe",
+                "command_line": "tool -x",
+                "pid": 4400,
+            },
         },
         {"at": "1s", "action": "file.mkdir", "params": {"path": "C:\\Data"}},
         {"at": "1s", "action": "file.write", "params": {"path": "C:\\Data\\a.txt", "text": "a"}},
@@ -283,6 +288,7 @@ def test_processes_and_files(engine, tmp_path):
     assert log.errors == 0
     e = Engine(engine, "scn-a")
     assert all(p["image"] != "tool.exe" for p in e.call("proc.list"))
+    assert e.call("changes")["changes"][0]["pid"] == 4400
     data = e.call("file.read", path="C:\\Data\\b.txt")["data"]
     assert data == "YWI="
     assert e.call("reg.query_value", key="HKLM\\SOFTWARE\\T", name="V")["data"] == "x"

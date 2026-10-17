@@ -71,7 +71,7 @@ Each host has its own clock: a fixed skew in `[-max-skew, +max-skew]` and a per-
 | `logon.success` | none | Security 4624 v2, `count` times, each with its own logon ID |
 | `service.stop`, `service.start`, `service.restart` | Service state | System 7036 with the display name |
 | `file.write`, `file.append`, `file.delete`, `file.mkdir`, `file.rename` | Files | none: the agent's FIM sees the change |
-| `process.start`, `process.exit` | Process table | none: process auditing is off by default |
+| `process.start`, `process.exit` | Process table. `process.start` may request a `pid`. | none: process auditing is off by default |
 | `registry.set`, `registry.delete_value`, `registry.delete_key` | Registry | none |
 | `event` | none | Any event, as given |
 

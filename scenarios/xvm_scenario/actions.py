@@ -436,13 +436,15 @@ def file_rename(h: HostContext, p: dict, time: datetime) -> None:
 @action(
     "process.start",
     required=("image",),
-    optional=("path", "command_line", "user", "session", "parent"),
+    optional=("path", "command_line", "user", "session", "parent", "pid"),
 )
 def process_start(h: HostContext, p: dict, time: datetime) -> None:
     """A process starts. `parent` is an image name or a PID. No audit event is
     written: process auditing is off by default, and the census has not shown
     an agent reading 4688."""
-    params = {k: p[k] for k in ("image", "path", "command_line", "user", "session") if k in p}
+    params = {
+        k: p[k] for k in ("image", "path", "command_line", "user", "session", "pid") if k in p
+    }
     parent = p.get("parent")
     if parent is not None:
         pid = parent if isinstance(parent, int) else h.pid_of(str(parent))
