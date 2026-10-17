@@ -76,7 +76,7 @@ Loader status:
 | Module table: dependency order, bundled DLLs from the agent directory, forwarders | Done (`process.rs`) |
 | Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`). Calls pass through a trampoline that realigns the stack to 16 bytes |
 | Start-up: TLS callbacks, `DllMain`, entry point (`runtime.rs`, `xvm-windows-run`) | Done |
-| Host profiles, Windows path mapping, command line and environment (`profile.rs`, `paths.rs`, `cmdline.rs`) | Done. Example: `control/profiles/example-windows.toml`. TOML is a stopgap for loader-only settings until the profile decision; host facts move to the engine |
+| Process parameters from the engine (`hostconfig.rs`), Windows path mapping, command line (`paths.rs`, `cmdline.rs`) | Done. Launch settings, the `windows` section, time zone and code pages from the engine; drives from `--drive` |
 | Windows threads with attach and detach notifications (`Runtime::spawn`) | Done, with `CreateThread` |
 | Service Control Manager, service side (`win/advapi32/service.rs`) | Done. SIGTERM stops a service |
 | Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
@@ -91,7 +91,7 @@ Loader status:
 | Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
 | TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
 | `GetModuleHandle`, `GetProcAddress` | Done |
-| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME`) | Started: `os_info` and the registry (open, query, close) |
+| Host facts from the engine (`win/facts.rs`; `xvm-windows-run --engine SOCKET --host NAME --drive C=FOLDER`) | Started: `os_info` and the registry (open, query, close) |
 | The agent in the engine's process list (`registration.rs`) | Done: `proc.start` with the profile's PID and the real PID, parent `services.exe` for a service; `proc.exit` on every exit path |
 | MSI installer step (`installer/xvm_msi`, `xvm-msi-install`) | Done: folders, files and components from the MSI tables, AppSearch registry searches, conditions from the host profile, `WAZUH_MANAGER` and enrollment properties in `ossec.conf`. Custom actions, registry, services, shortcuts and permissions are reported as gaps |
 

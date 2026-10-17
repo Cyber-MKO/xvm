@@ -24,7 +24,6 @@ use crate::map::{self, MapError, Mapped};
 use crate::memory::MemoryMap;
 use crate::paths::DriveMap;
 use crate::pe::PeError;
-use crate::profile;
 use crate::tls::ProcessTls;
 use crate::trap::Traps;
 use crate::win;
@@ -167,8 +166,8 @@ impl VectoredHandlers {
     }
 }
 
-/// What the process is started with: from the host profile today, from
-/// the host-state engine later.
+/// What the process is started with: from the host-state engine
+/// (`hostconfig`), with drives from the launch.
 #[derive(Debug, Clone, Default)]
 pub struct ProcessParams {
     pub command_line: String,
@@ -189,34 +188,6 @@ pub struct ProcessParams {
     pub system_module_directory: Option<String>,
     /// Upper-case full Windows path to the SHA-256 of a trusted file.
     pub trusted_files: BTreeMap<String, [u8; 32]>,
-}
-
-impl ProcessParams {
-    pub fn from_profile(windows: &profile::Windows) -> ProcessParams {
-        ProcessParams {
-            command_line: windows.agent.command_line.clone(),
-            environment: windows.environment_block(),
-            current_directory: windows.agent.current_directory.clone(),
-            drives: DriveMap::new(&windows.drives),
-            service: windows.agent.service.clone(),
-            pid: windows.agent.pid,
-            time_zone: windows.time_zone.clone(),
-            code_pages: crate::codepage::CodePages {
-                ansi: windows.ansi_code_page,
-                oem: windows.oem_code_page,
-            },
-            cert_stores: windows.certificates.clone(),
-            system_module_directory: windows.system_module_directory.clone(),
-            trusted_files: windows
-                .trusted_files
-                .iter()
-                .filter_map(|(path, hash)| {
-                    let full = DriveMap::full_path(path, r"C:\").ok()?;
-                    Some((full.to_ascii_uppercase(), crate::sha256::parse_hex(hash)?))
-                })
-                .collect(),
-        }
-    }
 }
 
 /// `argv` and `envp` as built by `__getmainargs`. The vectors own the

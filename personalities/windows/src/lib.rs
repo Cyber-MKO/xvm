@@ -14,6 +14,8 @@ pub mod codepage;
 pub mod emu;
 pub mod gap;
 pub mod handles;
+#[cfg(all(target_arch = "x86", target_os = "linux"))]
+pub mod hostconfig;
 pub mod image;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod map;
@@ -22,7 +24,6 @@ pub mod paths;
 pub mod pe;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod process;
-pub mod profile;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod registration;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
@@ -30,6 +31,7 @@ pub mod runtime;
 pub mod sha256;
 pub mod sync;
 pub mod teb;
+pub mod testing;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod thread;
 pub mod timezone;

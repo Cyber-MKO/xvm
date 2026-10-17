@@ -132,7 +132,7 @@ extern "C" fn _exit(status: i32) -> ! {
 }
 
 fn main_args(argv: &[String], environment: &[String]) -> MainArgs {
-    // The profile only holds ASCII without NULs (profile::validate).
+    // The profile only holds ASCII without NULs (hostconfig::load checks it).
     let mut strings: Vec<CString> = argv
         .iter()
         .chain(environment)

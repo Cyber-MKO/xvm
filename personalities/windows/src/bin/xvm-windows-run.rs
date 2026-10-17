@@ -1,27 +1,25 @@
-//! Run the agent process a host profile describes: load the executable its
-//! command line names, run start-up and the entry point, and exit with the
-//! entry point's result. Gaps go to stderr; calling one aborts.
+//! Run the agent process of one emulated host: read its parameters from
+//! the host-state engine, load the executable its command line names, run
+//! start-up and the entry point, and exit with the entry point's result.
+//! Gaps go to stderr; calling one aborts.
 //!
 //! SIGTERM or SIGINT stops the host: a service process gets
 //! `SERVICE_CONTROL_STOP`, any other process exits at once. A second
 //! signal always exits at once.
 //!
-//! With `--engine` and `--host`, host facts come from the host-state
-//! engine on that socket, for that host; without them, functions that
-//! need host facts fail and log a gap.
-//!
-//! Usage: xvm-windows-run [--engine SOCKET --host NAME] PROFILE
+//! Usage: xvm-windows-run --engine SOCKET --host NAME --drive C=FOLDER...
 
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 fn main() -> std::process::ExitCode {
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
     use std::process::ExitCode;
-
     use std::sync::{Arc, Mutex};
+
     use xvm_engine::client::Client;
     use xvm_windows::cmdline;
-    use xvm_windows::process::{Process, ProcessParams};
-    use xvm_windows::profile::Profile;
+    use xvm_windows::hostconfig;
+    use xvm_windows::process::Process;
     use xvm_windows::registration;
     use xvm_windows::runtime::Runtime;
 
@@ -30,40 +28,43 @@ fn main() -> std::process::ExitCode {
         ExitCode::FAILURE
     };
     let usage = || {
-        eprintln!("usage: xvm-windows-run [--engine SOCKET --host NAME] PROFILE");
+        eprintln!("usage: xvm-windows-run --engine SOCKET --host NAME --drive C=FOLDER...");
         ExitCode::from(2)
     };
-    let (mut engine, mut host, mut profile_path) = (None, None, None);
+    let (mut socket, mut host, mut drives) = (None, None, BTreeMap::new());
     let mut args = std::env::args_os().skip(1);
     while let Some(arg) = args.next() {
-        match arg.to_str() {
-            Some("--engine") => engine = args.next().map(PathBuf::from),
-            Some("--host") => host = args.next().and_then(|h| h.into_string().ok()),
-            _ if profile_path.is_none() => profile_path = Some(PathBuf::from(arg)),
+        let value = args.next();
+        match (arg.to_str(), value) {
+            (Some("--engine"), Some(v)) => socket = Some(PathBuf::from(v)),
+            (Some("--host"), Some(v)) => host = v.into_string().ok(),
+            (Some("--drive"), Some(v)) => {
+                let Some((letter, folder)) = v.to_str().and_then(|v| v.split_once('=')) else {
+                    return usage();
+                };
+                drives.insert(letter.to_ascii_uppercase(), PathBuf::from(folder));
+            }
             _ => return usage(),
         }
     }
-    let Some(profile_path) = profile_path else {
+    let (Some(socket), Some(host)) = (socket, host) else {
         return usage();
     };
-    let engine = match (engine, host) {
-        (Some(socket), Some(host)) => match Client::connect(&socket, &host) {
-            Ok(client) => Some(Arc::new(Mutex::new(client))),
-            Err(e) => return fail(format!("{}: {e}", socket.display())),
-        },
-        (None, None) => None,
-        _ => return usage(),
+    if drives.is_empty() {
+        return usage();
+    }
+    let mut client = match Client::connect(&socket, &host) {
+        Ok(client) => client,
+        Err(e) => return fail(format!("{}: {e}", socket.display())),
     };
-    let profile = match Profile::load(&profile_path) {
+    let params = match hostconfig::load(&mut client, &drives) {
         Ok(p) => p,
-        Err(e) => return fail(e.to_string()),
+        Err(e) => return fail(format!("host {host}: {e}")),
     };
-    let windows = match profile.windows() {
-        Ok(w) => w,
-        Err(e) => return fail(e.to_string()),
+    let engine = Some(Arc::new(Mutex::new(client)));
+    let Some(program) = cmdline::split(&params.command_line).into_iter().next() else {
+        return fail("the agent's command line is empty".into());
     };
-    let params = ProcessParams::from_profile(windows);
-    let program = cmdline::split(&params.command_line).remove(0);
     let image = match params.drives.to_host(&program, &params.current_directory) {
         Ok(path) => path,
         Err(e) => return fail(format!("{program}: {e}")),

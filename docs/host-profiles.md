@@ -146,59 +146,23 @@ These facts identify one machine, so the base leaves them out and each host prof
 
 The `.reg` parser follows Microsoft's public description of the format. It reads `REG_SZ`, `REG_EXPAND_SZ`, `REG_MULTI_SZ`, `REG_DWORD`, `REG_QWORD` and `REG_BINARY`. Any other type, and keys under `HKEY_CURRENT_USER`, are reported as skipped.
 
-## Loader profile (TOML, stopgap)
+## Running the Windows agent
 
-The Windows loader (`xvm-windows-run`) still reads its own TOML file (`personalities/windows/src/profile.rs`; example `control/profiles/example-windows.toml`). Kasim decided (2026-10-17) that its settings move to the YAML profile, served by the engine:
+The Windows loader reads the agent's launch settings, the `windows` section and the registry facts above from the engine (`personalities/windows/src/hostconfig.rs`). The drive folders are given at launch:
 
-| TOML key | Moves to |
+```
+cargo run --target i686-unknown-linux-gnu --bin xvm-windows-run -- --engine SOCKET --host NAME --drive C=FOLDER
+```
+
+| Check | Rule |
 | --- | --- |
-| `host.name`, `host.os` | `identity.hostname`, `os` |
-| `windows.agent.*`, `windows.environment` | `agent.pid`, `command_line`, `current_directory`, `service`, `environment` |
-| `windows.system_module_directory`, `cert_stores`, `trusted_files` | The `windows` section (certificates inline as base64 DER) |
-| `windows.time_zone` | Registry: `TimeZoneInformation` and `Time Zones\KEY` |
-| `windows.ansi_code_page`, `oem_code_page` | Registry: `Nls\CodePage` |
-| `windows.drives` | A launch setting, not part of the profile |
+| `agent.pid` | Not 0 and a multiple of 4 |
+| Strings the ANSI functions return (command line, directories, environment, trusted paths) | ASCII without NULs, for now: those functions do not convert to the ANSI code page yet |
+| Code pages | One the loader has a table for: 1252 (ANSI) and 437 (OEM) |
+| Time zone | `TimeZoneKeyName`, the biases and both start dates are required. `DynamicDaylightTimeDisabled` = 1 means no daylight time. Absolute dates (`wYear` set) are refused |
 
-The TOML file goes once the loader reads these from the engine. Until then its format is:
+A Windows path maps to the host through the drive folders. Existing components match without regard to case; new ones keep the agent's spelling. Supported forms are `C:\dir`, `\dir` (current drive) and `dir` (current directory), with either separator, plus the `\\?\` prefix. UNC and drive-relative (`C:file`) paths are refused.
 
-### Schema 1
-
-| Key | Type | Meaning |
-| --- | --- | --- |
-| `schema` | integer | Must be 1 |
-| `host.name` | string | Host name |
-| `host.os` | string | `windows`, `macos` or `linux` |
-| `windows.drives` | table | Drive letter (one upper-case letter) to host directory. Relative directories are resolved against the profile file. |
-| `windows.agent.command_line` | string | The agent process's full command line, as `GetCommandLine` returns it. Its program name picks the executable to load. |
-| `windows.agent.pid` | integer | The agent's process ID: not 0 and a multiple of 4. `GetCurrentProcessId` and `_getpid` return it |
-| `windows.agent.current_directory` | string | The agent's starting directory, as a Windows path |
-| `windows.agent.service` | string, optional | The service the Service Control Manager started the agent as. Without it, `StartServiceCtrlDispatcherA` fails as it does for a console process. |
-| `windows.cert_stores` | table, optional | System certificate store name (`ROOT`, `CA`, `MY`) to a list of DER certificate files, relative to the profile. Read and checked when the profile loads. Store names are compared ignoring case. |
-| `windows.system_module_directory` | string, optional | The directory emulated system DLLs report as their location, such as `C:\Windows\SysWOW64` for a 32-bit process on 64-bit Windows |
-| `windows.trusted_files` | table, optional | Windows path to the SHA-256 (64 hex digits) of a file whose signature is valid on this host. `WinVerifyTrust` answers from this list |
-| `windows.time_zone` | table | What `GetTimeZoneInformation` returns: `key_name`, `standard_name`, `daylight_name` (31 characters at most), `bias`, `standard_bias`, `daylight_bias` (minutes; UTC = local + bias), and optionally `standard_date` and `daylight_date` as `{ month, day_of_week, week, hour, minute, second }` (week 5 is the last). Local time follows these rules |
-| `windows.ansi_code_page` | integer | The ANSI code page (`CP_ACP`, `CP_THREAD_ACP`). Must be one we have a table for: 1252 |
-| `windows.oem_code_page` | integer | The OEM code page (`CP_OEMCP`). Must be one we have a table for: 437 |
-| `windows.environment` | table | The agent's environment variables. The runtime sorts them by name, ignoring case, as Windows keeps its environment block. |
-
-Rules:
-
-- Unknown keys are errors.
-- Windows strings must be ASCII for now: the functions that return them do not convert them to the ANSI code page yet.
-- `host.os` must be `windows` when a `windows` section is present.
-
-### Windows paths
-
-A Windows path maps to the host through the drive table. Existing components match without regard to case; new ones keep the agent's spelling. Supported forms are `C:\dir`, `\dir` (current drive) and `dir` (current directory), with either separator, plus the `\\?\` prefix. UNC and drive-relative (`C:file`) paths are refused.
-
-### Running
-
-```
-cargo run --target i686-unknown-linux-gnu --bin xvm-windows-run -- [--engine SOCKET --host NAME] PROFILE
-```
-
-With `--engine` and `--host`, host facts (such as the OS version) come from `xvm-engined` on that socket, for that host. Without them, functions that need host facts fail and log a gap.
-
-The drive must already hold the agent's files. The MSI installer step will put them there.
+The drive must already hold the agent's files: `xvm-msi-install` puts them there.
 
 SIGTERM or SIGINT stops the host. A service process gets `SERVICE_CONTROL_STOP` and stops through its own handler; any other process exits at once. A second signal always exits at once.

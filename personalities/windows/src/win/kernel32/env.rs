@@ -87,7 +87,7 @@ extern "stdcall" fn GetEnvironmentVariableA(
         set_last_error(ERROR_ENVVAR_NOT_FOUND);
         return 0;
     };
-    // The profile holds ASCII only (profile::validate).
+    // The profile holds ASCII only (hostconfig::load checks it).
     // SAFETY: the API's contract for out; c_char and u8 match.
     unsafe { copy_out(value.as_bytes(), out.cast(), out_len) }
 }
