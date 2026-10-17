@@ -24,13 +24,15 @@ xvm-host engine stop
 
 | Command | Does |
 | --- | --- |
-| `up NAME... [--hosts DIR] [--msi FILE]` | Starts the engine if it is down (on freshly compiled profiles, with saved state), installs the MSI onto the host's drive once per MSI, and starts the host's supervisor |
+| `up NAME... [--hosts DIR] [--msi FILE] [--corpus CAPTURE]` | Starts the engine if it is down (on freshly compiled profiles, with saved state), installs the MSI onto the host's drive once per MSI, fills a new host's event logs from the corpus, and starts the host's supervisor |
 | `down NAME...` or `down --all` | SIGTERM to the supervisor, which passes it to the agent. A service stops through its own handler. After 30 s the agent is killed. |
-| `reset NAME... [--msi FILE]` | For a stopped host: drops its run-time changes in the engine (`reset`), empties its drive and installs again |
+| `reset NAME... [--msi FILE]` | For a stopped host: drops its run-time changes in the engine (`reset`), empties its drive and installs again. The next `up` fills its logs again. |
 | `status [NAME...] [--json]` | The engine and each host: state, PID, starts, restarts, since when |
 | `engine start`, `stop`, `restart` | The engine alone. `stop` refuses while hosts are up, unless `--force`. |
 
 The profile folders (`--bases`, `--hosts`) are saved in the run folder on first use, so later commands need only `--root`.
+
+A real host's logs hold history when an agent first reads them. With `--corpus`, a host's first start replays the capture's newest events (`evtx/rendered/LOG.xml`) into its logs: same spacing, rewritten to name the host (computer name, machine SID, process IDs), and shifted so the last event lands at the start time. `hosts/NAME/seeded.json` records that it ran; the replay log is `hosts/NAME/seed.jsonl`.
 
 | Path in the run folder | Holds |
 | --- | --- |
@@ -38,6 +40,7 @@ The profile folders (`--bases`, `--hosts`) are saved in the run folder on first 
 | `engine.sock`, `engine.pid`, `engine.json`, `engine.log`, `gaps.jsonl` | The engine daemon, its compiled-profile digest, its output and its gap log |
 | `hosts/NAME/drive-c/` | The host's C: drive (`--drive C=...`) |
 | `hosts/NAME/installed.json` | The installed MSI and its SHA-256 |
+| `hosts/NAME/seeded.json`, `seed.jsonl` | The first-start log fill and its replay log |
 | `hosts/NAME/supervisor.pid`, `status.json`, `host.log` | The supervisor, the host's state, the agent's output and installer gaps |
 
 | Host state | Meaning |

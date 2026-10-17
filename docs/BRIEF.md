@@ -99,6 +99,7 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | New events reach a subscription through a blocking wait in the engine | Decided | Kasim (2026-10-17), replacing "polling first" the same day. `evt.wait` returns as soon as a channel has a record after `after`, or on a reset or timeout; the personality then reads with `evt.query`. Idle hosts cost nothing. |
 | Hosts run under `xvm-host`, with one Python supervisor per host | Proposed | Built as recommended (2026-10-17); Kasim to confirm. Not systemd units, so it works the same in a container, on a workstation, and under Habeny. The supervisor restarts a failed agent with backoff and passes SIGTERM on for a clean service stop. |
 | Uninstall registry keys are derived from the `software` list | Decided | Kasim (2026-10-17), option B. One source for inventory (T4): the engine serves each entry as an Uninstall key in the right registry view. |
+| A new host's event logs start with the golden corpus's recent events | Decided | Kasim (2026-10-17), option B. `xvm-host up --corpus` replays them once, rewritten to name the host and shifted to end at the start time. |
 | `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files

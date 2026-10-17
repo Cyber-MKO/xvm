@@ -13,7 +13,9 @@ DEFAULT_ROOT = Path("run")
 
 
 def _site(args: argparse.Namespace) -> Site:
-    site = Site.open(args.root, args.bases or None, getattr(args, "hosts", None))
+    site = Site.open(
+        args.root, args.bases or None, getattr(args, "hosts", None), getattr(args, "corpus", None)
+    )
     site.save()
     return site
 
@@ -94,6 +96,11 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("names", nargs="+")
     u.add_argument("--hosts", type=Path, help="host profile folder; saved in the run folder")
     u.add_argument("--msi", type=Path, help="agent MSI to install on first start")
+    u.add_argument(
+        "--corpus",
+        type=Path,
+        help="golden capture whose recent events fill each new host's logs; saved",
+    )
     u.set_defaults(func=_up)
 
     d = sub.add_parser("down", help="stop hosts")

@@ -28,7 +28,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from . import profile
@@ -115,6 +115,8 @@ class Site:
     root: Path
     bases: list[Path]
     hosts_dir: Path
+    # A golden capture whose recent events fill each host's logs on first start.
+    corpus: Path | None = None
 
     @property
     def socket(self) -> Path:
@@ -127,12 +129,17 @@ class Site:
             {
                 "bases": [str(b.resolve()) for b in self.bases],
                 "hosts": str(self.hosts_dir.resolve()),
+                "corpus": str(self.corpus.resolve()) if self.corpus else None,
             },
         )
 
     @classmethod
     def open(
-        cls, root: Path, bases: list[Path] | None = None, hosts_dir: Path | None = None
+        cls,
+        root: Path,
+        bases: list[Path] | None = None,
+        hosts_dir: Path | None = None,
+        corpus: Path | None = None,
     ) -> Site:
         """The site at root. Profile folders given here win over the saved ones."""
         saved = {}
@@ -142,7 +149,8 @@ class Site:
         h = hosts_dir or (Path(saved["hosts"]) if saved.get("hosts") else None)
         if not b or h is None:
             raise HostError(f"{root}: no profile folders yet; pass --bases and --hosts")
-        return cls(root, b, h)
+        c = corpus or (Path(saved["corpus"]) if saved.get("corpus") else None)
+        return cls(root, b, h, c)
 
     def host_dir(self, name: str) -> Path:
         return self.root / "hosts" / name
@@ -274,6 +282,8 @@ class Site:
         self.profile_path(name)
         self.start_engine()
         note = self.install(name, msi)
+        if self.corpus:
+            note += "; " + self.seed(name)
         hd = self.host_dir(name)
         proc = subprocess.Popen(
             [
@@ -319,7 +329,47 @@ class Site:
                 e.close()
         shutil.rmtree(self.drive(name), ignore_errors=True)
         (self.host_dir(name) / "installed.json").unlink(missing_ok=True)
+        # The engine reset emptied the logs, so the next up fills them again.
+        (self.host_dir(name) / "seeded.json").unlink(missing_ok=True)
         return self.install(name, msi)
+
+    def seed(self, name: str) -> str:
+        """Fill a new host's event logs with the corpus's recent events, once.
+
+        A real host has a history in its logs when an agent first reads them.
+        The capture's newest events (`evtx/rendered/`) are replayed with their
+        own spacing, rewritten to name this host, and shifted so the last one
+        lands now. The replay log is `hosts/NAME/seed.jsonl`.
+        """
+        marker = self.host_dir(name) / "seeded.json"
+        if marker.exists():
+            return "logs already seeded"
+        from xvm_scenario import replay
+        from xvm_scenario.corpus import Capture
+        from xvm_scenario.runner import RunLog, run
+
+        sc, notes = replay.scenario(Capture.load(self.corpus), "recent")
+        if not sc.steps:
+            return "corpus has no recent events; logs left empty"
+        span = sc.steps[-1].offset
+        start = datetime.now(UTC) - timedelta(seconds=span)
+        log = RunLog(self.host_dir(name) / "seed.jsonl")
+        try:
+            run(sc, self.socket, [name], start=start, speed=0, seed=name, log=log)
+        finally:
+            log.close()
+        _write_json(
+            marker,
+            {
+                "corpus": str(self.corpus),
+                "events": len(sc.steps),
+                "failed": log.errors,
+                "gaps": log.gaps,
+                "notes": notes,
+                "seeded": _now(),
+            },
+        )
+        return f"seeded {len(sc.steps) - log.errors} events ({log.gaps} gaps)"
 
     def status(self, name: str) -> dict:
         st_path = self.host_dir(name) / "status.json"

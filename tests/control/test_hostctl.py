@@ -190,3 +190,82 @@ def test_install_once_and_reset(site, monkeypatch, tmp_path):
 def test_unknown_host_and_missing_site(tmp_path, capsys):
     assert main(["--root", str(tmp_path / "nowhere"), "status"]) == 1
     assert "pass --bases and --hosts" in capsys.readouterr().err
+
+
+def _corpus(root: Path) -> Path:
+    from ..scenario.capture import event_xml
+
+    sec = "Microsoft-Windows-Security-Auditing"
+    events = [
+        event_xml(
+            {
+                "provider": sec,
+                "event_id": 4624,
+                "time": "2026-01-01T00:00:00.0000000Z",
+                "process_id": 640,
+                "data": [{"name": "WorkstationName", "value": "GOLDEN-VM"}],
+            },
+            "Security",
+        ),
+        event_xml(
+            {
+                "provider": sec,
+                "event_id": 4634,
+                "time": "2026-01-01T00:01:00.0000000Z",
+                "data": [{"name": "TargetUserSid", "value": "S-1-5-21-7-8-9-500"}],
+            },
+            "Security",
+        ),
+    ]
+    (root / "evtx" / "rendered").mkdir(parents=True)
+    (root / "evtx" / "rendered" / "Security.xml").write_text(
+        "﻿<Events>" + "".join(events) + "</Events>", encoding="utf-8"
+    )
+    (root / "host").mkdir()
+    (root / "manifest.json").write_text(json.dumps({"host": {"name": "GOLDEN-VM"}}))
+    (root / "host" / "users.json").write_text(
+        json.dumps([{"Name": "Administrator", "SID": "S-1-5-21-7-8-9-500"}])
+    )
+    (root / "host" / "processes.json").write_text(
+        json.dumps([{"ProcessId": 640, "Name": "lsass.exe"}])
+    )
+    return root
+
+
+def test_first_start_seeds_the_logs_once(site, tmp_path):
+    from datetime import UTC, datetime
+
+    from xvm_scenario.engine import Engine
+
+    s, out = site
+    s.corpus = _corpus(tmp_path / "capture")
+    s.save()
+
+    def security():
+        e = Engine(s.socket, "scn-a")
+        try:
+            return e.call("evt.query", channel="Security", format="json")["events"]
+        finally:
+            e.close()
+
+    assert s.up("scn-a", None).endswith("seeded 2 events (0 gaps)")
+    events = security()
+    assert [e["event_id"] for e in events] == [4624, 4634]
+    # Rewritten to name this host, and shifted so the last event is now.
+    assert events[0]["data"][0]["value"] == "SCN-A"
+    assert events[1]["data"][0]["value"] == "S-1-5-21-1111-2222-3333-500"
+    last = datetime.fromisoformat(events[1]["time"].replace("Z", "+00:00"))
+    assert abs((datetime.now(UTC) - last).total_seconds()) < 30
+    first = datetime.fromisoformat(events[0]["time"].replace("Z", "+00:00"))
+    assert round((last - first).total_seconds()) == 60
+    # A later start does not seed again; the saved corpus is reused.
+    s.down("scn-a")
+    again = hostctl.Site.open(s.root)
+    assert again.corpus == s.corpus.resolve()
+    assert again.up("scn-a", None).endswith("logs already seeded")
+    assert len(security()) == 2
+    # After a reset the logs are empty, so the next start seeds them again.
+    again.down("scn-a")
+    again.reset("scn-a", None)
+    assert security() == []
+    assert again.up("scn-a", None).endswith("seeded 2 events (0 gaps)")
