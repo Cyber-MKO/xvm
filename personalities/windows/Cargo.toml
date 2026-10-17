@@ -4,9 +4,12 @@ version = "0.0.1"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "Windows personality: PE loader and NT/Win32 subset (Phase 1, not started)"
+description = "Windows personality: PE loader and NT/Win32 subset"
 
 [lints]
 workspace = true
 
 [dependencies]
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

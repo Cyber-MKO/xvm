@@ -51,7 +51,7 @@ tests/           T1 to T8, fidelity, resource and calibration harnesses
 | Wazuh Windows census | Done: 4.14.2 (the target) and 4.14.9, in `census/reports/` |
 | Golden baseline | **Open.** Kasim runs the kit in `scenarios/golden/windows/` on a Windows evaluation VM |
 
-### Phase 1 (Windows personality): may start
+### Phase 1 (Windows personality, first boot): in progress
 
 Kasim reviewed the census, accepted the four decisions in `docs/phase1-sizing.md`, and asked for the PE loader to start (2026-10-16).
 
@@ -61,6 +61,39 @@ Kasim reviewed the census, accepted the four decisions in `docs/phase1-sizing.md
 | Runtime | The Windows personality is a 32-bit Linux process (`i686-unknown-linux-gnu`) |
 | CRT | We provide `msvcrt.dll` on top of host libc, function by function from the census |
 | `user32` | Only the census functions, no window system |
+
+Phase 1 work lives in `personalities/windows/`. The exit check is in `docs/BRIEF.md` section 10.
+
+Loader status:
+
+| Part | Status |
+| --- | --- |
+| PE32 i386 header and section parsing | Done |
+| Layout, base relocations, exports, TLS directory | Done |
+| Import binding with gap records | Done |
+| Mapping into a 32-bit process and running code | Done |
+| TEB, `fs` segment, implicit TLS, TLS callbacks | Done (fields in `docs/api/windows.md`) |
+| Module table: dependency order, bundled DLLs from the agent directory, forwarders | Done (`process.rs`) |
+| Emulated module layer: in-memory PE images with thunks, call-time gap traps | Done (`emu.rs`, `trap.rs`). Calls pass through a trampoline that realigns the stack to 16 bytes |
+| Start-up: TLS callbacks, `DllMain`, entry point (`runtime.rs`, `xvm-windows-run`) | Done |
+| Host profiles, Windows path mapping, command line and environment (`profile.rs`, `paths.rs`, `cmdline.rs`) | Done. Example: `control/profiles/example-windows.toml`. TOML is a stopgap for loader-only settings until the profile decision; host facts move to the engine |
+| Windows threads with attach and detach notifications (`Runtime::spawn`) | Done. `CreateThread` not started |
+| Service Control Manager, service side (`win/advapi32/service.rs`) | Done. SIGTERM stops a service |
+| Certificate stores from the profile, X.509 reader (`x509.rs`, `win/crypt32`) | Done |
+| Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
+| Kernel handle table, file I/O (`handles.rs`, `win/kernel32/file.rs`) | Started: open, read, close |
+| C streams (`win/msvcrt/stdio.rs`) | Started: `_fdopen`, reading, buffered writing, `fflush`, `fclose`, standard streams in `_iob` |
+| `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
+| Waitable objects (`sync.rs`): events, threads, semaphores; dynamic TLS slots | Done |
+| Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
+| Emulated functions | 147 of 617 plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |
+| `wazuh-agent.exe` start-up | Runs as `WazuhSvc`; reads its configuration; starts Winsock; writes `ossec.log` in local time. With the shipped `ossec.conf` (manager `0.0.0.0`) it logs "No client configured", stops the service and exits 0. Code pages come from the profile. With a manager address it resolves the name (`getaddrinfo`). Next gap: `kernel32!GetVersionExA`, which needs the loader to read `os_info` from the engine |
+| Exception dispatch (signals and `RaiseException` to handlers) | Not started. Handlers are only registered |
+| TLS slots for DLLs loaded after a thread started | Not started. Wazuh's late DLLs have only MinGW's 4-byte TLS placeholder |
+| `GetModuleHandle`, `GetProcAddress` | Done |
+| MSI installer step | Not started |
+
+Build and test the loader for both targets: `cargo test` and `cargo test --target i686-unknown-linux-gnu`. The i686 run needs `gcc-multilib`. Fixtures are built from source with clang, lld-link and llvm-dlltool.
 
 ### Built so far
 

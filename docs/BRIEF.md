@@ -3,7 +3,7 @@
 - Name: xvm
 - Owner: Kasim
 - As of: 2026-10-16
-- Status: pre-build
+- Status: Phase 1 (Windows loader)
 
 ## 1. What we are building
 
@@ -67,6 +67,23 @@ The platform is standalone and usable by anyone, and it is built to be Habeny-ce
 | Event logs are stored in per-channel segment files | Decided | Kasim, 2026-10-17. Kept out of the change log and snapshots; same batched fsync. |
 | Full event channels overwrite the oldest events, sized by the registry's MaxSize | Decided | Kasim, 2026-10-17. Record IDs keep counting, as on Windows. |
 | Census test fixtures are built from source | Decided | Headerless C built with clang and lld-link (no SDK, no CRT), so no vendor binaries enter the repo. |
+| Wazuh 4.14.2 census reviewed; Phase 1 starts | Decided | Kasim reviewed the census (2026-10-16). Golden baseline capture stays open. |
+| Loader fixtures are built from source too | Decided | Same approach as the census fixtures, built for `i686-pc-windows-msvc`. |
+| Emulated DLLs are Rust functions with a minimal in-memory PE header | Decided | Kasim (2026-10-16), option C. The resolver hands out Rust `extern "stdcall"` and `extern "C"` addresses. Each emulated module also gets a small PE header and export table so `GetModuleHandle`, `GetProcAddress` and header walks find a real image. No second toolchain. |
+| A call to an unimplemented import aborts the process | Decided | Kasim (2026-10-16). Each gap gets its own trap stub. A call prints the DLL, function, calling module and return address, then aborts. |
+| Host profiles are TOML files; the runtime reads them until the state engine exists | Decided | Kasim (2026-10-16), option A. Format in `docs/host-profiles.md`. Each drive maps to a host directory; existing path components match without regard to case. |
+| The Service Control Manager is emulated inside the agent process | Decided | Kasim (2026-10-16), option A. The profile names the service the process was started as. The dispatcher runs `ServiceMain` on its own thread; the control plane sends control codes (SIGTERM becomes `SERVICE_CONTROL_STOP` for now). |
+| Certificate stores come from the host profile | Decided | Kasim (2026-10-16), option A. DER files per store; read with our own reader (X.690, RFC 5280) for only the fields the census needs. |
+| Signature verdicts come from a trusted-file list in the profile | Decided | Kasim (2026-10-16), option B. SHA-256 per file; emulated system DLLs count as signed. The profile also names the directory emulated system DLLs report. |
+| `ntdll.dll` and `kernel32.dll` are mapped into every process | Decided | As on Windows, whether imported or not. The agent looks up `ntdll!LdrRegisterDllNotification` at run time. |
+| The agent's process ID comes from the host profile | Decided | Kasim (2026-10-17), option A. `windows.agent.pid`, a non-zero multiple of 4. The state engine's process list will include it. |
+| The time zone comes from the host profile as Windows rules | Decided | Kasim (2026-10-17), option A. `windows.time_zone` holds the `TIME_ZONE_INFORMATION` fields. Local time is computed from them, not from the host's zone. |
+| ANSI and OEM code pages come from the host profile | Decided | Kasim (2026-10-17), option A. `windows.ansi_code_page` and `windows.oem_code_page`; tables generated from Unicode's published Microsoft mapping files. |
+| One branch owns integration: the engine branch is merged into the loader branch | Decided | Kasim (2026-10-17), option A. The loader's TOML profile stays working until Kasim decides where its loader-only settings go (YAML sections served by the engine, or TOML for now). |
+| The loader asks the engine for the agent's PID | Decided | Kasim (2026-10-17), option A. The loader registers the agent with `proc.start` and requests the profile's PID; the engine records it instead of assigning one. |
+| The manager address reaches `ossec.conf` through our MSI installer step | Decided | Kasim (2026-10-17), option A. Install properties (such as `WAZUH_MANAGER`) come from the host profile; the step writes them into the configuration as the real installer does. |
+| Name resolution: the host's `hosts` file, then the real resolver | Decided | Kasim (2026-10-17), option B. `getaddrinfo` reads the emulated host's `C:\Windows\System32\drivers\etc\hosts` first, as Windows does, then asks the real machine's resolver. |
+| `fs` points at a per-thread TEB through a GDT TLS entry | Decided | `set_thread_area(2)`. glibc on i386 uses `gs`, so `fs` is free. Only TEB fields that agent code reads directly are filled; see `docs/api/windows.md`. |
 
 ## 4. Core insight: emulate the API surface, not just the files
 

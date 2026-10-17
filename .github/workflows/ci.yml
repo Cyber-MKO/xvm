@@ -38,17 +38,21 @@ jobs:
 
   rust:
     runs-on: ubuntu-24.04
+    env:
+      XVM_REQUIRE_FIXTURES: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - run: cargo fmt --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo test
-      - name: Test the engine as a 32-bit build (the Windows personality is i686)
+          targets: i686-unknown-linux-gnu
+      - name: Install fixture tools and 32-bit libc
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends gcc-multilib
-          rustup target add i686-unknown-linux-gnu
-          cargo test -p xvm-engine --target i686-unknown-linux-gnu
+          sudo apt-get install -y --no-install-recommends clang lld llvm gcc-multilib
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --target i686-unknown-linux-gnu -- -D warnings
+      - run: cargo test
+      - name: Test on i686 (the engine, and the loader running PE code)
+        run: cargo test --target i686-unknown-linux-gnu

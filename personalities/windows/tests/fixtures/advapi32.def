@@ -1,0 +1,5 @@
+LIBRARY advapi32.dll
+EXPORTS
+StartServiceCtrlDispatcherA@4
+RegisterServiceCtrlHandlerA@8
+SetServiceStatus@8
