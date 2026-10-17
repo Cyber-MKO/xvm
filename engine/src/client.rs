@@ -135,6 +135,20 @@ impl Client {
     }
 
     /// Journal entries after `since`. See `Runtime::changes`.
+    /// Block until `channel` has a record after `after`, the logs are reset, or
+    /// `timeout_ms` passes. Returns `{newest_record_id, reset, timed_out}`.
+    pub fn evt_wait(
+        &mut self,
+        channel: &str,
+        after: u64,
+        timeout_ms: u64,
+    ) -> Result<Value, ClientError> {
+        self.call(
+            "evt.wait",
+            json!({"channel": channel, "after": after, "timeout_ms": timeout_ms}),
+        )
+    }
+
     pub fn changes(&mut self, since: u64) -> Result<Value, ClientError> {
         self.call("changes", json!({"since": since}))
     }

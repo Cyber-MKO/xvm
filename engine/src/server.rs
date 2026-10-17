@@ -4,6 +4,7 @@ use std::io::{self, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use serde_json::{Map, Value, json};
 
@@ -27,6 +28,9 @@ pub struct Server {
     gaps: GapLog,
     persist: Option<Arc<Persist>>,
 }
+
+/// Longest `evt.wait`, in milliseconds.
+const MAX_WAIT_MS: u64 = 60_000;
 
 /// Largest read answered in one message; the base64 text must fit `MAX_MESSAGE`.
 const MAX_READ: usize = 4 * 1024 * 1024;
@@ -207,6 +211,8 @@ impl Server {
         e.size = line.len() + 1;
         let record_id = e.record_id;
         let oldest = ch.push(Arc::new(e));
+        // Waiters wake now and read once this write releases the log lock.
+        h.signal_events(false);
         if let Some(p) = &self.persist
             && let Err(err) = p.append_event(h, ch, &line, oldest)
         {
@@ -220,6 +226,55 @@ impl Server {
             ));
         }
         Ok(json!({"record_id": record_id, "channel": ch.name}))
+    }
+
+    /// Block until `channel` has a record after `after`, the logs are reset, or
+    /// `timeout_ms` passes. Only this connection waits; others carry on.
+    fn evt_wait(&self, req: &Request, h: &Host) -> Result<Value, Fail> {
+        let channel = param(req, "channel")?;
+        let after = match req.params.get("after") {
+            None => 0,
+            Some(_) => apply::whole(&req.op, &req.params, "after")?,
+        };
+        let timeout = match req.params.get("timeout_ms") {
+            None => 0,
+            Some(_) => apply::whole(&req.op, &req.params, "timeout_ms")?,
+        };
+        if timeout > MAX_WAIT_MS {
+            return Err(Fail(
+                code::BAD_REQUEST,
+                format!("timeout_ms must be at most {MAX_WAIT_MS}"),
+            ));
+        }
+        {
+            let rt = h.read();
+            if !declared_channels(&h.registry(&rt)).contains_key(&crate::merge::norm(channel)) {
+                return Err(Fail(code::NOT_FOUND, format!("no event channel {channel}")));
+            }
+        }
+        let deadline = Instant::now() + Duration::from_millis(timeout);
+        let start = h.event_signal();
+        let mut seen = start;
+        loop {
+            // The newest record ever written: retention may have dropped it, but
+            // a reader still needs to know the log moved past `after`.
+            let newest = h
+                .events_read()
+                .channel(channel)
+                .map_or(0, |c| c.next_record_id - 1);
+            let answer = |reset: bool, timed_out: bool| json!({"newest_record_id": newest, "reset": reset, "timed_out": timed_out});
+            // `after` beyond anything written means the log was reset since the reader read it.
+            if after > newest || seen.resets != start.resets {
+                return Ok(answer(true, false));
+            }
+            if newest > after {
+                return Ok(answer(false, false));
+            }
+            if Instant::now() >= deadline {
+                return Ok(answer(false, true));
+            }
+            seen = h.wait_events(seen, deadline);
+        }
     }
 
     fn evt_query(&self, req: &Request, h: &Host) -> Result<Value, Fail> {
@@ -400,6 +455,7 @@ impl Server {
             "evt.channels" => Ok(self.evt_channels(h)),
             "evt.write" => self.evt_write(req, h),
             "evt.query" => self.evt_query(req, h),
+            "evt.wait" => self.evt_wait(req, h),
             "evt.get" => {
                 let e = self.evt_record(req, h)?;
                 let mut v = e.to_value();

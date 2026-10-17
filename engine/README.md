@@ -51,6 +51,7 @@ Each message is a 4-byte big-endian length, then JSON. A request is `{"id": N, "
 | `file.read` | `path`, optional `offset`, `length` (at most 4 MiB) | `{data (base64), eof}` |
 | `evt.channels` | none | Every channel the registry declares: `name`, `events`, `oldest_record_id`, `newest_record_id`, `bytes`, `max_size`, `max_size_from_registry` |
 | `evt.query` | `channel`, optional `query` (default `*`), `after` (record ID, default 0), `limit` (1 to 1000, default 100), `format` (`xml` or `json`) | `{events, more, last_record_id}`. With `xml`, each event is `{record_id, xml}`. |
+| `evt.wait` | `channel`, optional `after` (record ID, default 0), `timeout_ms` (0 to 60000, default 0) | `{newest_record_id, reset, timed_out}`. Blocks until the channel has a record after `after`, the logs are reset, or the timeout passes. See Event logs. |
 | `evt.get` | `channel`, `record_id` | The event as JSON, with `xml` |
 | `evt.format_message` | `channel`, `record_id` | `{message, source}`: the event's own `message`, or the host's template filled in |
 | `proc.list` | none | Running processes: `pid`, `ppid`, `image`, `path`, `command_line`, `user`, `session`, `start_time`, `profile_id` or `native_pid` |
@@ -125,7 +126,7 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | XML | Rendered in the Windows event schema, as `EvtRender` returns it, with `TimeCreated` to seven fractional digits |
 | Queries | The XPath subset subscribers use, as a bare expression or a `QueryList`. See `src/evtquery.rs` for the supported forms. Anything else is `bad_query`. |
 | Messages | An event's own `message` (golden corpus replay) wins. Otherwise the host's `event_messages` template for `ID/VERSION`, then `ID`, filled with the data values (`%1`, `%2`...). No template is `no_message`. |
-| Subscriptions | Personalities poll: `evt.query` with `after` set to the last record ID they delivered. A blocking wait op is planned before scale tests (Phase 4). |
+| Subscriptions | A subscriber calls `evt.wait` with the last record ID it delivered, then `evt.query` with the same `after` and its query. Each wait blocks only its own connection, so a personality keeps one connection per subscription. `newest_record_id` is the newest record ever written, even if retention dropped it. `reset: true` means the logs were reset (or `after` is beyond anything written): read again from 0. Without a write or reset, the wait ends at `timeout_ms` with `timed_out: true`. If the engine stops, the connection closes. |
 | Bookmarks | Not stored by the engine. A bookmark is a channel and record ID, which the personality renders for `EvtCreateBookmark` and `EvtRender`; Wazuh saves it itself. |
 | Persistence | Per-channel segment files under `hosts/NAME/events/` in the state folder, outside the change log and snapshots. See Persistence. |
 | `reset` | Empties every channel; record IDs start again at 1. |
@@ -166,7 +167,7 @@ With `--state DIR`, every run-time change is saved and restored on the next star
 | Test | Checks |
 | --- | --- |
 | `tests/vectors.rs` | The layered view equals `xvm-profile resolve` on every case in `tests/vectors/`, including value and list order |
-| `tests/server.rs` | Socket round trips, errors, `hello` first, gap logging |
+| `tests/server.rs` | Socket round trips, errors, `hello` first, gap logging, `evt.wait` waking on writes and resets without blocking other connections |
 | `tests/runtime.rs` | Every write op, rejected writes, the journal and lost entries, reset, hosts on one base staying separate, eight concurrent writers, implied parent keys surviving their last subkey |
 | `tests/eventlog.rs` | Channels from the registry, writing and XML, queries and paging (including Wazuh's default Security query), templates and per-event messages, gaps, retention, restart and reset, torn segment lines, old segments deleted |
 | `tests/persist.rs` | A restart through log replay and through snapshots gives the same observable host, PIDs continue, blobs stored once, rejected writes not logged, torn lines, missing blobs, profile drift, reset saved |

@@ -7,7 +7,8 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Arc, Condvar, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::time::Instant;
 
 use serde_json::{Map, Value};
 
@@ -83,6 +84,16 @@ pub struct Host {
     /// Event logs. Kept apart from `runtime` so high event rates do not touch
     /// the change journal or snapshots. Lock order: `runtime`, then `events`.
     events: RwLock<crate::eventlog::EventLogs>,
+    /// Bumped on every event write and reset, to wake `evt.wait`.
+    events_signal: (Mutex<EventSignal>, Condvar),
+}
+
+/// How many event writes and resets a host has seen. `evt.wait` compares
+/// two of these to learn that something changed.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EventSignal {
+    pub writes: u64,
+    pub resets: u64,
 }
 
 fn object(v: Value, what: &str) -> Result<Map<String, Value>, StoreError> {
@@ -221,6 +232,7 @@ impl Host {
             event_messages,
             runtime: RwLock::new(runtime),
             events: RwLock::new(Default::default()),
+            events_signal: Default::default(),
         })
     }
 
@@ -261,7 +273,45 @@ impl Host {
         let out = rt.reset(time);
         rt.procs = self.boot_procs.clone();
         *self.events_write() = Default::default();
+        self.signal_events(true);
         out
+    }
+
+    /// Wake every `evt.wait` on this host: an event was written, or the logs were reset.
+    pub fn signal_events(&self, reset: bool) {
+        let (lock, cv) = &self.events_signal;
+        let mut s = lock.lock().unwrap_or_else(|e| e.into_inner());
+        if reset {
+            s.resets += 1;
+        } else {
+            s.writes += 1;
+        }
+        cv.notify_all();
+    }
+
+    pub fn event_signal(&self) -> EventSignal {
+        *self
+            .events_signal
+            .0
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Block until the signal differs from `seen` or `deadline` passes. Returns the current signal.
+    pub fn wait_events(&self, seen: EventSignal, deadline: Instant) -> EventSignal {
+        let (lock, cv) = &self.events_signal;
+        let mut s = lock.lock().unwrap_or_else(|e| e.into_inner());
+        while *s == seen {
+            let now = Instant::now();
+            if now >= deadline {
+                break;
+            }
+            s = cv
+                .wait_timeout(s, deadline - now)
+                .unwrap_or_else(|e| e.into_inner())
+                .0;
+        }
+        *s
     }
 
     pub fn events_read(&self) -> std::sync::RwLockReadGuard<'_, crate::eventlog::EventLogs> {
