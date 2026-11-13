@@ -1,4 +1,4 @@
-//! Time: `time`, `localtime`, `gmtime`, `clock`.
+//! Time: `time`, `localtime`, `gmtime`, `mktime`, `clock`.
 //!
 //! `msvcrt.dll`'s `time` is the 32-bit `_time32`: seconds since 1970 as
 //! a signed 32-bit value, and -1 once that no longer fits (January 2038).
@@ -11,6 +11,12 @@
 //!
 //! `gmtime` converts to UTC. It shares `localtime`'s buffer: the `gmtime`
 //! page on Microsoft Learn says both use one `struct tm` per thread.
+//!
+//! `mktime` is the inverse of `localtime`, following its Learn page: out
+//! of range fields carry over (minute 75 is 1:15 later), `tm_isdst` above
+//! 0 means daylight time, 0 standard time, below 0 "work it out". It
+//! writes the normalized fields, weekday and day of year back, and gives
+//! -1 for a time a 32-bit `time_t` cannot hold.
 //!
 //! `clock` is the wall-clock time since the CRT started, in
 //! `CLOCKS_PER_SEC` (1000) units, as the `clock` page on Learn says.
@@ -29,6 +35,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         ("time", time as *const () as u32),
         ("localtime", localtime as *const () as u32),
         ("gmtime", gmtime as *const () as u32),
+        ("mktime", mktime as *const () as u32),
         ("clock", clock as *const () as u32),
     ]
 }
@@ -76,6 +83,44 @@ extern "C" fn gmtime(t: *const i32) -> *mut i32 {
             std::ptr::null_mut()
         }
     }
+}
+
+/// Seconds since 1970 for the local time in `*tm`, or -1.
+extern "C" fn mktime(tm: *mut i32) -> i32 {
+    if tm.is_null() {
+        errno::set(EINVAL);
+        return -1;
+    }
+    // SAFETY: a struct tm, nine ints (the function's contract).
+    let f = unsafe { std::ptr::read_unaligned(tm.cast::<[i32; 9]>()) };
+    let months = i64::from(f[5]) * 12 + i64::from(f[4]);
+    let (year, month) = (1900 + months.div_euclid(12), months.rem_euclid(12) + 1);
+    let local = (crate::timezone::days_from_civil(year, month, 1) + i64::from(f[3]) - 1) * 86_400
+        + i64::from(f[2]) * 3600
+        + i64::from(f[1]) * 60
+        + i64::from(f[0]);
+    let tz = with_current(|p| p.params.time_zone.clone());
+    let standard = local + i64::from(tz.bias + tz.standard_bias) * 60;
+    let daylight = local + i64::from(tz.bias + tz.daylight_bias) * 60;
+    let utc = match f[8] {
+        d if d > 0 => daylight,
+        0 => standard,
+        _ if tz.is_daylight(daylight) && tz.is_daylight(standard) => daylight,
+        _ => standard,
+    };
+    let Ok(t) = i32::try_from(utc) else {
+        return -1;
+    };
+    if t < 0 {
+        return -1;
+    }
+    let out = Tm::from_seconds(tz.to_local(utc), tz.is_daylight(utc));
+    let fields = [
+        out.sec, out.min, out.hour, out.mday, out.mon, out.year, out.wday, out.yday, out.isdst,
+    ];
+    // SAFETY: as above.
+    unsafe { std::ptr::write_unaligned(tm.cast::<[i32; 9]>(), fields) };
+    t
 }
 
 /// Fills this thread's `struct tm` and returns it.
@@ -171,6 +216,17 @@ mod tests {
         assert_eq!(read(gmtime(&summer)), [0, 0, 12, 15, 6, 126, 3, 195, 0]);
         assert_eq!(gmtime(&summer), localtime(&summer), "a shared buffer");
         assert!(gmtime(&-1).is_null());
+        // mktime undoes localtime, normalizing on the way.
+        let mut tm = read(localtime(&summer));
+        assert_eq!(mktime(tm.as_mut_ptr()), summer);
+        let mut late = [0, 75, 13, 15, 6, 126, 0, 0, -1];
+        assert_eq!(mktime(late.as_mut_ptr()), summer + 15 * 60, "14:15 local");
+        assert_eq!(late, [0, 15, 14, 15, 6, 126, 3, 195, 1]);
+        let mut winter_tm = [0, 0, 13, 15, 0, 126, 0, 0, -1];
+        assert_eq!(mktime(winter_tm.as_mut_ptr()), winter);
+        assert_eq!(winter_tm[8], 0);
+        let mut ancient = [0, 0, 0, 1, 0, 60, 0, 0, 0];
+        assert_eq!(mktime(ancient.as_mut_ptr()), -1, "1960");
         assert!(localtime(&-1).is_null());
         assert!(localtime(std::ptr::null()).is_null());
         assert!(runtime.lock().gaps().is_empty());
