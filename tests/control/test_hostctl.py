@@ -435,7 +435,8 @@ def test_real_systemd_units(site, monkeypatch):
             timeout=30,
         )
         assert st["supervisor"] == "systemd" and st["pid"]
-        assert len(runs(out)) == 2
+        # The restarted process writes its start record a moment after systemd reports it.
+        wait_for(lambda: len(runs(out)) == 2)
         assert s.is_up("scn-a")
         assert s.down("scn-a") is True
         assert (out / "stopped").read_text() == "SIGTERM"
