@@ -23,8 +23,15 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
+      - name: Start a systemd user manager for the runner
+        # xvm-host runs hosts as transient systemd units; this lets the tests
+        # use a real systemd instead of only the stand-in.
+        run: |
+          sudo loginctl enable-linger "$USER"
+          echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+          for i in $(seq 20); do [ -S "/run/user/$(id -u)/bus" ] && break; sleep 0.5; done
       - name: Test
-        run: uv run pytest -q
+        run: uv run pytest -q -rs
       - name: Parse PowerShell scripts
         shell: pwsh
         run: |
@@ -42,7 +49,8 @@ jobs:
       XVM_REQUIRE_FIXTURES: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # The version in rust-toolchain.toml.
+      - uses: dtolnay/rust-toolchain@1.97.0
         with:
           components: rustfmt, clippy
           targets: i686-unknown-linux-gnu

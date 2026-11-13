@@ -1,0 +1,6 @@
+# One Rust version for development and CI, so a new clippy lint in a later
+# release cannot fail a build nobody changed. Raise it on purpose.
+[toolchain]
+channel = "1.97.0"
+components = ["rustfmt", "clippy"]
+targets = ["i686-unknown-linux-gnu"]

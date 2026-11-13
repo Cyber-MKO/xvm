@@ -72,7 +72,9 @@ def site(engined, tmp_path, monkeypatch):
     monkeypatch.setenv("XVM_RUNNER", str(runner))
     monkeypatch.setenv("FAKE_OUT", str(out))
     root = tmp_path / "run"
-    s = hostctl.Site(root, [SCN / "bases"], hosts)
+    # The Python supervisor, wherever the tests run: "auto" would pick systemd
+    # on a machine that has it. The systemd tests below choose it themselves.
+    s = hostctl.Site(root, [SCN / "bases"], hosts, supervisor="python")
     s.save()
     yield s, out
     for h in s.hosts():
@@ -395,3 +397,48 @@ def test_systemd_clean_exit_and_fallback(systemd, monkeypatch):
         s.up("scn-a", None)
     s.supervisor = "auto"
     assert s.backend() == "python"
+
+
+def _real_systemd() -> bool:
+    """Can this machine run a transient unit for us right now?"""
+    from xvm_control import units
+
+    if not Path("/run/systemd/system").is_dir() or not shutil.which("systemd-run"):
+        return False
+    probe = subprocess.run(
+        ["systemd-run", *units._scope(), "--wait", "--quiet", "true"],
+        capture_output=True,
+        check=False,
+    )
+    return probe.returncode == 0
+
+
+@pytest.mark.skipif(not _real_systemd(), reason="no usable systemd manager here")
+def test_real_systemd_units(site, monkeypatch):
+    """The whole cycle on a real systemd: start, restart after a failure, stop."""
+    s, out = site
+    s.supervisor = "systemd"
+    monkeypatch.setenv("FAKE_MODE", "fail-once")
+    # systemd runs the unit with its own environment, not this process's.
+    env_file = out / "runner-env"
+    env_file.write_text(f"FAKE_OUT={out}\nFAKE_MODE=fail-once\n")
+    real_runner = Path(os.environ["XVM_RUNNER"])
+    wrapper = out / "runner-wrapper"
+    wrapper.write_text(f'#!/bin/sh\nset -a\n. {env_file}\nset +a\nexec {real_runner} "$@"\n')
+    wrapper.chmod(0o755)
+    monkeypatch.setenv("XVM_RUNNER", str(wrapper))
+    try:
+        s.up("scn-a", None)
+        # The first run exits 3; systemd restarts it after RestartSec and it then serves.
+        st = wait_for(
+            lambda: (x := s.status("scn-a"))["state"] == "running" and x["restarts"] >= 1 and x,
+            timeout=30,
+        )
+        assert st["supervisor"] == "systemd" and st["pid"]
+        assert len(runs(out)) == 2
+        assert s.is_up("scn-a")
+        assert s.down("scn-a") is True
+        assert (out / "stopped").read_text() == "SIGTERM"
+        assert wait_for(lambda: s.status("scn-a")["state"] == "stopped", timeout=15)
+    finally:
+        s.down("scn-a")

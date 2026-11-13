@@ -1,0 +1,80 @@
+name: Windows event probe
+
+# Runs the golden capture kit on a GitHub Windows Server 2022 runner and
+# commits the events of the scenario window back to the branch, as text.
+# It answers "what does Windows write for this step?" without a VM of our
+# own. It is not the golden baseline: there is no Wazuh manager here, so the
+# agent never connects and nothing reaches archives.json.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit policy
+        # A default Windows Server audits these; the runner image may not.
+        # The policy before the change is printed for the record.
+        shell: powershell
+        run: |
+          auditpol /get /subcategory:"Logon","User Account Management","Security Group Management"
+          auditpol /set /subcategory:"Logon" /success:enable /failure:enable
+          auditpol /set /subcategory:"User Account Management" /success:enable /failure:enable
+          auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
+
+      - name: Install the Wazuh agent 4.14.2
+        # The kit expects the agent. With no manager it runs but never enrolls.
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Join-Path $env:RUNNER_TEMP 'wazuh-agent.msi'
+          Invoke-WebRequest 'https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.2-1.msi' -OutFile $msi
+          $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList '/i', $msi, '/q', 'WAZUH_MANAGER=127.0.0.1'
+          if ($p.ExitCode -ne 0) { throw "msiexec exit code $($p.ExitCode)" }
+          Start-Service WazuhSvc
+          Get-Service WazuhSvc | Format-List Name, Status
+
+      - name: Run the capture
+        shell: powershell
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'xvm-golden-out'
+          powershell -ExecutionPolicy Bypass -File scenarios\golden\windows\capture.ps1 -OutDir $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Keep the text the event diff needs
+        # Process names without command lines, and the manifest without its
+        # file list: nothing here can carry a secret from the runner.
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'xvm-golden-out'
+          $dest = 'scenarios\golden\windows\probes\github-windows-2022'
+          if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+          New-Item -ItemType Directory -Path "$dest\host", "$dest\evtx\scenario" | Out-Null
+          $m = Get-Content "$out\manifest.json" -Raw | ConvertFrom-Json
+          $m.PSObject.Properties.Remove('files')
+          $m | Add-Member -NotePropertyName run_id -NotePropertyValue $env:GITHUB_RUN_ID
+          ConvertTo-Json -InputObject $m -Depth 6 | Set-Content "$dest\manifest.json" -Encoding UTF8
+          Copy-Item "$out\host\users.json" "$dest\host\users.json"
+          $procs = @(Get-Content "$out\host\processes.json" -Raw | ConvertFrom-Json |
+              ForEach-Object { [ordered]@{ ProcessId = $_.ProcessId; Name = $_.Name } })
+          ConvertTo-Json -InputObject $procs | Set-Content "$dest\host\processes.json" -Encoding UTF8
+          Copy-Item "$out\evtx\scenario\*.rendered.xml" "$dest\evtx\scenario\"
+          Get-ChildItem -Recurse $dest | Select-Object FullName, Length | Format-Table -AutoSize
+
+      - name: Commit the probe
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scenarios/golden/windows/probes
+          git commit -m "Windows event probe from run ${GITHUB_RUN_ID}"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
