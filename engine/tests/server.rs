@@ -387,3 +387,56 @@ fn uninstall_keys_come_from_the_software_list() {
         "not_found"
     );
 }
+
+#[test]
+fn a_crashed_agents_pid_can_be_registered_again() {
+    let (socket, gaps) = start();
+    let mut c = Client::connect(&socket, "edge-host").unwrap();
+    // A real process that has already ended, as a crashed agent's has.
+    let mut child = std::process::Command::new("true").spawn().unwrap();
+    let dead = child.id();
+    child.wait().unwrap();
+    c.call(
+        "proc.start",
+        json!({"image": "wazuh-agent.exe", "pid": 1200, "native_pid": dead}),
+    )
+    .unwrap();
+    // The restarted agent asks for the same PID: the stale one is ended first.
+    let me = std::process::id();
+    let again = c
+        .call(
+            "proc.start",
+            json!({"image": "wazuh-agent.exe", "pid": 1200, "native_pid": me}),
+        )
+        .unwrap();
+    assert_eq!(again["native_pid"], me);
+    let changes = c.changes(0).unwrap();
+    let ops: Vec<(&str, u64)> = changes["changes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| (x["op"].as_str().unwrap(), x["pid"].as_u64().unwrap()))
+        .collect();
+    assert_eq!(
+        ops,
+        [
+            ("proc.start", 1200),
+            ("proc.exit", 1200),
+            ("proc.start", 1200)
+        ]
+    );
+    assert_eq!(changes["changes"][1]["exit_code"], 1);
+    let log = String::from_utf8(gaps.0.lock().unwrap().clone()).unwrap();
+    assert!(log.contains(r#""gap":"stale-process""#), "{log}");
+    // A process whose real process still runs keeps its PID.
+    assert_eq!(
+        engine_code(
+            c.call(
+                "proc.start",
+                json!({"image": "x.exe", "pid": 1200, "native_pid": me})
+            )
+            .unwrap_err()
+        ),
+        "exists"
+    );
+}

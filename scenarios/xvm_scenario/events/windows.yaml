@@ -12,8 +12,9 @@
 #
 # Checked against the golden capture xvm-golden-20261017 with
 # `xvm-scenario diff-events`: every account, group, service and marker event
-# matches Windows field by field. 4625 is not checked yet: the capture's
-# failed-logon step produced none.
+# matches Windows field by field. 4625 is checked against the probe
+# probes/github-windows-2022 (a GitHub Windows Server 2022 runner), since the
+# capture's failed-logon step produced none.
 
 security: &security
   provider: Microsoft-Windows-Security-Auditing
@@ -261,7 +262,7 @@ events:
       LogonProcessName: "NtLmSsp "
       AuthenticationPackageName: "NTLM"
       WorkstationName: "{workstation}"
-      TransactionId: "{00000000-0000-0000-0000-000000000000}"
+      TransmittedServices: "-"
       LmPackageName: "-"
       KeyLength: "0"
       ProcessId: "0x0"

@@ -138,6 +138,7 @@ The journal keeps the last 10,000 changes per host. If a reader asks for entries
 | --- | --- |
 | Boot table | The profile's `processes` run from boot. Each starts at `os_info.last_boot` plus its `start_offset_s`. Without `last_boot`, a host boots when the engine loads it. |
 | PIDs | Assigned by the engine, deterministic per host name, so a host gets the same PIDs every start and hosts differ from each other. Windows PIDs are multiples of 4 from 8 up; Linux and macOS PIDs count up from 1. A profile may pin a PID, for example System at 4, and `proc.start` may request one, as the loader does for the agent. A PID is not reused while unused ones remain; the generator never hands out a requested PID. |
+| Crashed agents | A personality that crashes never calls `proc.exit`. When `proc.start` requests a PID held by a process whose `native_pid` is no longer a running process, the engine ends that one first (a `proc.exit` with exit code 1 in the journal, and a `stale-process` record in the gap log), so the restarted agent can register. A process whose real process still runs keeps its PID (`exists`). |
 | Run time | Personalities register the agent's real processes with `proc.start`, giving `native_pid`. Scenarios start and end processes the same way. Both go into the change journal. |
 | `reset` | Restores the boot table with the same PIDs. |
 | `resolved` | Shows the profile's process definitions. The running table is `proc.list`. |

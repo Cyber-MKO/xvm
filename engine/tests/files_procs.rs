@@ -621,10 +621,14 @@ fn start_with_a_requested_pid() {
     // The loader registers the agent under the PID its profile gives.
     let p = c.ok(
         "proc.start",
-        json!({"image": "wazuh-agent.exe", "pid": 1200, "native_pid": 777}),
+        // A real process that is running: this test's own.
+        json!({"image": "wazuh-agent.exe", "pid": 1200, "native_pid": std::process::id()}),
     );
     assert_eq!(p["pid"], 1200);
-    assert_eq!(c.ok("proc.get", json!({"pid": 1200}))["native_pid"], 777);
+    assert_eq!(
+        c.ok("proc.get", json!({"pid": 1200}))["native_pid"],
+        std::process::id()
+    );
     let j = c.ok("changes", json!({}));
     assert_eq!(j["changes"][0]["pid"], 1200);
     // In use, by a boot process or a run-time one.

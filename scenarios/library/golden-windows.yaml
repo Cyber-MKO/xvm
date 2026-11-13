@@ -15,7 +15,8 @@ steps:
   - {at: 20s, name: group_add, action: group.add,
      params: {user: xvmgolden, group: S-1-5-32-544}}
   - {at: 30s, name: failed_logon, action: logon.failed,
-     params: {user: xvmgolden, count: 3, ip_address: 127.0.0.1}}
+     # As net use to the loopback address writes them: no domain, a client port.
+     params: {user: xvmgolden, count: 3, domain: "-", ip_address: 127.0.0.1, ip_port: 50000}}
   - {at: 40s, name: group_remove, action: group.remove,
      params: {user: xvmgolden, group: S-1-5-32-544}}
   - {at: 50s, name: user_delete, action: user.delete, params: {name: xvmgolden}}

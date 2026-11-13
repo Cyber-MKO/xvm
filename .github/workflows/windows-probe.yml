@@ -63,8 +63,10 @@ jobs:
           $m | Add-Member -NotePropertyName run_id -NotePropertyValue $env:GITHUB_RUN_ID
           ConvertTo-Json -InputObject $m -Depth 6 | Set-Content "$dest\manifest.json" -Encoding UTF8
           Copy-Item "$out\host\users.json" "$dest\host\users.json"
-          $procs = @(Get-Content "$out\host\processes.json" -Raw | ConvertFrom-Json |
-              ForEach-Object { [ordered]@{ ProcessId = $_.ProcessId; Name = $_.Name } })
+          # Parentheses: Windows PowerShell 5.1 passes ConvertFrom-Json's array
+          # down the pipeline as one object unless it is evaluated first.
+          $all = (Get-Content "$out\host\processes.json" -Raw | ConvertFrom-Json)
+          $procs = @($all | ForEach-Object { [ordered]@{ ProcessId = $_.ProcessId; Name = $_.Name } })
           ConvertTo-Json -InputObject $procs | Set-Content "$dest\host\processes.json" -Encoding UTF8
           Copy-Item "$out\evtx\scenario\*.rendered.xml" "$dest\evtx\scenario\"
           Get-ChildItem -Recurse $dest | Select-Object FullName, Length | Format-Table -AutoSize

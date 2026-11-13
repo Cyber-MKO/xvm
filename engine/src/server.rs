@@ -89,10 +89,24 @@ impl Server {
         }
         params.insert("time".into(), time_param(req)?.into());
         let mut rt = h.write();
-        let out = apply(h, &mut rt, &req.op, &params, None)?;
-        if let Some(p) = &self.persist
-            && let Err(e) = p.record(h, &rt, &req.op, &params)
-        {
+        let stale = if req.op == "proc.start" {
+            self.end_stale_process(h, &mut rt, &params)?
+        } else {
+            None
+        };
+        let applied = apply(h, &mut rt, &req.op, &params, None);
+        let saved = match (&applied, &self.persist) {
+            (Ok(_), Some(p)) => p.record(h, &rt, &req.op, &params),
+            _ => Ok(()),
+        };
+        // Applying and saving happen under the lock, so the log order is the
+        // order of the changes. The gap log reads the host itself: release first.
+        drop(rt);
+        if let Some(record) = stale {
+            self.log(Some(h), record);
+        }
+        let out = applied?;
+        if let Err(e) = saved {
             // The change is applied; saving it failed. Say so rather than pretend.
             eprintln!("xvm-engined: {}: could not log {}: {e}", h.name, req.op);
             return Err(Fail(
@@ -101,6 +115,55 @@ impl Server {
             ));
         }
         Ok(out)
+    }
+
+    /// A personality that crashes never calls `proc.exit`, so its process
+    /// would hold its PID for ever and the restarted agent could not register.
+    /// When `proc.start` asks for a PID held by a process whose real process
+    /// (`native_pid`) is gone, end that one first. The exit is applied and
+    /// logged as its own change, so a replay takes the same path. Returns
+    /// the gap record for the caller to log once it holds no lock.
+    fn end_stale_process(
+        &self,
+        h: &Host,
+        rt: &mut crate::runtime::Runtime,
+        params: &Map<String, Value>,
+    ) -> Result<Option<Value>, Fail> {
+        let Some(pid) = params.get("pid").and_then(Value::as_u64) else {
+            return Ok(None);
+        };
+        let Some(native) = rt
+            .procs
+            .live
+            .get(&pid)
+            .and_then(|p| p.fields.get("native_pid"))
+            .and_then(Value::as_u64)
+        else {
+            return Ok(None);
+        };
+        if std::path::Path::new(&format!("/proc/{native}")).exists() {
+            return Ok(None);
+        }
+        let mut exit = Map::new();
+        exit.insert("pid".into(), pid.into());
+        exit.insert("exit_code".into(), 1.into());
+        if let Some(time) = params.get("time") {
+            exit.insert("time".into(), time.clone());
+        }
+        apply(h, rt, "proc.exit", &exit, None)?;
+        if let Some(p) = &self.persist
+            && let Err(e) = p.record(h, rt, "proc.exit", &exit)
+        {
+            eprintln!("xvm-engined: {}: could not log proc.exit: {e}", h.name);
+            return Err(Fail(
+                code::NOT_SAVED,
+                format!("applied, but not saved: {e}"),
+            ));
+        }
+        Ok(Some(
+            json!({"gap": "stale-process", "pid": pid, "native_pid": native,
+                "why": "its real process is gone without proc.exit; ended before the PID is reused"}),
+        ))
     }
 
     fn log_gap(&self, host: Option<&Host>, op: &str) {

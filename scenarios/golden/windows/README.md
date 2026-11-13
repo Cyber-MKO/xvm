@@ -66,3 +66,15 @@ The test user is removed even if a step fails. No event log is cleared.
 | `manager/*.json` | Manager archives and alerts for the window, added by `xvm-golden import-manager` |
 
 `xvm-golden verify` checks the hashes, the required files and steps, the step times, and that no `client.keys` is present.
+
+## Probes
+
+A probe is the scenario window of the same kit, run on a GitHub Windows Server 2022 runner by the `Windows event probe` workflow (start it from the Actions tab). It installs the real Wazuh agent 4.14.2 so the kit runs unchanged, and commits only text to `probes/github-windows-2022/`: the scenario window's events, the local users, and process names without command lines.
+
+| Use | Detail |
+| --- | --- |
+| What it is for | Checking an event layout against a real Windows without a VM of our own: `xvm-scenario diff-events probes/github-windows-2022 RUNLOG` |
+| What it is not | A golden baseline. No manager runs there, so the agent never connects and there are no archives or alerts. |
+| Differences from a default server | The built-in Administrator is named `runneradmin`, and the runner audits more (4688, 4673). The workflow turns on logon, account and group auditing, which a default Windows Server has. |
+
+The 4625 layout was checked this way: the first golden capture's failed-logon step produced no logon.
