@@ -1,0 +1,37 @@
+﻿[
+    {
+        "Name":  "DefaultAccount",
+        "Enabled":  false,
+        "SID":  "S-1-5-21-3708201392-4242277230-667464164-503",
+        "LastLogon":  null,
+        "PasswordLastSet":  null
+    },
+    {
+        "Name":  "Guest",
+        "Enabled":  false,
+        "SID":  "S-1-5-21-3708201392-4242277230-667464164-501",
+        "LastLogon":  null,
+        "PasswordLastSet":  null
+    },
+    {
+        "Name":  "installer",
+        "Enabled":  true,
+        "SID":  "S-1-5-21-3708201392-4242277230-667464164-1000",
+        "LastLogon":  "\/Date(1793581549546)\/",
+        "PasswordLastSet":  "\/Date(1793567715827)\/"
+    },
+    {
+        "Name":  "runneradmin",
+        "Enabled":  true,
+        "SID":  "S-1-5-21-3708201392-4242277230-667464164-500",
+        "LastLogon":  "\/Date(1794582783373)\/",
+        "PasswordLastSet":  "\/Date(1794582731585)\/"
+    },
+    {
+        "Name":  "WDAGUtilityAccount",
+        "Enabled":  false,
+        "SID":  "S-1-5-21-3708201392-4242277230-667464164-504",
+        "LastLogon":  null,
+        "PasswordLastSet":  "\/Date(1792923781491)\/"
+    }
+]

@@ -1,0 +1,82 @@
+﻿{
+    "schema":  1,
+    "kind":  "windows-golden-baseline",
+    "host":  {
+                 "name":  "runnervmquqza",
+                 "os":  "Microsoft Windows Server 2022 Datacenter",
+                 "version":  "10.0.20348",
+                 "build":  "20348"
+             },
+    "agent":  {
+                  "product":  "wazuh",
+                  "version":  "4.14.2"
+              },
+    "capture_pid":  2112,
+    "capture_start":  "2026-11-13T15:13:59.839Z",
+    "capture_end":  "2026-11-13T15:18:48.562Z",
+    "scenario":  {
+                     "start":  "2026-11-13T15:16:49.259Z",
+                     "end":  "2026-11-13T15:18:26.036Z",
+                     "steps":  [
+                                   {
+                                       "name":  "marker_start",
+                                       "start":  "2026-11-13T15:16:49.259Z",
+                                       "end":  "2026-11-13T15:16:59.314Z",
+                                       "expect":  "Application event 900 from xvm-golden"
+                                   },
+                                   {
+                                       "name":  "user_create",
+                                       "start":  "2026-11-13T15:16:59.314Z",
+                                       "end":  "2026-11-13T15:17:09.358Z",
+                                       "expect":  "Security 4720, 4722, 4724, 4738"
+                                   },
+                                   {
+                                       "name":  "group_add",
+                                       "start":  "2026-11-13T15:17:09.358Z",
+                                       "end":  "2026-11-13T15:17:19.381Z",
+                                       "expect":  "Security 4732"
+                                   },
+                                   {
+                                       "name":  "failed_logon",
+                                       "start":  "2026-11-13T15:17:19.381Z",
+                                       "end":  "2026-11-13T15:17:29.421Z",
+                                       "expect":  "Security 4625 three times"
+                                   },
+                                   {
+                                       "name":  "group_remove",
+                                       "start":  "2026-11-13T15:17:29.421Z",
+                                       "end":  "2026-11-13T15:17:39.448Z",
+                                       "expect":  "Security 4733"
+                                   },
+                                   {
+                                       "name":  "user_delete",
+                                       "start":  "2026-11-13T15:17:39.448Z",
+                                       "end":  "2026-11-13T15:17:49.461Z",
+                                       "expect":  "Security 4726"
+                                   },
+                                   {
+                                       "name":  "service_restart",
+                                       "start":  "2026-11-13T15:17:49.461Z",
+                                       "end":  "2026-11-13T15:18:00.005Z",
+                                       "expect":  "System 7036 for W32Time"
+                                   },
+                                   {
+                                       "name":  "fim_change",
+                                       "start":  "2026-11-13T15:18:00.005Z",
+                                       "end":  "2026-11-13T15:18:16.022Z",
+                                       "expect":  "Wazuh FIM added, modified and deleted alerts"
+                                   },
+                                   {
+                                       "name":  "marker_end",
+                                       "start":  "2026-11-13T15:18:16.022Z",
+                                       "end":  "2026-11-13T15:18:26.036Z",
+                                       "expect":  "Application event 901 from xvm-golden"
+                                   }
+                               ]
+                 },
+    "warnings":  [
+                     "FIM folder C:\\xvm-golden-fim is not in ossec.conf; the FIM step will raise no alert.",
+                     "1 files could not be hashed (in use or access denied)."
+                 ],
+    "run_id":  "43450403750"
+}

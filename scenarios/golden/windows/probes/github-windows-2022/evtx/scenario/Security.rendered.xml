@@ -1,0 +1,1041 @@
+﻿<Events><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:49.2721166Z'/><EventRecordID>1559918</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='416'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0x1df0</Data><Data Name='NewProcessName'>C:\Windows\System32\eventcreate.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x840</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0x1df0
+	New Process Name:	C:\Windows\System32\eventcreate.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x840
+	Creator Process Name:	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4728</EventID><Version>0</Version><Level>0</Level><Task>13826</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:59.3213173Z'/><EventRecordID>1559919</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='MemberName'>-</Data><Data Name='MemberSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='TargetUserName'>None</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-513</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data></EventData><RenderingInfo Culture='en-US'><Message>A member was added to a security-enabled global group.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Member:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		-
+
+Group:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-513
+	Group Name:		None
+	Group Domain:		runnervmquqza
+
+Additional Information:
+	Privileges:		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4720</EventID><Version>0</Version><Level>0</Level><Task>13824</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:59.3215644Z'/><EventRecordID>1559920</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data><Data Name='SamAccountName'>xvmgolden</Data><Data Name='DisplayName'>%%1793</Data><Data Name='UserPrincipalName'>-</Data><Data Name='HomeDirectory'>%%1793</Data><Data Name='HomePath'>%%1793</Data><Data Name='ScriptPath'>%%1793</Data><Data Name='ProfilePath'>%%1793</Data><Data Name='UserWorkstations'>%%1793</Data><Data Name='PasswordLastSet'>%%1794</Data><Data Name='AccountExpires'>%%1794</Data><Data Name='PrimaryGroupId'>513</Data><Data Name='AllowedToDelegateTo'>-</Data><Data Name='OldUacValue'>0x0</Data><Data Name='NewUacValue'>0x15</Data><Data Name='UserAccountControl'>
+		%%2080
+		%%2082
+		%%2084</Data><Data Name='UserParameters'>%%1793</Data><Data Name='SidHistory'>-</Data><Data Name='LogonHours'>%%1797</Data></EventData><RenderingInfo Culture='en-US'><Message>A user account was created.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+New Account:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		xvmgolden
+	Account Domain:		runnervmquqza
+
+Attributes:
+	SAM Account Name:	xvmgolden
+	Display Name:		&lt;value not set&gt;
+	User Principal Name:	-
+	Home Directory:		&lt;value not set&gt;
+	Home Drive:		&lt;value not set&gt;
+	Script Path:		&lt;value not set&gt;
+	Profile Path:		&lt;value not set&gt;
+	User Workstations:	&lt;value not set&gt;
+	Password Last Set:	&lt;never&gt;
+	Account Expires:		&lt;never&gt;
+	Primary Group ID:	513
+	Allowed To Delegate To:	-
+	Old UAC Value:		0x0
+	New UAC Value:		0x15
+	User Account Control:	
+		Account Disabled
+		&apos;Password Not Required&apos; - Enabled
+		&apos;Normal Account&apos; - Enabled
+	User Parameters:	&lt;value not set&gt;
+	SID History:		-
+	Logon Hours:		All
+
+Additional Information:
+	Privileges		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4722</EventID><Version>0</Version><Level>0</Level><Task>13824</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:59.3233327Z'/><EventRecordID>1559921</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data></EventData><RenderingInfo Culture='en-US'><Message>A user account was enabled.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Account:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		xvmgolden
+	Account Domain:		runnervmquqza</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4738</EventID><Version>0</Version><Level>0</Level><Task>13824</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:59.3233702Z'/><EventRecordID>1559922</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='Dummy'>-</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data><Data Name='SamAccountName'>xvmgolden</Data><Data Name='DisplayName'>%%1793</Data><Data Name='UserPrincipalName'>-</Data><Data Name='HomeDirectory'>%%1793</Data><Data Name='HomePath'>%%1793</Data><Data Name='ScriptPath'>%%1793</Data><Data Name='ProfilePath'>%%1793</Data><Data Name='UserWorkstations'>%%1793</Data><Data Name='PasswordLastSet'>%%1794</Data><Data Name='AccountExpires'>%%1794</Data><Data Name='PrimaryGroupId'>513</Data><Data Name='AllowedToDelegateTo'>-</Data><Data Name='OldUacValue'>0x15</Data><Data Name='NewUacValue'>0x14</Data><Data Name='UserAccountControl'>
+		%%2048</Data><Data Name='UserParameters'>%%1793</Data><Data Name='SidHistory'>-</Data><Data Name='LogonHours'>%%1797</Data></EventData><RenderingInfo Culture='en-US'><Message>A user account was changed.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Account:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		xvmgolden
+	Account Domain:		runnervmquqza
+
+Changed Attributes:
+	SAM Account Name:	xvmgolden
+	Display Name:		&lt;value not set&gt;
+	User Principal Name:	-
+	Home Directory:		&lt;value not set&gt;
+	Home Drive:		&lt;value not set&gt;
+	Script Path:		&lt;value not set&gt;
+	Profile Path:		&lt;value not set&gt;
+	User Workstations:	&lt;value not set&gt;
+	Password Last Set:	&lt;never&gt;
+	Account Expires:		&lt;never&gt;
+	Primary Group ID:	513
+	AllowedToDelegateTo:	-
+	Old UAC Value:		0x15
+	New UAC Value:		0x14
+	User Account Control:	
+		Account Enabled
+	User Parameters:	&lt;value not set&gt;
+	SID History:		-
+	Logon Hours:		All
+
+Additional Information:
+	Privileges:		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4738</EventID><Version>0</Version><Level>0</Level><Task>13824</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:59.3382540Z'/><EventRecordID>1559923</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='Dummy'>-</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data><Data Name='SamAccountName'>-</Data><Data Name='DisplayName'>-</Data><Data Name='UserPrincipalName'>-</Data><Data Name='HomeDirectory'>-</Data><Data Name='HomePath'>-</Data><Data Name='ScriptPath'>-</Data><Data Name='ProfilePath'>-</Data><Data Name='UserWorkstations'>-</Data><Data Name='PasswordLastSet'>-</Data><Data Name='AccountExpires'>-</Data><Data Name='PrimaryGroupId'>-</Data><Data Name='AllowedToDelegateTo'>-</Data><Data Name='OldUacValue'>-</Data><Data Name='NewUacValue'>-</Data><Data Name='UserAccountControl'>-</Data><Data Name='UserParameters'>-</Data><Data Name='SidHistory'>-</Data><Data Name='LogonHours'>-</Data></EventData><RenderingInfo Culture='en-US'><Message>A user account was changed.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Account:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		xvmgolden
+	Account Domain:		runnervmquqza
+
+Changed Attributes:
+	SAM Account Name:	-
+	Display Name:		-
+	User Principal Name:	-
+	Home Directory:		-
+	Home Drive:		-
+	Script Path:		-
+	Profile Path:		-
+	User Workstations:	-
+	Password Last Set:	-
+	Account Expires:		-
+	Primary Group ID:	-
+	AllowedToDelegateTo:	-
+	Old UAC Value:		-
+	New UAC Value:		-
+	User Account Control:	-
+	User Parameters:	-
+	SID History:		-
+	Logon Hours:		-
+
+Additional Information:
+	Privileges:		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4724</EventID><Version>0</Version><Level>0</Level><Task>13824</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:16:59.3382649Z'/><EventRecordID>1559924</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data></EventData><RenderingInfo Culture='en-US'><Message>An attempt was made to reset an account&apos;s password.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Account:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		xvmgolden
+	Account Domain:		runnervmquqza</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:03.9815436Z'/><EventRecordID>1559925</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='3924'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0x1f34</Data><Data Name='NewProcessName'>C:\Windows\System32\wsl.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x1cd0</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Users\RUNNER~1\AppData\Local\Temp\provjobd.exe2005266038</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0x1f34
+	New Process Name:	C:\Windows\System32\wsl.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x1cd0
+	Creator Process Name:	C:\Users\RUNNER~1\AppData\Local\Temp\provjobd.exe2005266038
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4732</EventID><Version>0</Version><Level>0</Level><Task>13826</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:09.3670389Z'/><EventRecordID>1559926</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='MemberName'>-</Data><Data Name='MemberSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='TargetUserName'>Administrators</Data><Data Name='TargetDomainName'>Builtin</Data><Data Name='TargetSid'>S-1-5-32-544</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data></EventData><RenderingInfo Culture='en-US'><Message>A member was added to a security-enabled local group.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Member:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		-
+
+Group:
+	Security ID:		S-1-5-32-544
+	Group Name:		Administrators
+	Group Domain:		Builtin
+
+Additional Information:
+	Privileges:		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:15.7407696Z'/><EventRecordID>1559927</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e1c</Data><Data Name='ProcessName'>C:\Windows\SystemApps\Microsoft.Windows.Search_cw5n1h2txyewy\SearchApp.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e1c
+	Process Name:	C:\Windows\SystemApps\Microsoft.Windows.Search_cw5n1h2txyewy\SearchApp.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5586393Z'/><EventRecordID>1559928</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5587822Z'/><EventRecordID>1559929</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5588626Z'/><EventRecordID>1559930</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5589386Z'/><EventRecordID>1559931</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5590149Z'/><EventRecordID>1559932</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5590865Z'/><EventRecordID>1559933</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5591557Z'/><EventRecordID>1559934</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5592265Z'/><EventRecordID>1559935</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5593010Z'/><EventRecordID>1559936</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5593884Z'/><EventRecordID>1559937</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5594608Z'/><EventRecordID>1559938</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5597259Z'/><EventRecordID>1559939</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5598415Z'/><EventRecordID>1559940</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5599148Z'/><EventRecordID>1559941</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5600114Z'/><EventRecordID>1559942</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5600828Z'/><EventRecordID>1559943</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4673</EventID><Version>0</Version><Level>0</Level><Task>13056</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:16.5601476Z'/><EventRecordID>1559944</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='6448'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='ObjectServer'>Security</Data><Data Name='Service'>-</Data><Data Name='PrivilegeList'>SeTcbPrivilege</Data><Data Name='ProcessId'>0x1e54</Data><Data Name='ProcessName'>C:\Windows\System32\RuntimeBroker.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>A privileged service was called.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Service:
+	Server:	Security
+	Service Name:	-
+
+Process:
+	Process ID:	0x1e54
+	Process Name:	C:\Windows\System32\RuntimeBroker.exe
+
+Service Request Information:
+	Privileges:		SeTcbPrivilege</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.3869020Z'/><EventRecordID>1559945</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='3928'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0x42c</Data><Data Name='NewProcessName'>C:\Windows\System32\net.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x840</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0x42c
+	New Process Name:	C:\Windows\System32\net.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x840
+	Creator Process Name:	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4648</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.3967043Z'/><EventRecordID>1559946</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='LogonGuid'>{00000000-0000-0000-0000-000000000000}</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'></Data><Data Name='TargetLogonGuid'>{00000000-0000-0000-0000-000000000000}</Data><Data Name='TargetServerName'>runnervmquqza</Data><Data Name='TargetInfo'>runnervmquqza</Data><Data Name='ProcessId'>0x4</Data><Data Name='ProcessName'></Data><Data Name='IpAddress'>127.0.0.1</Data><Data Name='IpPort'>445</Data></EventData><RenderingInfo Culture='en-US'><Message>A logon was attempted using explicit credentials.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+	Logon GUID:		{00000000-0000-0000-0000-000000000000}
+
+Account Whose Credentials Were Used:
+	Account Name:		xvmgolden
+	Account Domain:		
+	Logon GUID:		{00000000-0000-0000-0000-000000000000}
+
+Target Server:
+	Target Server Name:	runnervmquqza
+	Additional Information:	runnervmquqza
+
+Process Information:
+	Process ID:		0x4
+	Process Name:		
+
+Network Information:
+	Network Address:	127.0.0.1
+	Port:			445
+
+This event is generated when a process attempts to log on an account by explicitly specifying that account’s credentials.  This most commonly occurs in batch-type configurations such as scheduled tasks, or when using the RUNAS command.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4776</EventID><Version>0</Version><Level>0</Level><Task>14336</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.3970077Z'/><EventRecordID>1559947</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='PackageName'>MICROSOFT_AUTHENTICATION_PACKAGE_V1_0</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='Workstation'>runnervmquqza</Data><Data Name='Status'>0xc000006a</Data></EventData><RenderingInfo Culture='en-US'><Message>The computer attempted to validate the credentials for an account.
+
+Authentication Package:	MICROSOFT_AUTHENTICATION_PACKAGE_V1_0
+Logon Account:	xvmgolden
+Source Workstation:	runnervmquqza
+Error Code:	0xC000006A</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4625</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.3970636Z'/><EventRecordID>1559948</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-0-0</Data><Data Name='SubjectUserName'>-</Data><Data Name='SubjectDomainName'>-</Data><Data Name='SubjectLogonId'>0x0</Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>-</Data><Data Name='Status'>0xc000006d</Data><Data Name='FailureReason'>%%2313</Data><Data Name='SubStatus'>0xc000006a</Data><Data Name='LogonType'>3</Data><Data Name='LogonProcessName'>NtLmSsp </Data><Data Name='AuthenticationPackageName'>NTLM</Data><Data Name='WorkstationName'>runnervmquqza</Data><Data Name='TransmittedServices'>-</Data><Data Name='LmPackageName'>-</Data><Data Name='KeyLength'>0</Data><Data Name='ProcessId'>0x0</Data><Data Name='ProcessName'>-</Data><Data Name='IpAddress'>127.0.0.1</Data><Data Name='IpPort'>52743</Data></EventData><RenderingInfo Culture='en-US'><Message>An account failed to log on.
+
+Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Logon Type:			3
+
+Account For Which Logon Failed:
+	Security ID:		S-1-0-0
+	Account Name:		xvmgolden
+	Account Domain:		-
+
+Failure Information:
+	Failure Reason:		Unknown user name or bad password.
+	Status:			0xC000006D
+	Sub Status:		0xC000006A
+
+Process Information:
+	Caller Process ID:	0x0
+	Caller Process Name:	-
+
+Network Information:
+	Workstation Name:	runnervmquqza
+	Source Network Address:	127.0.0.1
+	Source Port:		52743
+
+Detailed Authentication Information:
+	Logon Process:		NtLmSsp 
+	Authentication Package:	NTLM
+	Transited Services:	-
+	Package Name (NTLM only):	-
+	Key Length:		0
+
+This event is generated when a logon request fails. It is generated on the computer where access was attempted.
+
+The Subject fields indicate the account on the local system which requested the logon. This is most commonly a service such as the Server service, or a local process such as Winlogon.exe or Services.exe.
+
+The Logon Type field indicates the kind of logon that was requested. The most common types are 2 (interactive) and 3 (network).
+
+The Process Information fields indicate which account and process on the system requested the logon.
+
+The Network Information fields indicate where a remote logon request originated. Workstation name is not always available and may be left blank in some cases.
+
+The authentication information fields provide detailed information about this specific logon request.
+	- Transited services indicate which intermediate services have participated in this logon request.
+	- Package name indicates which sub-protocol was used among the NTLM protocols.
+	- Key length indicates the length of the generated session key. This will be 0 if no session key was requested.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4006040Z'/><EventRecordID>1559949</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='616'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0x1294</Data><Data Name='NewProcessName'>C:\Windows\System32\net.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x840</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0x1294
+	New Process Name:	C:\Windows\System32\net.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x840
+	Creator Process Name:	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4648</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4071711Z'/><EventRecordID>1559950</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='980'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='LogonGuid'>{00000000-0000-0000-0000-000000000000}</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'></Data><Data Name='TargetLogonGuid'>{00000000-0000-0000-0000-000000000000}</Data><Data Name='TargetServerName'>runnervmquqza</Data><Data Name='TargetInfo'>runnervmquqza</Data><Data Name='ProcessId'>0x4</Data><Data Name='ProcessName'></Data><Data Name='IpAddress'>127.0.0.1</Data><Data Name='IpPort'>445</Data></EventData><RenderingInfo Culture='en-US'><Message>A logon was attempted using explicit credentials.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+	Logon GUID:		{00000000-0000-0000-0000-000000000000}
+
+Account Whose Credentials Were Used:
+	Account Name:		xvmgolden
+	Account Domain:		
+	Logon GUID:		{00000000-0000-0000-0000-000000000000}
+
+Target Server:
+	Target Server Name:	runnervmquqza
+	Additional Information:	runnervmquqza
+
+Process Information:
+	Process ID:		0x4
+	Process Name:		
+
+Network Information:
+	Network Address:	127.0.0.1
+	Port:			445
+
+This event is generated when a process attempts to log on an account by explicitly specifying that account’s credentials.  This most commonly occurs in batch-type configurations such as scheduled tasks, or when using the RUNAS command.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4776</EventID><Version>0</Version><Level>0</Level><Task>14336</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4074346Z'/><EventRecordID>1559951</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='980'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='PackageName'>MICROSOFT_AUTHENTICATION_PACKAGE_V1_0</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='Workstation'>runnervmquqza</Data><Data Name='Status'>0xc000006a</Data></EventData><RenderingInfo Culture='en-US'><Message>The computer attempted to validate the credentials for an account.
+
+Authentication Package:	MICROSOFT_AUTHENTICATION_PACKAGE_V1_0
+Logon Account:	xvmgolden
+Source Workstation:	runnervmquqza
+Error Code:	0xC000006A</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4625</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4074813Z'/><EventRecordID>1559952</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='980'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-0-0</Data><Data Name='SubjectUserName'>-</Data><Data Name='SubjectDomainName'>-</Data><Data Name='SubjectLogonId'>0x0</Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>-</Data><Data Name='Status'>0xc000006d</Data><Data Name='FailureReason'>%%2313</Data><Data Name='SubStatus'>0xc000006a</Data><Data Name='LogonType'>3</Data><Data Name='LogonProcessName'>NtLmSsp </Data><Data Name='AuthenticationPackageName'>NTLM</Data><Data Name='WorkstationName'>runnervmquqza</Data><Data Name='TransmittedServices'>-</Data><Data Name='LmPackageName'>-</Data><Data Name='KeyLength'>0</Data><Data Name='ProcessId'>0x0</Data><Data Name='ProcessName'>-</Data><Data Name='IpAddress'>127.0.0.1</Data><Data Name='IpPort'>52744</Data></EventData><RenderingInfo Culture='en-US'><Message>An account failed to log on.
+
+Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Logon Type:			3
+
+Account For Which Logon Failed:
+	Security ID:		S-1-0-0
+	Account Name:		xvmgolden
+	Account Domain:		-
+
+Failure Information:
+	Failure Reason:		Unknown user name or bad password.
+	Status:			0xC000006D
+	Sub Status:		0xC000006A
+
+Process Information:
+	Caller Process ID:	0x0
+	Caller Process Name:	-
+
+Network Information:
+	Workstation Name:	runnervmquqza
+	Source Network Address:	127.0.0.1
+	Source Port:		52744
+
+Detailed Authentication Information:
+	Logon Process:		NtLmSsp 
+	Authentication Package:	NTLM
+	Transited Services:	-
+	Package Name (NTLM only):	-
+	Key Length:		0
+
+This event is generated when a logon request fails. It is generated on the computer where access was attempted.
+
+The Subject fields indicate the account on the local system which requested the logon. This is most commonly a service such as the Server service, or a local process such as Winlogon.exe or Services.exe.
+
+The Logon Type field indicates the kind of logon that was requested. The most common types are 2 (interactive) and 3 (network).
+
+The Process Information fields indicate which account and process on the system requested the logon.
+
+The Network Information fields indicate where a remote logon request originated. Workstation name is not always available and may be left blank in some cases.
+
+The authentication information fields provide detailed information about this specific logon request.
+	- Transited services indicate which intermediate services have participated in this logon request.
+	- Package name indicates which sub-protocol was used among the NTLM protocols.
+	- Key length indicates the length of the generated session key. This will be 0 if no session key was requested.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4107436Z'/><EventRecordID>1559953</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='3928'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0x7d4</Data><Data Name='NewProcessName'>C:\Windows\System32\net.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x840</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0x7d4
+	New Process Name:	C:\Windows\System32\net.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x840
+	Creator Process Name:	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4648</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4173444Z'/><EventRecordID>1559954</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='LogonGuid'>{00000000-0000-0000-0000-000000000000}</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'></Data><Data Name='TargetLogonGuid'>{00000000-0000-0000-0000-000000000000}</Data><Data Name='TargetServerName'>runnervmquqza</Data><Data Name='TargetInfo'>runnervmquqza</Data><Data Name='ProcessId'>0x4</Data><Data Name='ProcessName'></Data><Data Name='IpAddress'>127.0.0.1</Data><Data Name='IpPort'>445</Data></EventData><RenderingInfo Culture='en-US'><Message>A logon was attempted using explicit credentials.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+	Logon GUID:		{00000000-0000-0000-0000-000000000000}
+
+Account Whose Credentials Were Used:
+	Account Name:		xvmgolden
+	Account Domain:		
+	Logon GUID:		{00000000-0000-0000-0000-000000000000}
+
+Target Server:
+	Target Server Name:	runnervmquqza
+	Additional Information:	runnervmquqza
+
+Process Information:
+	Process ID:		0x4
+	Process Name:		
+
+Network Information:
+	Network Address:	127.0.0.1
+	Port:			445
+
+This event is generated when a process attempts to log on an account by explicitly specifying that account’s credentials.  This most commonly occurs in batch-type configurations such as scheduled tasks, or when using the RUNAS command.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4776</EventID><Version>0</Version><Level>0</Level><Task>14336</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4176126Z'/><EventRecordID>1559955</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='PackageName'>MICROSOFT_AUTHENTICATION_PACKAGE_V1_0</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='Workstation'>runnervmquqza</Data><Data Name='Status'>0xc000006a</Data></EventData><RenderingInfo Culture='en-US'><Message>The computer attempted to validate the credentials for an account.
+
+Authentication Package:	MICROSOFT_AUTHENTICATION_PACKAGE_V1_0
+Logon Account:	xvmgolden
+Source Workstation:	runnervmquqza
+Error Code:	0xC000006A</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4625</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8010000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:19.4176582Z'/><EventRecordID>1559956</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-0-0</Data><Data Name='SubjectUserName'>-</Data><Data Name='SubjectDomainName'>-</Data><Data Name='SubjectLogonId'>0x0</Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>-</Data><Data Name='Status'>0xc000006d</Data><Data Name='FailureReason'>%%2313</Data><Data Name='SubStatus'>0xc000006a</Data><Data Name='LogonType'>3</Data><Data Name='LogonProcessName'>NtLmSsp </Data><Data Name='AuthenticationPackageName'>NTLM</Data><Data Name='WorkstationName'>runnervmquqza</Data><Data Name='TransmittedServices'>-</Data><Data Name='LmPackageName'>-</Data><Data Name='KeyLength'>0</Data><Data Name='ProcessId'>0x0</Data><Data Name='ProcessName'>-</Data><Data Name='IpAddress'>127.0.0.1</Data><Data Name='IpPort'>52745</Data></EventData><RenderingInfo Culture='en-US'><Message>An account failed to log on.
+
+Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Logon Type:			3
+
+Account For Which Logon Failed:
+	Security ID:		S-1-0-0
+	Account Name:		xvmgolden
+	Account Domain:		-
+
+Failure Information:
+	Failure Reason:		Unknown user name or bad password.
+	Status:			0xC000006D
+	Sub Status:		0xC000006A
+
+Process Information:
+	Caller Process ID:	0x0
+	Caller Process Name:	-
+
+Network Information:
+	Workstation Name:	runnervmquqza
+	Source Network Address:	127.0.0.1
+	Source Port:		52745
+
+Detailed Authentication Information:
+	Logon Process:		NtLmSsp 
+	Authentication Package:	NTLM
+	Transited Services:	-
+	Package Name (NTLM only):	-
+	Key Length:		0
+
+This event is generated when a logon request fails. It is generated on the computer where access was attempted.
+
+The Subject fields indicate the account on the local system which requested the logon. This is most commonly a service such as the Server service, or a local process such as Winlogon.exe or Services.exe.
+
+The Logon Type field indicates the kind of logon that was requested. The most common types are 2 (interactive) and 3 (network).
+
+The Process Information fields indicate which account and process on the system requested the logon.
+
+The Network Information fields indicate where a remote logon request originated. Workstation name is not always available and may be left blank in some cases.
+
+The authentication information fields provide detailed information about this specific logon request.
+	- Transited services indicate which intermediate services have participated in this logon request.
+	- Package name indicates which sub-protocol was used among the NTLM protocols.
+	- Key length indicates the length of the generated session key. This will be 0 if no session key was requested.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4733</EventID><Version>0</Version><Level>0</Level><Task>13826</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:29.4269700Z'/><EventRecordID>1559957</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='MemberName'>-</Data><Data Name='MemberSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='TargetUserName'>Administrators</Data><Data Name='TargetDomainName'>Builtin</Data><Data Name='TargetSid'>S-1-5-32-544</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data></EventData><RenderingInfo Culture='en-US'><Message>A member was removed from a security-enabled local group.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Member:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		-
+
+Group:
+	Security ID:		S-1-5-32-544
+	Group Name:		Administrators
+	Group Domain:		Builtin
+
+Additional Information:
+	Privileges:		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:34.0041676Z'/><EventRecordID>1559958</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='3928'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0x7c8</Data><Data Name='NewProcessName'>C:\Windows\System32\wsl.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x1cd0</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Users\RUNNER~1\AppData\Local\Temp\provjobd.exe2005266038</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0x7c8
+	New Process Name:	C:\Windows\System32\wsl.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x1cd0
+	Creator Process Name:	C:\Users\RUNNER~1\AppData\Local\Temp\provjobd.exe2005266038
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4729</EventID><Version>0</Version><Level>0</Level><Task>13826</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:39.4545313Z'/><EventRecordID>1559959</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='MemberName'>-</Data><Data Name='MemberSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='TargetUserName'>None</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-513</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data></EventData><RenderingInfo Culture='en-US'><Message>A member was removed from a security-enabled global group.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Member:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		-
+
+Group:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-513
+	Group Name:		None
+	Group Domain:		runnervmquqza
+
+Additional Information:
+	Privileges:		-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4726</EventID><Version>0</Version><Level>0</Level><Task>13824</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:39.4547052Z'/><EventRecordID>1559960</EventRecordID><Correlation ActivityID='{067388fd-05d4-0002-4203-083f8173dd01}'/><Execution ProcessID='876' ThreadID='996'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='TargetUserName'>xvmgolden</Data><Data Name='TargetDomainName'>runnervmquqza</Data><Data Name='TargetSid'>S-1-5-21-3708201392-4242277230-667464164-1003</Data><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='PrivilegeList'>-</Data></EventData><RenderingInfo Culture='en-US'><Message>A user account was deleted.
+
+Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Account:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-1003
+	Account Name:		xvmgolden
+	Account Domain:		runnervmquqza
+
+Additional Information:
+	Privileges	-</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4616</EventID><Version>1</Version><Level>0</Level><Task>12288</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:49.4668411Z'/><EventRecordID>1559961</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='616'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-19</Data><Data Name='SubjectUserName'>LOCAL SERVICE</Data><Data Name='SubjectDomainName'>NT AUTHORITY</Data><Data Name='SubjectLogonId'>0x3e5</Data><Data Name='PreviousTime'>2026-11-13T15:17:49.4613092Z</Data><Data Name='NewTime'>2026-11-13T15:17:49.4661902Z</Data><Data Name='ProcessId'>0xd1c</Data><Data Name='ProcessName'>C:\Windows\System32\svchost.exe</Data></EventData><RenderingInfo Culture='en-US'><Message>The system time was changed.
+
+Subject:
+	Security ID:		S-1-5-19
+	Account Name:		LOCAL SERVICE
+	Account Domain:		NT AUTHORITY
+	Logon ID:		0x3E5
+
+Process Information:
+	Process ID:	0xd1c
+	Name:		C:\Windows\System32\svchost.exe
+
+Previous Time:		‎2026‎-‎11‎-‎13T15:17:49.461309200Z
+New Time:		‎2026‎-‎11‎-‎13T15:17:49.466190200Z
+
+This event is generated when the system time is changed. It is normal for the Windows Time Service, which runs with System privilege, to change the system time on a regular basis. Other system time changes may be indicative of attempts to tamper with the computer.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:17:49.7297534Z'/><EventRecordID>1559962</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='616'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-18</Data><Data Name='SubjectUserName'>runnervmquqza$</Data><Data Name='SubjectDomainName'>WORKGROUP</Data><Data Name='SubjectLogonId'>0x3e7</Data><Data Name='NewProcessId'>0xb44</Data><Data Name='NewProcessName'>C:\Windows\System32\svchost.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x350</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-5-19</Data><Data Name='TargetUserName'>LOCAL SERVICE</Data><Data Name='TargetDomainName'>NT AUTHORITY</Data><Data Name='TargetLogonId'>0x3e5</Data><Data Name='ParentProcessName'>C:\Windows\System32\services.exe</Data><Data Name='MandatoryLabel'>S-1-16-16384</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-18
+	Account Name:		runnervmquqza$
+	Account Domain:		WORKGROUP
+	Logon ID:		0x3E7
+
+Target Subject:
+	Security ID:		S-1-5-19
+	Account Name:		LOCAL SERVICE
+	Account Domain:		NT AUTHORITY
+	Logon ID:		0x3E5
+
+Process Information:
+	New Process ID:		0xb44
+	New Process Name:	C:\Windows\System32\svchost.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-16384
+	Creator Process ID:	0x350
+	Creator Process Name:	C:\Windows\System32\services.exe
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:18:04.0689774Z'/><EventRecordID>1559963</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='144'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0xbbc</Data><Data Name='NewProcessName'>C:\Windows\System32\wsl.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x1cd0</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Users\RUNNER~1\AppData\Local\Temp\provjobd.exe2005266038</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0xbbc
+	New Process Name:	C:\Windows\System32\wsl.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x1cd0
+	Creator Process Name:	C:\Users\RUNNER~1\AppData\Local\Temp\provjobd.exe2005266038
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event><Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/><EventID>4688</EventID><Version>2</Version><Level>0</Level><Task>13312</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='2026-11-13T15:18:16.0277294Z'/><EventRecordID>1559964</EventRecordID><Correlation/><Execution ProcessID='4' ThreadID='440'/><Channel>Security</Channel><Computer>runnervmquqza</Computer><Security/></System><EventData><Data Name='SubjectUserSid'>S-1-5-21-3708201392-4242277230-667464164-500</Data><Data Name='SubjectUserName'>runneradmin</Data><Data Name='SubjectDomainName'>runnervmquqza</Data><Data Name='SubjectLogonId'>0x93387</Data><Data Name='NewProcessId'>0xc4</Data><Data Name='NewProcessName'>C:\Windows\System32\eventcreate.exe</Data><Data Name='TokenElevationType'>%%1936</Data><Data Name='ProcessId'>0x840</Data><Data Name='CommandLine'></Data><Data Name='TargetUserSid'>S-1-0-0</Data><Data Name='TargetUserName'>-</Data><Data Name='TargetDomainName'>-</Data><Data Name='TargetLogonId'>0x0</Data><Data Name='ParentProcessName'>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data><Data Name='MandatoryLabel'>S-1-16-12288</Data></EventData><RenderingInfo Culture='en-US'><Message>A new process has been created.
+
+Creator Subject:
+	Security ID:		S-1-5-21-3708201392-4242277230-667464164-500
+	Account Name:		runneradmin
+	Account Domain:		runnervmquqza
+	Logon ID:		0x93387
+
+Target Subject:
+	Security ID:		S-1-0-0
+	Account Name:		-
+	Account Domain:		-
+	Logon ID:		0x0
+
+Process Information:
+	New Process ID:		0xc4
+	New Process Name:	C:\Windows\System32\eventcreate.exe
+	Token Elevation Type:	TokenElevationTypeDefault (1)
+	Mandatory Label:		S-1-16-12288
+	Creator Process ID:	0x840
+	Creator Process Name:	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+	Process Command Line:	
+
+Token Elevation Type indicates the type of token that was assigned to the new process in accordance with User Account Control policy.
+
+Type 1 is a full token with no privileges removed or groups disabled.  A full token is only used if User Account Control is disabled or if the user is the built-in Administrator account or a service account.
+
+Type 2 is an elevated token with no privileges removed or groups disabled.  An elevated token is used when User Account Control is enabled and the user chooses to start the program using Run as administrator.  An elevated token is also used when an application is configured to always require administrative privilege or to always require maximum privilege, and the user is a member of the Administrators group.
+
+Type 3 is a limited token with administrative privileges removed and administrative groups disabled.  The limited token is used when User Account Control is enabled, the application does not require administrative privilege, and the user does not choose to start the program using Run as administrator.</Message></RenderingInfo></Event></Events>
