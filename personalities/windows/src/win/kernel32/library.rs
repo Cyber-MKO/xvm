@@ -76,12 +76,40 @@ fn notification(p: &Process, index: usize) -> Notification {
     }
 }
 
+/// Reads, lays out and reserves the files a load of `name` needs (it and
+/// the bundled DLLs it imports that are not loaded yet) without holding the
+/// process lock, so other threads' calls go on meanwhile. The caller holds
+/// the loader lock, so nothing else loads in between. A file that fails
+/// here is left for the load itself to report.
+fn prepare_files(runtime: &crate::runtime::Runtime, name: &str) {
+    let Some(first) = runtime.lock().file_to_load(name) else {
+        return;
+    };
+    let mut queue = vec![first];
+    let mut seen: Vec<std::path::PathBuf> = Vec::new();
+    while let Some(path) = queue.pop() {
+        if seen.contains(&path) {
+            continue;
+        }
+        seen.push(path.clone());
+        let Ok(prepared) = crate::process::prepare(&path) else {
+            continue;
+        };
+        let imports = prepared.imports();
+        let mut p = runtime.lock();
+        queue.extend(imports.iter().filter_map(|dll| p.import_to_load(dll)));
+        p.add_prepared(prepared);
+    }
+}
+
 fn load_library(name: Option<String>) -> u32 {
     let Some(name) = name else {
         set_last_error(ERROR_MOD_NOT_FOUND);
         return 0;
     };
     let runtime = current().expect("emulated call from a thread outside any process");
+    let _loader = runtime.loader();
+    prepare_files(&runtime, &name);
     let (base, notices, callbacks, steps) = {
         let mut p = runtime.lock();
         let before = p.modules().len();
@@ -94,6 +122,7 @@ fn load_library(name: Option<String>) -> u32 {
                 if let LoadLibraryError::Load(e) = e {
                     eprintln!("LoadLibrary {name}: {e}");
                 }
+                p.clear_prepared();
                 drop(p);
                 set_last_error(ERROR_MOD_NOT_FOUND);
                 return 0;
@@ -104,6 +133,7 @@ fn load_library(name: Option<String>) -> u32 {
             .map(|i| notification(&p, i))
             .collect();
         let callbacks = p.dll_notifications.clone();
+        p.clear_prepared();
         (
             p.modules()[index].base(),
             notices,

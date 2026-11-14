@@ -54,6 +54,9 @@ pub struct Runtime {
     services: Arc<ServiceEvents>,
     sync: Arc<SyncHub>,
     file_locks: Arc<crate::filelock::FileLocks>,
+    /// Windows' loader lock: one `LoadLibrary` at a time, held while it
+    /// prepares images without the process lock.
+    loader: Arc<Mutex<()>>,
 }
 
 /// What the service control dispatcher waits for.
@@ -120,6 +123,7 @@ impl Runtime {
             services: Arc::default(),
             sync: Arc::default(),
             file_locks: Arc::default(),
+            loader: Arc::default(),
         }
     }
 
@@ -133,6 +137,11 @@ impl Runtime {
     }
 
     /// The process's byte-range file locks.
+    /// Serialises library loads (`LoadLibrary`), as Windows' loader lock.
+    pub fn loader(&self) -> MutexGuard<'_, ()> {
+        self.loader.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
     pub fn file_locks(&self) -> &crate::filelock::FileLocks {
         &self.file_locks
     }

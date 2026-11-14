@@ -83,7 +83,7 @@ Loader status:
 | Signature verdicts from the profile, SHA-256 (`sha256.rs`, `win/wintrust`) | Done |
 | Kernel handle table, file I/O (`handles.rs`, `win/kernel32/file.rs`, `fileio.rs`, `lockfile.rs`) | Done for synchronous I/O: open, read, write, seek, size, truncate, flush, delete, byte-range locks. Asynchronous handles are a logged gap |
 | C streams (`win/msvcrt/stdio.rs`) | Started: `_fdopen`, reading, buffered writing, `fflush`, `fclose`, standard streams in `_iob` |
-| `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
+| `LoadLibrary`, `FreeLibrary`, DLL load notifications | Done. A loader lock serialises loads; files are read, laid out and reserved outside the process lock. Late-loaded DLLs get no TLS slot on existing threads (logged gap) |
 | Waitable objects (`sync.rs`): events, threads, semaphores, mutexes; dynamic TLS slots | Done |
 | Image page map, `VirtualQuery`, `VirtualProtect` (`memory.rs`) | Done for image pages |
 | Emulated functions | 294 of 617 imports, 3 run-time lookups (`inet_ntop`, `inet_pton`, `ConvertLengthToIpv4Mask`) plus `ntdll!LdrRegisterDllNotification`, and 2 data exports. Table in `docs/api/windows.md` |

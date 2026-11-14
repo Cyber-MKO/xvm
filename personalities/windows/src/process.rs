@@ -379,6 +379,9 @@ pub struct Process {
     traps: Traps,
     gaps: Vec<Gap>,
     loading: Vec<String>,
+    /// Images read, laid out and reserved ahead of a `LoadLibrary`,
+    /// outside the process lock (`prepare`), by normalized name.
+    prepared: BTreeMap<String, Prepared>,
     main: Option<usize>,
     pub vectored_handlers: VectoredHandlers,
     /// From `SetUnhandledExceptionFilter`; 0 for none.
@@ -440,6 +443,7 @@ impl Process {
             traps: Traps::new(),
             gaps: Vec::new(),
             loading: Vec::new(),
+            prepared: BTreeMap::new(),
             main: None,
             vectored_handlers: VectoredHandlers::default(),
             unhandled_exception_filter: 0,
@@ -572,10 +576,11 @@ impl Process {
         if self.loading.contains(&name) {
             return Err(LoadError::CircularImport(name));
         }
-        let bytes = std::fs::read(path).map_err(|e| LoadError::Io(path.to_path_buf(), e))?;
         let pe = |e| LoadError::Pe(name.clone(), e);
-        let mut image = Image::layout(&name, &bytes).map_err(pe)?;
-        let mapped = map::reserve(&mut image).map_err(|e| LoadError::Map(name.clone(), e))?;
+        let Prepared { mut image, mapped } = match self.prepared.remove(&name) {
+            Some(p) => p,
+            None => prepare(path)?,
+        };
 
         self.loading.push(name.clone());
         let imports = image.imports().map_err(pe);
@@ -786,6 +791,52 @@ impl Process {
         Ok(index)
     }
 
+    /// The file a `LoadLibrary` of `name` would map, if it is not loaded
+    /// yet and is not an emulated DLL.
+    pub fn file_to_load(&self, name: &str) -> Option<PathBuf> {
+        if name.contains(['\\', '/']) {
+            let params = &self.params;
+            let host = params
+                .drives
+                .to_host(name, &params.current_directory)
+                .ok()
+                .filter(|h| h.is_file())?;
+            return self.index(&file_name(&host)).is_none().then_some(host);
+        }
+        if self.index(name).is_some() || emu::is_system_dll(&normalize(name)) {
+            return None;
+        }
+        let cwd = self
+            .params
+            .drives
+            .to_host(&self.params.current_directory, r"C:\")
+            .ok();
+        self.find_file(&normalize(name))
+            .or_else(|| cwd.and_then(|dir| find_in(&dir, &normalize(name))))
+    }
+
+    /// The file an import of `dll` would load, if it is a bundled DLL
+    /// that is not loaded yet.
+    pub fn import_to_load(&self, dll: &str) -> Option<PathBuf> {
+        let name = normalize(dll);
+        if self.index(&name).is_some() || emu::is_system_dll(&name) {
+            return None;
+        }
+        self.find_file(&name)
+    }
+
+    /// Keep an image prepared outside the lock for the next `load` of it.
+    pub fn add_prepared(&mut self, prepared: Prepared) {
+        self.prepared
+            .insert(prepared.image.module.clone(), prepared);
+    }
+
+    /// Drop prepared images a load did not use, releasing their address
+    /// ranges.
+    pub fn clear_prepared(&mut self) {
+        self.prepared.clear();
+    }
+
     pub fn is_bundled(&self, name: &str) -> bool {
         self.find_file(&normalize(name)).is_some()
     }
@@ -836,6 +887,39 @@ fn normalize(name: &str) -> String {
     } else {
         lower + ".dll"
     }
+}
+
+/// An image read from disk, laid out and given its address range, but not
+/// yet bound or committed. This is the slow part of loading, and needs no
+/// process state, so `LoadLibrary` does it without the process lock.
+#[derive(Debug)]
+pub struct Prepared {
+    image: Image,
+    mapped: Mapped,
+}
+
+impl Prepared {
+    /// Where the image will be mapped.
+    pub fn base(&self) -> u32 {
+        self.mapped.base()
+    }
+
+    /// The names of the DLLs it imports.
+    pub fn imports(&self) -> Vec<String> {
+        self.image
+            .imports()
+            .map(|i| i.into_iter().map(|d| d.dll).collect())
+            .unwrap_or_default()
+    }
+}
+
+/// Read, lay out and reserve the image at `path`.
+pub fn prepare(path: &Path) -> Result<Prepared, LoadError> {
+    let name = file_name(path);
+    let bytes = std::fs::read(path).map_err(|e| LoadError::Io(path.to_path_buf(), e))?;
+    let mut image = Image::layout(&name, &bytes).map_err(|e| LoadError::Pe(name.clone(), e))?;
+    let mapped = map::reserve(&mut image).map_err(|e| LoadError::Map(name.clone(), e))?;
+    Ok(Prepared { image, mapped })
 }
 
 fn file_name(path: &Path) -> String {

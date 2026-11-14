@@ -595,6 +595,31 @@ fn load_library_maps_initialises_and_notifies() {
     );
 }
 
+/// LoadLibrary prepares images outside the process lock; the load then
+/// maps exactly what was prepared.
+#[test]
+fn prepared_images_are_what_load_maps() {
+    use std::collections::BTreeMap;
+    use xvm_windows::paths::DriveMap;
+    use xvm_windows::process::prepare;
+
+    let Some(dir) = fixtures() else { return };
+    let mut p = process(dir, "importer.exe");
+    p.params.drives = DriveMap::new(&BTreeMap::from([("C".to_string(), dir.to_path_buf())]));
+    p.params.current_directory = r"C:\".into();
+    assert_eq!(p.file_to_load("kernel32"), None, "emulated");
+    assert_eq!(p.file_to_load("sample.dll"), None, "already loaded");
+    assert_eq!(p.import_to_load("SAMPLE.DLL"), None);
+    let path = p.file_to_load("InitDll").unwrap();
+    assert_eq!(p.file_to_load(r"C:\initdll.dll"), Some(path.clone()));
+    let prepared = prepare(&path).unwrap();
+    let base = prepared.base();
+    p.add_prepared(prepared);
+    let index = p.load_library("initdll").unwrap();
+    assert_eq!(p.modules()[index].base(), base);
+    assert_eq!(p.file_to_load("initdll"), None);
+}
+
 #[test]
 fn virtual_query_and_protect_work_on_image_pages() {
     use xvm_windows::runtime::Runtime;
