@@ -116,6 +116,12 @@ impl Module {
 
     /// Address of an export, following forwarders inside `modules`.
     fn resolve(&self, modules: &[Module], symbol: &Symbol, depth: usize) -> Option<u32> {
+        // An emulated DLL's ordinals follow our export order, not
+        // Windows', and the census shows no ordinal imports: an ordinal
+        // there is a gap, never some other function.
+        if self.emulated && matches!(symbol, Symbol::Ordinal(_)) {
+            return None;
+        }
         match &self.exports.lookup(symbol)?.target {
             ExportTarget::Rva(rva) => Some(self.base().wrapping_add(*rva)),
             ExportTarget::Forwarder(_) if depth >= MAX_FORWARDS => None,

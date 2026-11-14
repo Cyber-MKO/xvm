@@ -125,6 +125,19 @@ def markdown(c: dict) -> str:
                 add("\n</details>")
             add("")
 
+    if c.get("runtime_lookups"):
+        add("## Run-time lookups\n")
+        add(
+            "Functions the agent looked up with `GetProcAddress` while running, from the "
+            "personality's gap log (`xvm-census runtime`). They count as census entries.\n"
+        )
+        add("| DLL | Function | Looked up by |")
+        add("| --- | --- | --- |")
+        for dll, funcs in c["runtime_lookups"].items():
+            for name, callers in funcs.items():
+                add(f"| `{dll}` | `{name}` | {_code(callers)} |")
+        add("")
+
     if c.get("dylibs"):
         add("## Mach-O linked libraries\n")
         add("Symbol-level imports are not parsed yet (Phase 6).\n")

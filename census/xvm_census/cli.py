@@ -1,14 +1,16 @@
-"""Command line: xvm-census scan PACKAGE --agent NAME."""
+"""Command line: xvm-census scan PACKAGE --agent NAME, and
+xvm-census runtime REPORT.json LOG... to record run-time lookups."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sys
 import tempfile
 from pathlib import Path
 
-from . import report, scan, unpack
+from . import report, runtime, scan, unpack
 
 
 def _cmd_scan(args: argparse.Namespace) -> int:
@@ -41,6 +43,18 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_runtime(args: argparse.Namespace) -> int:
+    path: Path = args.report
+    census = json.loads(path.read_text())
+    lookups = set()
+    for log in args.logs:
+        lookups |= runtime.parse_log(log.read_text(errors="replace"))
+    added = runtime.merge(census, lookups)
+    json_path, md_path = report.write(census, path.parent, path.stem)
+    print(f"{added} new run-time lookups in {json_path} and {md_path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="xvm-census", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -51,6 +65,12 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--out", type=Path, default=Path("census/reports"))
     s.add_argument("--keep", action="store_true", help="keep the unpacked tree next to the report")
     s.set_defaults(func=_cmd_scan)
+    r = sub.add_parser(
+        "runtime", help="record GetProcAddress lookups from personality gap logs in a report"
+    )
+    r.add_argument("report", type=Path, help="the census report JSON to update")
+    r.add_argument("logs", type=Path, nargs="+", help="personality logs with gap lines")
+    r.set_defaults(func=_cmd_runtime)
     args = p.parse_args(argv)
     return args.func(args)
 

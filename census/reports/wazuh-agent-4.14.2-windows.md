@@ -349,3 +349,20 @@ These binaries resolve APIs at run time. The names below come from string heuris
 `CompanyName`, `ComputerName`, `CurrentBuildNumber`, `CurrentMajorVersionNumber`, `CurrentMinorVersionNumber`, `CurrentVersion`, `DeleteState`, `DirSize`, `FileDescription`, `FileSizeWin`, `FileVersion`, `GetNativeSystemInfo`, `GetProductInfo`, `InstallService`, `LdrRegisterDllNotification`, `LegalCopyright`, `MergeAppendFile`, `OssecServiceCtrlHandler`, `OssecServiceStart`, `ProductName`, `ProductType`, `ProductVersion`, `ReleaseId`, `StringFileInfo`, `TestUnmergeFiles`, `UninstallService`, `UnmergeFiles`, `VarFileInfo`, `WazuhSvc`
 
 </details>
+
+## Run-time lookups
+
+Functions the agent looked up with `GetProcAddress` while running, from the personality's gap log (`xvm-census runtime`). They count as census entries.
+
+| DLL | Function | Looked up by |
+| --- | --- | --- |
+| `iphlpapi.dll` | `ConvertLengthToIpv4Mask` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `iphlpapi.dll` | `GetIfEntry2` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `kernel32.dll` | `GetSystemFirmwareTable` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `kernel32.dll` | `Wow64DisableWow64FsRedirection` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `msvcrt.dll` | `___lc_codepage_func` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `msvcrt.dll` | `__lc_codepage` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `msvcrt.dll` | `_gmtime32_s` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `msvcrt.dll` | `_localtime32_s` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `ws2_32.dll` | `inet_ntop` | `Program Files/ossec-agent/wazuh-agent.exe` |
+| `ws2_32.dll` | `inet_pton` | `Program Files/ossec-agent/wazuh-agent.exe` |

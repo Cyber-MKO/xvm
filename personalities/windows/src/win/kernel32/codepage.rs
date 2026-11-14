@@ -47,7 +47,19 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
             "WideCharToMultiByte",
             WideCharToMultiByte as *const () as u32,
         ),
+        ("IsDBCSLeadByteEx", IsDBCSLeadByteEx as *const () as u32),
     ]
+}
+
+/// Whether `byte` starts a two-byte character in `code_page`. The code
+/// pages we have are single-byte, where no byte does; another code page
+/// is a logged gap and FALSE.
+#[allow(non_snake_case)]
+extern "stdcall" fn IsDBCSLeadByteEx(code_page: u32, _byte: u8) -> i32 {
+    if table("IsDBCSLeadByteEx", code_page).is_none() {
+        set_last_error(ERROR_INVALID_PARAMETER);
+    }
+    0
 }
 
 fn gap(what: String) {
@@ -247,6 +259,18 @@ extern "stdcall" fn WideCharToMultiByte(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn single_byte_pages_have_no_lead_bytes() {
+        use crate::process::Process;
+        use crate::runtime::Runtime;
+        let runtime = Runtime::new(Process::new(Vec::new()));
+        let _thread = runtime.attach().unwrap();
+        assert_eq!(super::IsDBCSLeadByteEx(super::CP_ACP, 0x81), 0);
+        assert!(runtime.lock().gaps().is_empty());
+        assert_eq!(super::IsDBCSLeadByteEx(932, 0x81), 0);
+        assert_eq!(runtime.lock().gaps().len(), 1, "Shift JIS is not modelled");
+    }
+
     use super::*;
     use crate::process::Process;
     use crate::runtime::{Attached, Runtime};

@@ -1,4 +1,6 @@
-//! `iphlpapi.dll`: the IP Helper API. `GetAdaptersAddresses`.
+//! `iphlpapi.dll`: the IP Helper API. `GetAdaptersAddresses`, and
+//! `ConvertLengthToIpv4Mask` (a run-time lookup in the census),
+//! `GetExtendedTcpTable`, `GetExtendedUdpTable`.
 //!
 //! Adapters come from the engine's `network` section: one per entry in
 //! `network.interfaces`, in profile order. Structures follow
@@ -25,6 +27,11 @@
 //! profile has no IPv6 addresses: asking for `AF_INET6` is a logged gap
 //! and finds no adapters. Prefix and WINS lists are logged gaps; anycast
 //! and multicast lists are empty.
+//!
+//! The profile holds no open ports or connections. Until it does,
+//! `GetExtendedTcpTable` and `GetExtendedUdpTable` return valid empty
+//! tables (`dwNumEntries` 0) for the families and table classes on their
+//! Learn pages, and log a gap.
 
 use std::net::Ipv4Addr;
 
@@ -73,10 +80,24 @@ const IP_DAD_STATE_PREFERRED: u32 = 4;
 const INFINITE_LIFETIME: u32 = 0xffff_ffff;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
-    vec![(
-        "GetAdaptersAddresses",
-        GetAdaptersAddresses as *const () as u32,
-    )]
+    vec![
+        (
+            "GetAdaptersAddresses",
+            GetAdaptersAddresses as *const () as u32,
+        ),
+        (
+            "ConvertLengthToIpv4Mask",
+            ConvertLengthToIpv4Mask as *const () as u32,
+        ),
+        (
+            "GetExtendedTcpTable",
+            GetExtendedTcpTable as *const () as u32,
+        ),
+        (
+            "GetExtendedUdpTable",
+            GetExtendedUdpTable as *const () as u32,
+        ),
+    ]
 }
 
 fn gap(what: &str) {
@@ -419,6 +440,82 @@ extern "stdcall" fn GetAdaptersAddresses(
     // SAFETY: the buffer holds `available` >= `needed` bytes.
     unsafe { std::ptr::copy_nonoverlapping(bytes.as_ptr(), buffer, bytes.len()) };
     0
+}
+
+/// The IPv4 mask for a prefix length, in network order. Above 32 it
+/// stores INADDR_NONE and returns ERROR_INVALID_PARAMETER, as its Learn
+/// page says.
+#[allow(non_snake_case)]
+extern "stdcall" fn ConvertLengthToIpv4Mask(length: u32, mask: *mut u32) -> u32 {
+    if mask.is_null() {
+        return ERROR_INVALID_PARAMETER;
+    }
+    let (value, rc) = match length {
+        0 => (0, 0),
+        1..=32 => ((u32::MAX << (32 - length)).to_be(), 0),
+        _ => (u32::MAX, ERROR_INVALID_PARAMETER),
+    };
+    // SAFETY: writable (the API's contract).
+    unsafe { *mask = value };
+    rc
+}
+
+/// An empty connection table: just `dwNumEntries`, 0.
+fn empty_table(
+    function: &str,
+    table: *mut u8,
+    size: *mut u32,
+    family: u32,
+    class: u32,
+    classes: u32,
+) -> u32 {
+    const ERROR_INSUFFICIENT_BUFFER: u32 = 122;
+    if size.is_null() || !matches!(family, AF_INET | AF_INET6) || class >= classes {
+        return ERROR_INVALID_PARAMETER;
+    }
+    with_current(|p| {
+        p.record_runtime_gap(
+            GapKind::Feature,
+            "iphlpapi.dll",
+            &format!("{function}: open ports and connections are not in the host profile"),
+        )
+    });
+    // SAFETY: readable and writable (the API's contract).
+    let room = unsafe { *size };
+    if table.is_null() || room < 4 {
+        // SAFETY: as above.
+        unsafe { *size = 4 };
+        return ERROR_INSUFFICIENT_BUFFER;
+    }
+    // SAFETY: at least four writable bytes.
+    unsafe { table.cast::<u32>().write_unaligned(0) };
+    0
+}
+
+/// TCP connections and listeners: TCP_TABLE_CLASS 0 to 8.
+#[allow(non_snake_case)]
+extern "stdcall" fn GetExtendedTcpTable(
+    table: *mut u8,
+    size: *mut u32,
+    _order: i32,
+    family: u32,
+    class: u32,
+    _reserved: u32,
+) -> u32 {
+    empty_table("GetExtendedTcpTable", table, size, family, class, 9)
+}
+
+/// UDP listeners: UDP_TABLE_CLASS 0 to 2.
+#[allow(non_snake_case)]
+extern "stdcall" fn GetExtendedUdpTable(
+    table: *mut u8,
+    size: *mut u32,
+    _order: i32,
+    family: u32,
+    class: u32,
+    _reserved: u32,
+) -> u32 {
+    empty_table("GetExtendedUdpTable", table, size, family, class, 3)
 }
 
 #[cfg(test)]

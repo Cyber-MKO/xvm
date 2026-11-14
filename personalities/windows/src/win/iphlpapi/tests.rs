@@ -176,3 +176,48 @@ fn malformed_interfaces_are_rejected() {
         })
     );
 }
+
+#[test]
+fn prefix_lengths_become_masks() {
+    let mut m = 0;
+    assert_eq!(ConvertLengthToIpv4Mask(24, &mut m), 0);
+    assert_eq!(m.to_ne_bytes(), [255, 255, 255, 0]);
+    assert_eq!(ConvertLengthToIpv4Mask(0, &mut m), 0);
+    assert_eq!(m, 0);
+    assert_eq!(ConvertLengthToIpv4Mask(32, &mut m), 0);
+    assert_eq!(m, u32::MAX);
+    assert_eq!(ConvertLengthToIpv4Mask(33, &mut m), ERROR_INVALID_PARAMETER);
+    assert_eq!(m, u32::MAX, "INADDR_NONE");
+}
+
+#[test]
+fn connection_tables_are_empty_gaps() {
+    let (runtime, _thread) = host();
+    let mut size = 0;
+    assert_eq!(
+        GetExtendedTcpTable(std::ptr::null_mut(), &mut size, 1, AF_INET, 5, 0),
+        122
+    );
+    assert_eq!(size, 4);
+    let mut table = [0xffu8; 4];
+    assert_eq!(
+        GetExtendedTcpTable(table.as_mut_ptr(), &mut size, 1, AF_INET6, 5, 0),
+        0
+    );
+    assert_eq!(table, [0; 4]);
+    table = [0xff; 4];
+    assert_eq!(
+        GetExtendedUdpTable(table.as_mut_ptr(), &mut size, 1, AF_INET, 1, 0),
+        0
+    );
+    assert_eq!(table, [0; 4]);
+    assert_eq!(
+        GetExtendedUdpTable(table.as_mut_ptr(), &mut size, 1, AF_INET, 3, 0),
+        ERROR_INVALID_PARAMETER
+    );
+    assert_eq!(
+        GetExtendedTcpTable(table.as_mut_ptr(), &mut size, 1, 7, 0, 0),
+        ERROR_INVALID_PARAMETER
+    );
+    assert_eq!(runtime.lock().gaps().len(), 2);
+}

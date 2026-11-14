@@ -21,12 +21,18 @@ xvm-census scan path/to/wazuh-agent-4.13.1-1.msi --agent wazuh-agent-4.13.1-wind
 
 Options: `--out DIR` (default `census/reports`), `--name STEM`, `--keep` (keep the unpacked tree next to the report). A directory can be passed instead of a package.
 
+```sh
+xvm-census runtime census/reports/wazuh-agent-4.14.2-windows.json RUN.log
+```
+
+Records the `gap GetProcAddress DLL!FUNCTION from IMAGE` lines of a personality run in the report's `runtime_lookups` section and its "Run-time lookups" table. Kasim decided (2026-11-13) that these count as census entries (rule 3).
+
 ## Limits
 
 | Limit | Effect | Covered by |
 | --- | --- | --- |
 | Function-like strings are a heuristic | False positives and misses | Runtime gap log (rule 4) |
-| Names built at run time | Not visible to static analysis | Runtime gap log |
+| Names built at run time | Not visible to static analysis | Runtime gap log, recorded with `xvm-census runtime` |
 | PKG `pbzx` payloads | Reported in unpack notes, not unpacked | Phase 6 |
 | Mach-O symbol imports | Not parsed | Phase 6 |
 | ELF | Counted only; Linux agents run natively | Phase 5 |

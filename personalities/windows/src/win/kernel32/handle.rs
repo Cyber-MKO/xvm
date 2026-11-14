@@ -1,4 +1,4 @@
-//! Handle duplication: `DuplicateHandle`.
+//! Handle duplication and flags: `DuplicateHandle`, `SetHandleInformation`.
 //!
 //! Within the current process only. Real handles of any kind are
 //! duplicated, and so is the current-thread pseudo-handle, which becomes
@@ -6,6 +6,11 @@
 //! process, and duplicating the process pseudo-handle, are logged gaps.
 //! Access rights are kept as they are: our handles do not carry separate
 //! rights.
+//!
+//! `SetHandleInformation` accepts `HANDLE_FLAG_INHERIT`, which matters only
+//! to child processes, and none start (Kasim, 2026-11-13).
+//! `HANDLE_FLAG_PROTECT_FROM_CLOSE` would stop `CloseHandle`; it is a
+//! logged gap.
 
 use super::error::{ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, set_last_error};
 use super::process::{CURRENT_PROCESS, CURRENT_THREAD};
@@ -16,7 +21,40 @@ use crate::runtime::{current_thread, with_current};
 const DUPLICATE_CLOSE_SOURCE: u32 = 1;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
-    vec![("DuplicateHandle", DuplicateHandle as *const () as u32)]
+    vec![
+        ("DuplicateHandle", DuplicateHandle as *const () as u32),
+        (
+            "SetHandleInformation",
+            SetHandleInformation as *const () as u32,
+        ),
+    ]
+}
+
+const HANDLE_FLAG_INHERIT: u32 = 1;
+const HANDLE_FLAG_PROTECT_FROM_CLOSE: u32 = 2;
+
+/// Sets handle flags. FALSE with ERROR_INVALID_HANDLE for a handle that
+/// is not open, or ERROR_INVALID_PARAMETER for unknown flags.
+#[allow(non_snake_case)]
+extern "stdcall" fn SetHandleInformation(handle: u32, mask: u32, _flags: u32) -> i32 {
+    if !with_current(|p| p.handles.get(handle).is_some()) {
+        set_last_error(ERROR_INVALID_HANDLE);
+        return 0;
+    }
+    if mask & !(HANDLE_FLAG_INHERIT | HANDLE_FLAG_PROTECT_FROM_CLOSE) != 0 {
+        set_last_error(ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+    if mask & HANDLE_FLAG_PROTECT_FROM_CLOSE != 0 {
+        with_current(|p| {
+            p.record_runtime_gap(
+                GapKind::Feature,
+                "kernel32.dll",
+                "SetHandleInformation: HANDLE_FLAG_PROTECT_FROM_CLOSE",
+            )
+        });
+    }
+    1
 }
 
 #[allow(non_snake_case, clippy::too_many_arguments)]
@@ -78,6 +116,22 @@ mod tests {
     use crate::process::Process;
     use crate::runtime::Runtime;
     use std::sync::Arc;
+
+    #[test]
+    fn handle_flags() {
+        let runtime = Runtime::new(Process::new(Vec::new()));
+        let _thread = runtime.attach().unwrap();
+        let h = runtime.lock().handles.insert(Object::RegKey("HKLM".into()));
+        assert_eq!(SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0), 1);
+        assert_eq!(SetHandleInformation(h, 8, 8), 0);
+        assert_eq!(SetHandleInformation(0x1234, HANDLE_FLAG_INHERIT, 1), 0);
+        assert!(runtime.lock().gaps().is_empty());
+        assert_eq!(
+            SetHandleInformation(h, HANDLE_FLAG_PROTECT_FROM_CLOSE, 2),
+            1
+        );
+        assert_eq!(runtime.lock().gaps().len(), 1);
+    }
 
     #[test]
     fn duplicates_the_current_thread_and_real_handles() {

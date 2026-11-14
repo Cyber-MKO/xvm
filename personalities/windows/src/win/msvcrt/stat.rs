@@ -1,4 +1,4 @@
-//! File status: `_stat`.
+//! File status: `_stat`, `_wstat64`.
 //!
 //! Fields as the `_stat` page on Microsoft Learn describes them for
 //! `msvcrt`'s 32-bit `struct _stat` (36 bytes):
@@ -14,6 +14,10 @@
 //! | 20 | `st_size` | Size; EOVERFLOW past 2 GB |
 //! | 24, 28, 32 | `st_atime`, `st_mtime`, `st_ctime` | Access, change and creation times |
 //!
+//! `_wstat64` takes a UTF-16 path and fills `struct __stat64` (56 bytes):
+//! the same fields to `st_rdev`, then `st_size`, `st_atime`, `st_mtime`
+//! and `st_ctime` as 64-bit values from offset 24, with no size limit.
+//!
 //! Execute is set for directories and for `.exe`, `.com`, `.bat` and `.cmd`
 //! files. Write is clear for read-only files.
 
@@ -24,7 +28,7 @@ use std::path::Path;
 use super::errno::{self, EINVAL, ENOENT, EOVERFLOW};
 use crate::paths::DriveMap;
 use crate::runtime::with_current;
-use crate::win::text::ansi;
+use crate::win::text::{ansi, wide};
 
 const S_IFDIR: u16 = 0x4000;
 const S_IFREG: u16 = 0x8000;
@@ -33,7 +37,10 @@ const S_IWRITE: u16 = 0x80;
 const S_IEXEC: u16 = 0x40;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
-    vec![("_stat", _stat as *const () as u32)]
+    vec![
+        ("_stat", _stat as *const () as u32),
+        ("_wstat64", _wstat64 as *const () as u32),
+    ]
 }
 
 /// Status of a file, ready for the 32-bit or 64-bit structures.
@@ -90,23 +97,31 @@ pub(super) fn resolve(path: &str) -> Result<(std::path::PathBuf, String), i32> {
     })
 }
 
+/// The status of a path, or an `errno` value.
+fn stat_of(path: Option<String>) -> Result<Status, i32> {
+    let path = path.ok_or(EINVAL)?;
+    // A trailing separator only names a directory (or a drive root).
+    let trailing = path.len() > 3 && path.ends_with(['\\', '/']);
+    let (host, full) = resolve(&path)?;
+    let s = status(&host, &full)?;
+    if trailing && s.mode & S_IFDIR == 0 {
+        return Err(ENOENT);
+    }
+    Ok(s)
+}
+
+/// The leading fields both structures share, to `st_rdev`.
+fn head(buf: &mut [u8], s: &Status) {
+    buf[0..4].copy_from_slice(&s.drive.to_le_bytes());
+    buf[6..8].copy_from_slice(&s.mode.to_le_bytes());
+    buf[8..10].copy_from_slice(&1u16.to_le_bytes());
+    buf[16..20].copy_from_slice(&s.drive.to_le_bytes());
+}
+
 /// Returns 0, or -1 with `errno` set.
 extern "C" fn _stat(path: *const c_char, out: *mut u8) -> i32 {
     // SAFETY: a NUL-terminated string (the function's contract).
-    let Some(path) = (unsafe { ansi(path) }) else {
-        errno::set(EINVAL);
-        return -1;
-    };
-    // A trailing separator only names a directory (or a drive root).
-    let trailing = path.len() > 3 && path.ends_with(['\\', '/']);
-    let status = resolve(&path).and_then(|(host, full)| {
-        let s = status(&host, &full)?;
-        if trailing && s.mode & S_IFDIR == 0 {
-            return Err(ENOENT);
-        }
-        Ok(s)
-    });
-    let s = match status {
+    let s = match stat_of(unsafe { ansi(path) }) {
         Ok(s) => s,
         Err(code) => {
             errno::set(code);
@@ -118,15 +133,33 @@ extern "C" fn _stat(path: *const c_char, out: *mut u8) -> i32 {
         return -1;
     }
     let mut buf = [0u8; 36];
-    buf[0..4].copy_from_slice(&s.drive.to_le_bytes());
-    buf[6..8].copy_from_slice(&s.mode.to_le_bytes());
-    buf[8..10].copy_from_slice(&1u16.to_le_bytes());
-    buf[16..20].copy_from_slice(&s.drive.to_le_bytes());
+    head(&mut buf, &s);
     buf[20..24].copy_from_slice(&(s.size as i32).to_le_bytes());
     buf[24..28].copy_from_slice(&(s.atime as i32).to_le_bytes());
     buf[28..32].copy_from_slice(&(s.mtime as i32).to_le_bytes());
     buf[32..36].copy_from_slice(&(s.ctime as i32).to_le_bytes());
     // SAFETY: out holds a struct _stat (the function's contract).
+    unsafe { std::ptr::copy_nonoverlapping(buf.as_ptr(), out, buf.len()) };
+    0
+}
+
+/// As `_stat` for a UTF-16 path, into `struct __stat64`.
+extern "C" fn _wstat64(path: *const u16, out: *mut u8) -> i32 {
+    // SAFETY: a NUL-terminated string (the function's contract).
+    let s = match stat_of(unsafe { wide(path) }) {
+        Ok(s) => s,
+        Err(code) => {
+            errno::set(code);
+            return -1;
+        }
+    };
+    let mut buf = [0u8; 56];
+    head(&mut buf, &s);
+    buf[24..32].copy_from_slice(&(s.size as i64).to_le_bytes());
+    buf[32..40].copy_from_slice(&s.atime.to_le_bytes());
+    buf[40..48].copy_from_slice(&s.mtime.to_le_bytes());
+    buf[48..56].copy_from_slice(&s.ctime.to_le_bytes());
+    // SAFETY: out holds a struct __stat64 (the function's contract).
     unsafe { std::ptr::copy_nonoverlapping(buf.as_ptr(), out, buf.len()) };
     0
 }
@@ -182,6 +215,18 @@ mod tests {
             -1,
             "a file with a trailing separator"
         );
+
+        // The 64-bit structure, from a UTF-16 path.
+        let wide: Vec<u16> = "C:\\agent\\ossec.conf\0".encode_utf16().collect();
+        let mut buf = [0xaau8; 56];
+        assert_eq!(_wstat64(wide.as_ptr(), buf.as_mut_ptr()), 0);
+        let i64_at = |o: usize| i64::from_le_bytes(buf[o..o + 8].try_into().unwrap());
+        assert_eq!(u32::from_le_bytes(buf[0..4].try_into().unwrap()), 2);
+        assert_eq!(u16::from_le_bytes([buf[6], buf[7]]) & S_IFREG, S_IFREG);
+        assert_eq!((i64_at(24), i64_at(40)), (10, host_mtime));
+        let missing: Vec<u16> = "nothing\0".encode_utf16().collect();
+        assert_eq!(_wstat64(missing.as_ptr(), buf.as_mut_ptr()), -1);
+        assert_eq!(errno::get(), ENOENT);
         std::fs::remove_dir_all(&root).unwrap();
     }
 }

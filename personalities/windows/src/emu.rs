@@ -24,6 +24,10 @@
 //!
 //! The thunks hold absolute targets and the export table holds RVAs, so the
 //! image needs no relocations. It is built for the base it will be mapped at.
+//!
+//! Export ordinals follow our list order, not Windows'. The census shows
+//! no ordinal imports, so importing or looking up an emulated DLL's
+//! function by ordinal is always a gap (`Module::resolve`).
 
 use crate::pe::{
     FILE_DLL, MACHINE_I386, OPTIONAL_MAGIC_PE32, SCN_MEM_EXECUTE, SCN_MEM_READ, SCN_MEM_WRITE,

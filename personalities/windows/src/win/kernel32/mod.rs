@@ -13,8 +13,10 @@ mod heap;
 mod library;
 mod lockfile;
 mod memory;
+mod message;
 mod module;
 mod path;
+mod pipe;
 pub(crate) mod process;
 pub(crate) mod sync;
 mod sysinfo;
@@ -40,8 +42,10 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         library::exports(),
         lockfile::exports(),
         memory::exports(),
+        message::exports(),
         module::exports(),
         path::exports(),
+        pipe::exports(),
         tls::exports(),
         time::exports(),
         timezone::exports(),

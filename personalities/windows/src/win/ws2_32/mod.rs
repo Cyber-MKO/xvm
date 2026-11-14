@@ -2,9 +2,11 @@
 //! `wsock32.dll` come from there.
 
 mod addrinfo;
+mod ntop;
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     let mut all = addrinfo::exports();
+    all.extend(ntop::exports());
     all.extend(super::wsock32::convert::shared(&[
         "inet_addr",
         "inet_ntoa",
