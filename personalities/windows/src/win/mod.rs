@@ -23,6 +23,7 @@ pub(crate) mod wevtapi;
 mod wintrust;
 mod ws2_32;
 pub(crate) mod wsock32;
+mod wtsapi32;
 
 /// Sets up the variables of the emulated `dll` just loaded at `module`.
 pub fn on_load(p: &mut crate::process::Process, dll: &str, module: usize) {
@@ -51,6 +52,7 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "wintrust.dll" => (wintrust::exports(), Vec::new()),
         "ws2_32.dll" => (ws2_32::exports(), Vec::new()),
         "wsock32.dll" => (wsock32::exports(), Vec::new()),
+        "wtsapi32.dll" => (wtsapi32::exports(), Vec::new()),
         _ => (Vec::new(), Vec::new()),
     };
     let raw = if dll.eq_ignore_ascii_case("msvcrt.dll") {

@@ -32,7 +32,7 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `advapi32.dll` | `ConvertSidToStringSidA` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | `S-1-...` text in a `LocalAlloc` block |
 | `advapi32.dll` | `ConvertSidToStringSidW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
 | `advapi32.dll` | `ConvertStringSidToSidA` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | A binary SID in a `LocalAlloc` block; ERROR_INVALID_SID for bad text |
-| `advapi32.dll` | `LookupAccountNameA` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | Users and groups from the engine: users in the computer's NetBIOS domain, `S-1-5-32-` groups in BUILTIN. Unknown names: ERROR_NONE_MAPPED, a logged gap |
+| `advapi32.dll` | `LookupAccountNameA` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | Users and groups from the engine: users in the computer's NetBIOS domain, `S-1-5-32-` groups in BUILTIN, well-known accounts as Learn names them. Unknown names: ERROR_NONE_MAPPED, a logged gap |
 | `advapi32.dll` | `LookupAccountNameW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
 | `advapi32.dll` | `LookupAccountSidA` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | The reverse of `LookupAccountNameA` |
 | `advapi32.dll` | `LookupAccountSidW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
@@ -42,6 +42,12 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `advapi32.dll` | `RegEnumKeyW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/registry/enumerate.rs` tests | The older form: a buffer size in units, no class or time |
 | `advapi32.dll` | `RegEnumValueW` | Wazuh 4.14.2: 1 image, `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegEnumValueA`, in UTF-16 |
 | `advapi32.dll` | `RegQueryInfoKeyW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegQueryInfoKeyA`; lengths in UTF-16 units, data sizes as the W functions return them |
+| `advapi32.dll` | `OpenSCManagerW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/scm/tests.rs` | The local SCM only; another machine is a logged gap |
+| `advapi32.dll` | `EnumServicesStatusExW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/scm/tests.rs` | `SC_ENUM_PROCESS_INFO` from the engine's `services`, filtered by type and state. A running service's PID from the process list (`-s NAME`, or its path), else 0 and a logged gap |
+| `advapi32.dll` | `OpenServiceW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/scm/tests.rs` | By name, ignoring case; ERROR_SERVICE_DOES_NOT_EXIST otherwise |
+| `advapi32.dll` | `QueryServiceConfigW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/scm/tests.rs` | Type, start type, error control, path, account, display name. A fact the profile lacks is 0 and a logged gap |
+| `advapi32.dll` | `QueryServiceConfig2W` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/scm/tests.rs` | `SERVICE_CONFIG_DESCRIPTION` only; a missing description is empty and a logged gap |
+| `advapi32.dll` | `CloseServiceHandle` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/advapi32/scm/tests.rs` | Closes SCM and service handles |
 | `advapi32.dll` | `RegQueryValueExA` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Values from the engine; strings in the profile's ANSI code page with their NUL. ERROR_MORE_DATA with the size needed |
 | `advapi32.dll` | `RegCloseKey` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Predefined roots close as success |
 | `kernel32.dll` | `GetFileAttributesA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/attributes.rs` tests | Directory, or archive for files, plus read-only from host permissions. Hidden and system are not modelled for drive files |
@@ -169,6 +175,9 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `netapi32.dll` | `NetUserGetInfo` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 4: name, home, flags, privilege from group membership, SID, primary group 513. Logon times, password age, logon hours, comments and full names are not in the profile: a logged gap. Other levels are logged gaps |
 | `netapi32.dll` | `NetUserGetLocalGroups` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 0: the user's `groups` |
 | `netapi32.dll` | `NetApiBufferFree` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Frees a result block |
+| `wtsapi32.dll` | `WTSEnumerateSessionsW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/wtsapi32/mod.rs` tests | Session 0, "Services", disconnected (Kasim, 2026-11-14). Interactive sessions are a logged gap |
+| `wtsapi32.dll` | `WTSQuerySessionInformationW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/wtsapi32/mod.rs` tests | Session 0: id, user and domain (empty), station name, state. Other sessions and classes are logged gaps |
+| `wtsapi32.dll` | `WTSFreeMemory` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/wtsapi32/mod.rs` tests | Frees a result block |
 | `ws2_32.dll` | `inet_addr` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
 | `ws2_32.dll` | `inet_ntoa` | Wazuh 4.14.2: 2 images, `libwazuhext.dll`, `sysinfo.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
 | `ws2_32.dll` | `ntohs` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |

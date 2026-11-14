@@ -684,6 +684,25 @@
         },
         "account": {
           "type": "string"
+        },
+        "type": {
+          "enum": [
+            "own_process",
+            "share_process",
+            "kernel_driver",
+            "file_system_driver"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "error_control": {
+          "enum": [
+            "ignore",
+            "normal",
+            "severe",
+            "critical"
+          ]
         }
       }
     },

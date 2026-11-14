@@ -356,6 +356,9 @@ def files() -> dict[str, bytes]:
                     "StartMode": "Manual",
                     "PathName": "C:\\Windows\\system32\\svchost.exe -k x",
                     "StartName": "NT AUTHORITY\\LocalService",
+                    "ServiceType": "Share Process",
+                    "Description": "Maintains date and time synchronization.",
+                    "ErrorControl": "Normal",
                 },
                 {
                     "Name": "EventLog",

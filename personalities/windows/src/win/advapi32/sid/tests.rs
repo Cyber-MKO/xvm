@@ -134,6 +134,31 @@ fn accounts_from_the_profile() {
         ),
         1
     );
+    // Well-known accounts, from Learn.
+    let ns = sid::to_bytes("S-1-5-20").unwrap();
+    let (mut n, mut d) = ([0u16; 32], [0u16; 32]);
+    let (mut n_len, mut d_len) = (32u32, 32u32);
+    assert_eq!(
+        LookupAccountSidW(
+            none,
+            ns.as_ptr(),
+            n.as_mut_ptr(),
+            &mut n_len,
+            d.as_mut_ptr(),
+            &mut d_len,
+            &mut kind
+        ),
+        1
+    );
+    assert_eq!(
+        String::from_utf16(&n[..n_len as usize]).unwrap(),
+        "NETWORK SERVICE"
+    );
+    assert_eq!(
+        String::from_utf16(&d[..d_len as usize]).unwrap(),
+        "NT AUTHORITY"
+    );
+    assert_eq!(kind, SID_TYPE_WELL_KNOWN_GROUP);
     let unknown = w("Nobody");
     assert_eq!(
         LookupAccountNameW(

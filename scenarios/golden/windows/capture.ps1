@@ -276,7 +276,7 @@ Save-Json ([ordered]@{
 }) (Join-Path $hostDir 'locale.json')
 Save-Json (Get-CimInstance Win32_Service |
     Select-Object Name, DisplayName, State, StartMode, PathName,
-        StartName) (Join-Path $hostDir 'services.json')
+        StartName, ServiceType, Description, ErrorControl) (Join-Path $hostDir 'services.json')
 # Processes, with what a base image's boot table needs. The owner lookup is
 # slow per process but runs once.
 $ownerOf = @{ Name = 'Owner'; Expression = {

@@ -109,7 +109,12 @@
    "name": "EventLog",
    "display_name": "Windows Event Log",
    "state": "running",
-   "start_mode": "auto"
+   "start_mode": "auto",
+   "type": "share_process",
+   "error_control": "normal",
+   "description": "Manages events and event logs.",
+   "path": "C:\\Windows\\System32\\svchost.exe -k LocalServiceNetworkRestricted -p",
+   "account": "NT AUTHORITY\\LocalService"
   },
   {
    "name": "W32Time",

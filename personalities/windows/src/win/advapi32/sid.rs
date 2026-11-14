@@ -15,7 +15,11 @@
 //! | A group with a `S-1-5-32-` SID | `BUILTIN` | SidTypeAlias (4) |
 //! | Another group | The computer's name | SidTypeAlias (4) |
 //!
-//! The computer's name is its NetBIOS form: `identity.hostname` in upper
+//! | A well-known account (`WELL_KNOWN`) | As the "Well-known SIDs" page on Learn names it | SidTypeWellKnownGroup (5) |
+//!
+//! Well-known names are Learn's English ones (Kasim, 2026-11-14), until
+//! the golden capture provides them; the profile's lists come first. The
+//! computer's name is its NetBIOS form: `identity.hostname` in upper
 //! case, at most 15 characters. A name or SID in neither list fails with
 //! ERROR_NONE_MAPPED and is a logged gap. Remote systems are logged gaps.
 
@@ -39,6 +43,23 @@ const ERROR_INVALID_SID: u32 = 1337;
 const ERROR_NOT_SUPPORTED: u32 = 50;
 const SID_TYPE_USER: u32 = 1;
 const SID_TYPE_ALIAS: u32 = 4;
+const SID_TYPE_WELL_KNOWN_GROUP: u32 = 5;
+
+/// Well-known accounts: SID, name and domain, from "Well-known SIDs".
+const WELL_KNOWN: &[(&str, &str, &str)] = &[
+    ("S-1-1-0", "Everyone", ""),
+    ("S-1-2-0", "LOCAL", ""),
+    ("S-1-3-0", "CREATOR OWNER", ""),
+    ("S-1-3-1", "CREATOR GROUP", ""),
+    ("S-1-5-2", "NETWORK", "NT AUTHORITY"),
+    ("S-1-5-4", "INTERACTIVE", "NT AUTHORITY"),
+    ("S-1-5-6", "SERVICE", "NT AUTHORITY"),
+    ("S-1-5-7", "ANONYMOUS LOGON", "NT AUTHORITY"),
+    ("S-1-5-11", "Authenticated Users", "NT AUTHORITY"),
+    ("S-1-5-18", "SYSTEM", "NT AUTHORITY"),
+    ("S-1-5-19", "LOCAL SERVICE", "NT AUTHORITY"),
+    ("S-1-5-20", "NETWORK SERVICE", "NT AUTHORITY"),
+];
 
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
@@ -210,6 +231,14 @@ fn accounts(caller: Caller) -> Result<Vec<Account>, u32> {
                 kind: SID_TYPE_ALIAS,
             });
         }
+    }
+    for &(sid, name, domain) in WELL_KNOWN {
+        out.push(Account {
+            name: name.to_string(),
+            sid: sid.to_string(),
+            domain: domain.to_string(),
+            kind: SID_TYPE_WELL_KNOWN_GROUP,
+        });
     }
     Ok(out)
 }

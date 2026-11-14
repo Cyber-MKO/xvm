@@ -43,6 +43,10 @@ pub enum Object {
     Socket(Arc<SocketObject>),
     /// Another process of the emulated host, by its PID in the engine.
     Process(u32),
+    /// A handle to the Service Control Manager.
+    ScManager,
+    /// A service handle, by the service's name.
+    Service(String),
 }
 
 /// A Winsock socket backed by a host socket, which closes with it.
@@ -88,7 +92,9 @@ impl Object {
             | Object::RegKey(_)
             | Object::Snapshot(_)
             | Object::Socket(_)
-            | Object::Process(_) => None,
+            | Object::Process(_)
+            | Object::ScManager
+            | Object::Service(_) => None,
         }
     }
 }

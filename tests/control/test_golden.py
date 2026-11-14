@@ -96,6 +96,9 @@ def test_identity_is_left_out(tmp_path):
 def test_agent_and_test_user_are_left_out(tmp_path):
     base, _ = golden.build_base(write(tmp_path / "cap"), "windows-2022")
     assert [s["name"] for s in base["services"]] == ["EventLog", "W32Time"]
+    w32time = base["services"][1]
+    assert (w32time["type"], w32time["error_control"]) == ("share_process", "normal")
+    assert w32time["description"].startswith("Maintains")
     assert not any("WazuhSvc" in k for k in base["registry"]["keys"])
     assert [u["name"] for u in base["users"]] == ["Administrator", "Guest"]
     names = [s["name"] for s in base["software"]]

@@ -44,7 +44,7 @@ hotfixes:
   - {name: KB5000001, description: Update, installed_on: "2026-01-01", installed_by: NT AUTHORITY\SYSTEM}
   - {name: KB5000002, description: Security Update, installed_on: "2026-01-02", installed_by: NT AUTHORITY\SYSTEM}
 services:
-  - {name: EventLog, display_name: Windows Event Log, state: running, start_mode: auto}
+  - {name: EventLog, display_name: Windows Event Log, state: running, start_mode: auto, type: share_process, error_control: normal, description: Manages events and event logs., path: 'C:\Windows\System32\svchost.exe -k LocalServiceNetworkRestricted -p', account: NT AUTHORITY\LocalService}
   - {name: W32Time, display_name: Windows Time, state: running, start_mode: manual}
 registry:
   keys:

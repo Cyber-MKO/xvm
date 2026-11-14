@@ -335,6 +335,15 @@ def _accounts(root: Path) -> tuple[list[dict], list[dict]]:
     return users, groups
 
 
+# Win32_Service.ServiceType names to profile service types.
+SERVICE_TYPES = {
+    "own process": "own_process",
+    "share process": "share_process",
+    "kernel driver": "kernel_driver",
+    "file system driver": "file_system_driver",
+}
+
+
 def _services(root: Path) -> list[dict]:
     out = []
     for s in _as_list(_read_json(root / "host" / "services.json")):
@@ -353,6 +362,14 @@ def _services(root: Path) -> list[dict]:
             entry["path"] = s["PathName"]
         if s.get("StartName"):
             entry["account"] = s["StartName"]
+        kind = SERVICE_TYPES.get(str(s.get("ServiceType", "")).lower())
+        if kind:
+            entry["type"] = kind
+        if s.get("Description"):
+            entry["description"] = s["Description"]
+        control = str(s.get("ErrorControl", "")).lower()
+        if control in ("ignore", "normal", "severe", "critical"):
+            entry["error_control"] = control
         out.append(entry)
     return sorted(out, key=lambda e: e["name"].lower())
 

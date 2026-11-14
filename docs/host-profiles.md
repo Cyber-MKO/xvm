@@ -23,7 +23,7 @@ Examples live in [control/profiles/examples/](../control/profiles/examples/). Th
 | `users`, `groups` | Local accounts with SIDs (Windows) or UIDs and GIDs |
 | `software` | Installed packages |
 | `hotfixes` | Windows only. Installed updates: `name` (the hotfix ID, such as `KB5000001`), description, `installed_on` (a date), `installed_by` |
-| `services` | Services with state and start mode |
+| `services` | Services: display name, state, start mode, path, account, and Windows type (`own_process`, `share_process`, `kernel_driver`, `file_system_driver`), description and error control |
 | `registry` | Windows only. Keys under `HKLM`, `HKU` or `HKCR`, typed values |
 | `files` | Files and directories: path, type, size, sha256, times, attributes (Windows), owner, mode (Unix), and `content` for bytes we author |
 | `processes` | Processes running at boot: id, image, path, command line, user, session, parent (an id), optional pinned pid, `start_offset_s` after boot |
@@ -133,7 +133,7 @@ Quote timestamps in YAML, for example `"2026-01-01T00:00:00Z"`. Unquoted timesta
 | `files` | `host/files.json`: metadata and SHA-256 of the folders the agent's FIM configuration watches, the hosts file folder and the top of the Windows folder. No bytes. |
 | `processes` | `host/processes.json`, with start offsets from the boot time. System Idle and System keep PIDs 0 and 4; the engine assigns the rest. |
 | `event_messages` | `evtx/rendered/*.xml` and `evtx/scenario/*.rendered.xml`: each event's data values and the message Windows rendered, turned into templates. A template is kept only if it reproduces another event of the same provider, ID and version exactly (or is the only one). See `control/xvm_control/evtmsg.py`. |
-| `services` | `host/services.json` |
+| `services` | `host/services.json` (`Win32_Service`), with type, description and error control |
 | `registry.keys` | The identity exports: CurrentVersion, ComputerName, TCP/IP parameters, ProfileList, time zone, code pages, the first processor, the system environment, Event Log |
 
 These facts identify one machine, so the base leaves them out and each host profile supplies them:
