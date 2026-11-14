@@ -36,6 +36,12 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `advapi32.dll` | `LookupAccountNameW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
 | `advapi32.dll` | `LookupAccountSidA` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | The reverse of `LookupAccountNameA` |
 | `advapi32.dll` | `LookupAccountSidW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
+| `advapi32.dll` | `RegOpenKeyExW` | Wazuh 4.14.2: 2 images, `sysinfo.dll`, `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegOpenKeyExA`, with a UTF-16 path |
+| `advapi32.dll` | `RegQueryValueExW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegQueryValueExA`; strings in UTF-16, REG_MULTI_SZ ending in two UTF-16 NULs |
+| `advapi32.dll` | `RegEnumKeyExW` | Wazuh 4.14.2: 1 image, `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegEnumKeyExA`; names and lengths in UTF-16 units |
+| `advapi32.dll` | `RegEnumKeyW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/registry/enumerate.rs` tests | The older form: a buffer size in units, no class or time |
+| `advapi32.dll` | `RegEnumValueW` | Wazuh 4.14.2: 1 image, `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegEnumValueA`, in UTF-16 |
+| `advapi32.dll` | `RegQueryInfoKeyW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/registry/enumerate.rs` tests | As `RegQueryInfoKeyA`; lengths in UTF-16 units, data sizes as the W functions return them |
 | `advapi32.dll` | `RegQueryValueExA` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Values from the engine; strings in the profile's ANSI code page with their NUL. ERROR_MORE_DATA with the size needed |
 | `advapi32.dll` | `RegCloseKey` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Predefined roots close as success |
 | `kernel32.dll` | `GetFileAttributesA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/attributes.rs` tests | Directory, or archive for files, plus read-only from host permissions. Hidden and system are not modelled for drive files |
@@ -160,7 +166,7 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `wsock32.dll` | `inet_ntoa` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | Dotted decimal in a buffer per thread |
 | `netapi32.dll` | `NetLocalGroupEnum` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Levels 0 and 1 from the engine's `groups`; comments are not in the profile, a logged gap |
 | `netapi32.dll` | `NetUserEnum` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 0 from the engine's `users` |
-| `netapi32.dll` | `NetUserGetInfo` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | No level yet: ERROR_INVALID_LEVEL, a logged gap |
+| `netapi32.dll` | `NetUserGetInfo` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 4: name, home, flags, privilege from group membership, SID, primary group 513. Logon times, password age, logon hours, comments and full names are not in the profile: a logged gap. Other levels are logged gaps |
 | `netapi32.dll` | `NetUserGetLocalGroups` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 0: the user's `groups` |
 | `netapi32.dll` | `NetApiBufferFree` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Frees a result block |
 | `ws2_32.dll` | `inet_addr` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |

@@ -1,4 +1,4 @@
-//! The registry: `RegOpenKeyExA`, `RegQueryValueExA`, `RegCloseKey`.
+//! The registry: `RegOpenKeyExA/W`, `RegQueryValueExA/W`, `RegCloseKey`.
 //! Enumeration is in `enumerate.rs`.
 //!
 //! Keys and values come from the host-state engine. A key handle is a
@@ -9,7 +9,7 @@
 //! | --- | --- |
 //! | 32-bit process, 64-bit Windows, `HKLM\SOFTWARE\...` | Read through `HKLM\SOFTWARE\WOW6432Node` unless `KEY_WOW64_64KEY` |
 //! | That 32-bit key is not in the profile | The 64-bit key, as a logged gap: captures export the 64-bit view |
-//! | String values | Converted to the profile's ANSI code page, with their NUL |
+//! | String values | Converted to the profile's ANSI code page (A functions) or UTF-16 (W functions), with their NUL |
 //! | No subkey (NULL or empty) | A predefined key returns itself; an open key gets a new handle to the same key |
 //! | `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT` and other roots | Logged gaps |
 //!
@@ -26,7 +26,7 @@ use crate::gap::GapKind;
 use crate::handles::Object;
 use crate::runtime::with_current;
 use crate::win::facts::{self, Caller, Failure};
-use crate::win::text::ansi;
+use crate::win::text::{ansi, wide};
 
 const HKEY_CLASSES_ROOT: u32 = 0x8000_0000;
 const HKEY_CURRENT_USER: u32 = 0x8000_0001;
@@ -45,7 +45,9 @@ const ERROR_MORE_DATA: i32 = 234;
 pub(super) fn exports() -> Vec<(&'static str, u32)> {
     vec![
         ("RegOpenKeyExA", RegOpenKeyExA as *const () as u32),
+        ("RegOpenKeyExW", RegOpenKeyExW as *const () as u32),
         ("RegQueryValueExA", RegQueryValueExA as *const () as u32),
+        ("RegQueryValueExW", RegQueryValueExW as *const () as u32),
         ("RegCloseKey", RegCloseKey as *const () as u32),
     ]
     .into_iter()
@@ -103,6 +105,13 @@ fn redirected(path: &str) -> Option<String> {
     })
 }
 
+/// How a function spells strings: ANSI (A) or UTF-16 (W).
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Enc {
+    Ansi,
+    Wide,
+}
+
 /// Opens `subkey` under `hkey` and writes a new handle to `result`.
 #[allow(non_snake_case)]
 extern "stdcall" fn RegOpenKeyExA(
@@ -112,16 +121,44 @@ extern "stdcall" fn RegOpenKeyExA(
     access: u32,
     result: *mut u32,
 ) -> i32 {
-    const CALLER: Caller = ("advapi32.dll", "RegOpenKeyExA");
+    // SAFETY: NUL-terminated or NULL (the API's contract).
+    let sub = unsafe { ansi(subkey) }.unwrap_or_default();
+    open_key(
+        ("advapi32.dll", "RegOpenKeyExA"),
+        hkey,
+        &sub,
+        access,
+        result,
+    )
+}
+
+#[allow(non_snake_case)]
+extern "stdcall" fn RegOpenKeyExW(
+    hkey: u32,
+    subkey: *const u16,
+    _options: u32,
+    access: u32,
+    result: *mut u32,
+) -> i32 {
+    // SAFETY: NUL-terminated or NULL (the API's contract).
+    let sub = unsafe { wide(subkey) }.unwrap_or_default();
+    open_key(
+        ("advapi32.dll", "RegOpenKeyExW"),
+        hkey,
+        &sub,
+        access,
+        result,
+    )
+}
+
+fn open_key(caller: Caller, hkey: u32, sub: &str, access: u32, result: *mut u32) -> i32 {
     if result.is_null() {
         return ERROR_INVALID_PARAMETER;
     }
-    let base = match key_path(CALLER, hkey) {
+    let base = match key_path(caller, hkey) {
         Ok(p) => p,
         Err(code) => return code,
     };
-    // SAFETY: NUL-terminated or NULL (the API's contract).
-    let sub = unsafe { ansi(subkey) }.unwrap_or_default();
     let sub = sub.trim_matches('\\');
     if sub.is_empty() {
         let handle = if matches!(hkey, HKEY_LOCAL_MACHINE | HKEY_USERS) {
@@ -135,19 +172,19 @@ extern "stdcall" fn RegOpenKeyExA(
     }
     let path = format!("{base}\\{sub}");
     let mut candidates = vec![path.clone()];
-    let wow64 = access & KEY_WOW64_64KEY == 0 && facts::is_64bit(CALLER) == Some(true);
+    let wow64 = access & KEY_WOW64_64KEY == 0 && facts::is_64bit(caller) == Some(true);
     if access & KEY_WOW64_32KEY != 0 && !wow64 {
-        gap(CALLER, "KEY_WOW64_32KEY on a 64-bit view");
+        gap(caller, "KEY_WOW64_32KEY on a 64-bit view");
     }
     if let Some(r) = redirected(&path).filter(|_| wow64) {
         candidates.insert(0, r);
     }
     for (i, candidate) in candidates.iter().enumerate() {
-        match exists(CALLER, candidate) {
+        match exists(caller, candidate) {
             Ok(true) => {
                 if i == 1 {
                     gap(
-                        CALLER,
+                        caller,
                         &format!("32-bit view of {path} is not in the profile"),
                     );
                 }
@@ -163,17 +200,26 @@ extern "stdcall" fn RegOpenKeyExA(
     ERROR_FILE_NOT_FOUND
 }
 
-/// A value's type code and bytes as the ANSI functions return them.
-fn value_bytes(caller: Caller, value: &Value) -> Option<(u32, Vec<u8>)> {
+/// A value's type code and bytes, strings in `enc`.
+pub(super) fn value_bytes_as(caller: Caller, value: &Value, enc: Enc) -> Option<(u32, Vec<u8>)> {
     let kind = value.get("type")?.as_str()?;
     let data = value.get("data")?;
     let pages = with_current(|p| p.params.code_pages);
     let table = codepage::single_byte(pages.ansi)?;
     let text = |s: &str| {
         let units: Vec<u16> = s.encode_utf16().collect();
-        let mut bytes = table.encode(&units, true, table.default_byte).0;
-        bytes.push(0);
-        bytes
+        match enc {
+            Enc::Ansi => {
+                let mut bytes = table.encode(&units, true, table.default_byte).0;
+                bytes.push(0);
+                bytes
+            }
+            Enc::Wide => units
+                .iter()
+                .chain([&0])
+                .flat_map(|u| u.to_le_bytes())
+                .collect(),
+        }
     };
     Some(match kind {
         "REG_SZ" => (1, text(data.as_str()?)),
@@ -198,6 +244,9 @@ fn value_bytes(caller: Caller, value: &Value) -> Option<(u32, Vec<u8>)> {
                 .flat_map(text)
                 .collect();
             bytes.push(0);
+            if enc == Enc::Wide {
+                bytes.push(0);
+            }
             (7, bytes)
         }
         "REG_QWORD" => (11, data.as_u64()?.to_le_bytes().to_vec()),
@@ -219,18 +268,47 @@ extern "stdcall" fn RegQueryValueExA(
     data: *mut u8,
     size: *mut u32,
 ) -> i32 {
-    const CALLER: Caller = ("advapi32.dll", "RegQueryValueExA");
+    // SAFETY: NUL-terminated or NULL (the API's contract).
+    let name = unsafe { ansi(name) }.unwrap_or_default();
+    let caller = ("advapi32.dll", "RegQueryValueExA");
+    query_value(caller, Enc::Ansi, hkey, name, reserved, kind, data, size)
+}
+
+#[allow(non_snake_case)]
+extern "stdcall" fn RegQueryValueExW(
+    hkey: u32,
+    name: *const u16,
+    reserved: u32,
+    kind: *mut u32,
+    data: *mut u8,
+    size: *mut u32,
+) -> i32 {
+    // SAFETY: NUL-terminated or NULL (the API's contract).
+    let name = unsafe { wide(name) }.unwrap_or_default();
+    let caller = ("advapi32.dll", "RegQueryValueExW");
+    query_value(caller, Enc::Wide, hkey, name, reserved, kind, data, size)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn query_value(
+    caller: Caller,
+    enc: Enc,
+    hkey: u32,
+    name: String,
+    reserved: u32,
+    kind: *mut u32,
+    data: *mut u8,
+    size: *mut u32,
+) -> i32 {
     if reserved != 0 || (!data.is_null() && size.is_null()) {
         return ERROR_INVALID_PARAMETER;
     }
-    let path = match key_path(CALLER, hkey) {
+    let path = match key_path(caller, hkey) {
         Ok(p) => p,
         Err(code) => return code,
     };
-    // SAFETY: NUL-terminated or NULL (the API's contract).
-    let name = unsafe { ansi(name) }.unwrap_or_default();
     let value = match facts::call(
-        CALLER,
+        caller,
         "reg.query_value",
         json!({"key": path, "name": name}),
     ) {
@@ -238,7 +316,7 @@ extern "stdcall" fn RegQueryValueExA(
         Err(Failure::NotFound) => return ERROR_FILE_NOT_FOUND,
         Err(Failure::Unavailable) => return ERROR_ACCESS_DENIED,
     };
-    let Some((code, bytes)) = value_bytes(CALLER, &value) else {
+    let Some((code, bytes)) = value_bytes_as(caller, &value, enc) else {
         return ERROR_FILE_NOT_FOUND;
     };
     if !kind.is_null() {
