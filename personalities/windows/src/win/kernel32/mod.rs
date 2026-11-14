@@ -18,6 +18,7 @@ mod module;
 mod path;
 mod pipe;
 pub(crate) mod process;
+pub(crate) mod procinfo;
 pub(crate) mod sync;
 mod sysinfo;
 pub(crate) mod thread;
@@ -46,6 +47,7 @@ pub(super) fn exports() -> Vec<(&'static str, u32)> {
         module::exports(),
         path::exports(),
         pipe::exports(),
+        procinfo::exports(),
         tls::exports(),
         time::exports(),
         timezone::exports(),

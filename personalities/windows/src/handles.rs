@@ -41,6 +41,8 @@ pub enum Object {
     Snapshot(Arc<ProcessSnapshot>),
     /// A Winsock socket: a host socket.
     Socket(Arc<SocketObject>),
+    /// Another process of the emulated host, by its PID in the engine.
+    Process(u32),
 }
 
 /// A Winsock socket backed by a host socket, which closes with it.
@@ -82,7 +84,11 @@ impl Object {
             Object::Thread(t) => Some(Waitable::Thread(t.clone())),
             Object::Semaphore(s) => Some(Waitable::Semaphore(s.clone())),
             Object::Mutex(m) => Some(Waitable::Mutex(m.clone())),
-            Object::File(_) | Object::RegKey(_) | Object::Snapshot(_) | Object::Socket(_) => None,
+            Object::File(_)
+            | Object::RegKey(_)
+            | Object::Snapshot(_)
+            | Object::Socket(_)
+            | Object::Process(_) => None,
         }
     }
 }
