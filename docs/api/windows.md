@@ -151,8 +151,8 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `wsock32.dll` | `listen` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | On the host socket |
 | `wsock32.dll` | `accept` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Non-blocking when the listening socket is, as on Windows |
 | `wsock32.dll` | `connect` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Non-blocking: WSAEWOULDBLOCK, then writable in `select`, or in the except set on failure |
-| `wsock32.dll` | `send` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Never raises SIGPIPE: a closed peer is WSAECONNRESET. `MSG_OOB`, `MSG_DONTROUTE` |
-| `wsock32.dll` | `recv` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | `MSG_OOB`, `MSG_PEEK`, `MSG_WAITALL` (8 in Winsock). 0 at end of stream |
+| `wsock32.dll` | `send` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Never raises SIGPIPE: a closed peer is WSAECONNRESET. `MSG_OOB`, `MSG_DONTROUTE`. Past SO_SNDTIMEO on a blocking socket: WSAETIMEDOUT |
+| `wsock32.dll` | `recv` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | `MSG_OOB`, `MSG_PEEK`, `MSG_WAITALL` (8 in Winsock). 0 at end of stream. Past SO_RCVTIMEO on a blocking socket: WSAETIMEDOUT (Wazuh's enrollment sets one before its TLS read) |
 | `wsock32.dll` | `shutdown` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | SD_RECEIVE, SD_SEND, SD_BOTH |
 | `wsock32.dll` | `closesocket` | Wazuh 4.14.2: 6 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Closes the host socket; WSAENOTSOCK for anything else |
 | `wsock32.dll` | `getsockname` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/wsock32/sockets/tests.rs` | Address in Winsock's spelling; WSAEFAULT when it does not fit |

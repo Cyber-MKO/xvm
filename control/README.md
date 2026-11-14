@@ -4,7 +4,7 @@ Control plane: CLI and API, host profiles, Habeny provider (Phase 4). See docs/B
 
 | Path | Contents |
 | --- | --- |
-| `xvm_control/` | `xvm-profile`, `xvm-host` and `xvm-check` tools, the host profile schema, the `.reg` parser and the golden capture converter |
+| `xvm_control/` | `xvm-profile`, `xvm-host`, `xvm-check` and `xvm-mock-authd` tools, the host profile schema, the `.reg` parser and the golden capture converter |
 | `profiles/bases/` | Base images built from golden captures |
 | `profiles/examples/` | Illustrative base and host profile |
 
@@ -63,6 +63,52 @@ How hosts are supervised (`--supervisor`, saved in the run folder):
 Binaries: `xvm-engined` from `target/release` or `target/debug`, and `xvm-windows-run` from `target/i686-unknown-linux-gnu/release` or `debug`. `XVM_ENGINED` and `XVM_RUNNER` override them. `ProgramFiles` for the installer comes from the profile's `agent.environment`.
 
 The engine loads profiles when it starts. After changing a profile, run `xvm-host engine restart`; a changed profile discards that host's saved state (see `engine/README.md`, Persistence).
+
+## Enrolling a host with a manager
+
+The agent enrolls on its first start, when its `client.keys` is empty. It reads the manager's address from `ossec.conf`, which the installer step fills from the host profile's `agent.manager`.
+
+### Against your Wazuh manager
+
+1. Set `agent.manager` in the host profile (`control/profiles/hosts/xvm-win-01.yaml`) to the manager's address.
+2. Check that this machine reaches the manager: `nc -vz MANAGER 1515` (enrollment) and `nc -vz MANAGER 1514` (events).
+3. If the manager wants an enrollment password (`<use_password>yes</use_password>` in its `<auth>` block), put it in the host's drive at `Program Files (x86)/ossec-agent/authd.pass` after the install. The agent reads it on its own.
+4. Start the host. A host installed with another manager needs a reset first, so that `ossec.conf` gets the new address:
+
+```
+xvm-host engine restart                       # after editing the profile
+xvm-host down xvm-win-01
+xvm-host reset xvm-win-01 --msi wazuh-agent-4.14.2-1.msi
+xvm-host up xvm-win-01 --msi wazuh-agent-4.14.2-1.msi
+```
+
+5. Watch it enroll:
+
+| Where | What success looks like |
+| --- | --- |
+| `run/hosts/xvm-win-01/drive-c/Program Files (x86)/ossec-agent/ossec.log` | `Requesting a key from server: MANAGER`, then `Valid key received` |
+| The same folder, `client.keys` | One line: `ID XVM-WIN-01 any KEY` |
+| On the manager: `/var/ossec/bin/agent_control -l` | `XVM-WIN-01`, Active once the agent connects on 1514 |
+| `xvm-check t2 ...` (below) | Active within 10 minutes |
+
+| Symptom in `ossec.log` | Cause |
+| --- | --- |
+| `Unable to connect to enrollment service at '[MANAGER]:1515'` | The manager is not reachable from this machine, or authd is off |
+| `ERROR: Invalid password (from manager)` | `authd.pass` is missing or wrong |
+| `ERROR: Agent version must be lower or equal to manager version` | The manager is older than 4.14.2 |
+| `Duplicate agent name: XVM-WIN-01` | An agent with that name exists: remove it on the manager, or set `<force>` in its `<auth>` block |
+
+### Against the mock: `xvm-mock-authd`
+
+`xvm-mock-authd` answers enrollment requests the way `wazuh-authd` does, without a manager. It has no `wazuh-remoted`, so the agent's event connection on 1514 still fails after it enrolls.
+
+```
+xvm-mock-authd --listen 127.0.0.1:1515 --log run/authd.jsonl [--password-file FILE]
+```
+
+Set the profile's `agent.manager` to `127.0.0.1` and start the host as above. Each request is a JSON line in the log, with the key it issued.
+
+`tests/control/test_enrollment_live.py` does all of this with the real MSI and checks that the agent stores the issued key. It runs when `XVM_WAZUH_MSI` names the MSI; the `Enrollment` workflow runs it on GitHub.
 
 ## Phase 1 checks: `xvm-check`
 

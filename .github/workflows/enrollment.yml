@@ -1,0 +1,60 @@
+name: Enrollment
+
+# The real Wazuh agent (4.14.2 MSI) on the Windows personality enrolls with
+# xvm-mock-authd on 127.0.0.1:1515. See tests/control/test_enrollment_live.py.
+
+on:
+  push:
+    paths:
+      - "personalities/windows/**"
+      - "engine/**"
+      - "control/**"
+      - "tests/control/test_enrollment_live.py"
+      - ".github/workflows/enrollment.yml"
+  workflow_dispatch:
+
+jobs:
+  enroll:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.0
+        with:
+          targets: i686-unknown-linux-gnu
+      - uses: astral-sh/setup-uv@v6
+      - name: Install 32-bit libc and MSI tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-multilib msitools
+      - name: Build the engine and the Windows runner
+        run: |
+          cargo build --release -p xvm-engine --bin xvm-engined
+          cargo build --release -p xvm-windows --bin xvm-windows-run --target i686-unknown-linux-gnu
+      - name: Install package
+        run: |
+          uv venv
+          uv pip install -e '.[dev]'
+      - name: Download the agent MSI
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/wazuh-agent-4.14.2-1.msi" \
+            https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.2-1.msi
+          sha256sum "$RUNNER_TEMP/wazuh-agent-4.14.2-1.msi"
+      - name: Enroll with the mock manager
+        env:
+          XVM_WAZUH_MSI: ${{ runner.temp }}/wazuh-agent-4.14.2-1.msi
+          XVM_ENROLL_OUT: ${{ runner.temp }}/enroll
+        run: uv run pytest -q -rs tests/control/test_enrollment_live.py
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enrollment-logs
+          path: |
+            ${{ runner.temp }}/enroll/authd.jsonl
+            ${{ runner.temp }}/enroll/ossec.log
+            ${{ runner.temp }}/enroll/run/hosts/*/host.log
+            ${{ runner.temp }}/enroll/run/hosts/*/supervisor.log
+            ${{ runner.temp }}/enroll/run/engine.log
+            ${{ runner.temp }}/enroll/run/gaps.jsonl
+          if-no-files-found: warn

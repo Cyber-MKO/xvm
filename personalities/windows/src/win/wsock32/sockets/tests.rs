@@ -127,6 +127,22 @@ fn tcp_over_loopback() {
         0
     );
     assert_eq!(back, 1500);
+
+    // A blocking recv that runs past its timeout is WSAETIMEDOUT, as
+    // Winsock reports it (Wazuh's enrollment sets one before its TLS read).
+    let short = 50u32;
+    assert_eq!(
+        setsockopt(
+            accepted,
+            WIN_SOL_SOCKET,
+            0x1006,
+            (&raw const short).cast(),
+            4
+        ),
+        0
+    );
+    assert_eq!(recv(accepted, buf.as_mut_ptr(), 16, 0), SOCKET_ERROR);
+    assert_eq!(GetLastError(), WSAETIMEDOUT);
     let linger: [u16; 2] = [1, 3];
     assert_eq!(
         setsockopt(accepted, WIN_SOL_SOCKET, 0x80, linger.as_ptr().cast(), 4),

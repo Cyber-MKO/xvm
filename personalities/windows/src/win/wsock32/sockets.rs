@@ -14,6 +14,7 @@
 //! | Non-blocking `connect` | Linux EINPROGRESS is WSAEWOULDBLOCK, as Winsock reports it |
 //! | `recv` flags | `MSG_OOB`, `MSG_PEEK` the same; `MSG_WAITALL` 8 is 0x100 on Linux |
 //! | `send` | Never raises SIGPIPE: a closed peer is WSAECONNRESET |
+//! | Timeouts | A blocking `recv` or `send` that runs past SO_RCVTIMEO or SO_SNDTIMEO fails with WSAETIMEDOUT, as Winsock reports it; Linux says EAGAIN |
 //! | `SOL_SOCKET` options | Level 0xffff and option numbers differ; `SO_LINGER` holds two u16 values, and `SO_RCVTIMEO` and `SO_SNDTIMEO` hold milliseconds, not a `timeval`. `SO_ERROR` reads as a WSAE code |
 //! | `IPPROTO_TCP` options | `TCP_NODELAY` |
 //! | `ioctlsocket` | `FIONBIO` and `FIONREAD` |
@@ -142,6 +143,19 @@ pub(super) fn fail(code: u32) -> i32 {
 
 fn fail_errno() -> i32 {
     fail(wsa_error(errno()))
+}
+
+/// The Winsock error for a failed `recv` or `send` on `fd`. On a blocking
+/// socket, Linux reports a run past SO_RCVTIMEO or SO_SNDTIMEO as EAGAIN;
+/// Winsock reports WSAETIMEDOUT.
+fn transfer_error(fd: i32) -> i32 {
+    let e = errno();
+    // SAFETY: a plain descriptor call.
+    let blocking = unsafe { libc::fcntl(fd, libc::F_GETFL) } & libc::O_NONBLOCK == 0;
+    if blocking && (e == libc::EAGAIN || e == libc::EWOULDBLOCK) {
+        return fail(WSAETIMEDOUT);
+    }
+    fail(wsa_error(e))
 }
 
 /// Whether `WSAStartup` has been called; sets WSANOTINITIALISED if not.
@@ -375,7 +389,11 @@ extern "stdcall" fn recv(s: u32, buf: *mut u8, len: i32, flags: i32) -> i32 {
         }
         // SAFETY: `len` writable bytes (the API's contract).
         let r = retry(|| unsafe { libc::recv(o.fd, buf.cast(), len as usize, host_flags) });
-        if r < 0 { fail_errno() } else { r as i32 }
+        if r < 0 {
+            transfer_error(o.fd)
+        } else {
+            r as i32
+        }
     })
 }
 
@@ -391,7 +409,11 @@ extern "stdcall" fn send(s: u32, buf: *const u8, len: i32, flags: i32) -> i32 {
         let host_flags = flags | libc::MSG_NOSIGNAL;
         // SAFETY: `len` readable bytes (the API's contract).
         let r = retry(|| unsafe { libc::send(o.fd, buf.cast(), len as usize, host_flags) });
-        if r < 0 { fail_errno() } else { r as i32 }
+        if r < 0 {
+            transfer_error(o.fd)
+        } else {
+            r as i32
+        }
     })
 }
 
