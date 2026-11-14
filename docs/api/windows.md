@@ -24,6 +24,18 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `advapi32.dll` | `RegEnumKeyExA` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | Subkeys from the engine, sorted without case. No class names. A profile key has no last write time: 0, a logged gap |
 | `advapi32.dll` | `RegEnumValueA` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | Values from the engine, data as `RegQueryValueExA` gives it. ERROR_MORE_DATA for short buffers |
 | `advapi32.dll` | `RegQueryInfoKeyA` | Wazuh 4.14.2: 2 images, `sysinfo.dll` and `wazuh-agent.exe` | `src/win/advapi32/registry/enumerate.rs` tests | Counts and longest names and data. Security descriptor length is not modelled: 0, a logged gap when asked for |
+| `advapi32.dll` | `IsValidSid` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | Revision 1, at most 15 sub-authorities |
+| `advapi32.dll` | `GetLengthSid` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | 8 bytes plus 4 per sub-authority |
+| `advapi32.dll` | `EqualSid` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | Byte-equal valid SIDs |
+| `advapi32.dll` | `GetSidSubAuthority` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | The address of a sub-authority, unchecked as documented |
+| `advapi32.dll` | `GetSidSubAuthorityCount` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | The address of the count |
+| `advapi32.dll` | `ConvertSidToStringSidA` | Wazuh 4.14.2: 2 images, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | `S-1-...` text in a `LocalAlloc` block |
+| `advapi32.dll` | `ConvertSidToStringSidW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
+| `advapi32.dll` | `ConvertStringSidToSidA` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | A binary SID in a `LocalAlloc` block; ERROR_INVALID_SID for bad text |
+| `advapi32.dll` | `LookupAccountNameA` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | Users and groups from the engine: users in the computer's NetBIOS domain, `S-1-5-32-` groups in BUILTIN. Unknown names: ERROR_NONE_MAPPED, a logged gap |
+| `advapi32.dll` | `LookupAccountNameW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
+| `advapi32.dll` | `LookupAccountSidA` | Wazuh 4.14.2: 1 image, including `wazuh-agent.exe` | `src/win/advapi32/sid/tests.rs` | The reverse of `LookupAccountNameA` |
+| `advapi32.dll` | `LookupAccountSidW` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/advapi32/sid/tests.rs` | As the A form, in UTF-16 |
 | `advapi32.dll` | `RegQueryValueExA` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Values from the engine; strings in the profile's ANSI code page with their NUL. ERROR_MORE_DATA with the size needed |
 | `advapi32.dll` | `RegCloseKey` | Wazuh 4.14.2: 9 images, including `wazuh-agent.exe` | `src/win/advapi32/registry.rs` tests | Predefined roots close as success |
 | `kernel32.dll` | `GetFileAttributesA` | Wazuh 4.14.2: 10 images, including `wazuh-agent.exe` | `src/win/kernel32/attributes.rs` tests | Directory, or archive for files, plus read-only from host permissions. Hidden and system are not modelled for drive files |
@@ -146,6 +158,11 @@ One row per emulated API. Each row needs a census entry naming the calling agent
 | `wsock32.dll` | `ntohs` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/convert.rs` tests | Big-endian |
 | `wsock32.dll` | `inet_addr` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | The forms on its Learn page (`a.b.c.d`, `a.b.c`, `a.b`, `a`; decimal, octal, hex); INADDR_NONE otherwise |
 | `wsock32.dll` | `inet_ntoa` | Wazuh 4.14.2: 5 images, including `wazuh-agent.exe` | `src/win/wsock32/convert.rs` tests | Dotted decimal in a buffer per thread |
+| `netapi32.dll` | `NetLocalGroupEnum` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Levels 0 and 1 from the engine's `groups`; comments are not in the profile, a logged gap |
+| `netapi32.dll` | `NetUserEnum` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 0 from the engine's `users` |
+| `netapi32.dll` | `NetUserGetInfo` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | No level yet: ERROR_INVALID_LEVEL, a logged gap |
+| `netapi32.dll` | `NetUserGetLocalGroups` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Level 0: the user's `groups` |
+| `netapi32.dll` | `NetApiBufferFree` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/netapi32/tests.rs` | Frees a result block |
 | `ws2_32.dll` | `inet_addr` | Wazuh 4.14.2: 1 image, `libwazuhext.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
 | `ws2_32.dll` | `inet_ntoa` | Wazuh 4.14.2: 2 images, `libwazuhext.dll`, `sysinfo.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |
 | `ws2_32.dll` | `ntohs` | Wazuh 4.14.2: 1 image, `sysinfo.dll` | `src/win/wsock32/convert.rs` tests | The `wsock32.dll` function |

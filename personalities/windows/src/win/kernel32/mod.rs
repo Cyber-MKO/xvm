@@ -13,7 +13,7 @@ mod heap;
 mod library;
 mod lockfile;
 mod memory;
-mod message;
+pub(crate) mod message;
 mod module;
 mod path;
 mod pipe;

@@ -12,6 +12,7 @@ mod iphlpapi;
 pub(crate) mod kernel32;
 mod mpr;
 pub(crate) mod msvcrt;
+mod netapi32;
 mod ntdll;
 mod ole32;
 pub(crate) mod oleaut32;
@@ -40,6 +41,7 @@ pub fn exports(dll: &str) -> Vec<(&'static str, EmuExport)> {
         "kernel32.dll" => (kernel32::exports(), Vec::new()),
         "mpr.dll" => (mpr::exports(), Vec::new()),
         "msvcrt.dll" => (msvcrt::exports(), msvcrt::data()),
+        "netapi32.dll" => (netapi32::exports(), Vec::new()),
         "ntdll.dll" => (ntdll::exports(), Vec::new()),
         "ole32.dll" => (ole32::exports(), Vec::new()),
         "oleaut32.dll" => (oleaut32::exports(), Vec::new()),

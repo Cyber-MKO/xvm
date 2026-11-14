@@ -32,6 +32,7 @@ pub mod registration;
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 pub mod runtime;
 pub mod sha256;
+pub mod sid;
 pub mod sync;
 pub mod teb;
 pub mod testing;
