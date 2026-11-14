@@ -405,13 +405,34 @@ extern "C" fn fgets(buf: *mut c_char, n: i32, file: u32) -> *mut c_char {
         }
         Some(true) => {}
     }
+    // Take whole runs of read-ahead under one lock: a byte at a time made
+    // reading a configuration file cost milliseconds.
+    let max = n as usize - 1;
     let mut len = 0usize;
-    while len + 1 < n as usize {
-        let Some(b) = next_byte(file) else { break };
-        // SAFETY: buf holds n bytes (the function's contract).
-        unsafe { *buf.add(len) = b as c_char };
-        len += 1;
-        if b == b'\n' {
+    while len < max {
+        let (taken, newline, eof) = with_current(|p| {
+            let s = stream_mut(p, file).expect("checked above");
+            let mut taken = 0;
+            let mut newline = false;
+            while len + taken < max {
+                let Some((b, _)) = s.pending.pop_front() else {
+                    break;
+                };
+                // SAFETY: buf holds n bytes (the function's contract).
+                unsafe { *buf.add(len + taken) = b as c_char };
+                taken += 1;
+                if b == b'\n' {
+                    newline = true;
+                    break;
+                }
+            }
+            (taken, newline, s.eof)
+        });
+        len += taken;
+        if newline || len >= max {
+            break;
+        }
+        if eof || !fill(file) {
             break;
         }
     }
@@ -426,7 +447,19 @@ extern "C" fn fgets(buf: *mut c_char, n: i32, file: u32) -> *mut c_char {
 /// The next byte as an unsigned value, or EOF at the end of the file or
 /// on an error. `getc` is the same function.
 extern "C" fn fgetc(file: u32) -> i32 {
-    let readable = with_current(|p| stream_mut(p, file).map(|s| s.read));
+    // The common case, a byte already read ahead, under one lock: the
+    // agent reads whole files this way.
+    let readable = with_current(|p| {
+        stream_mut(p, file).map(|s| match s.read {
+            true => s.pending.pop_front().map(|(b, _)| b).ok_or(true),
+            false => Err(false),
+        })
+    });
+    let readable = match readable {
+        Some(Ok(b)) => return i32::from(b),
+        Some(Err(r)) => Some(r),
+        None => None,
+    };
     match readable {
         Some(true) => next_byte(file).map_or(EOF, i32::from),
         Some(false) => {

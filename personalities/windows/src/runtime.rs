@@ -412,10 +412,16 @@ pub fn current() -> Option<Runtime> {
 /// Run `f` on the process the calling thread is attached to. For emulated
 /// functions, which agent code only reaches from an attached thread.
 pub fn with_current<R>(f: impl FnOnce(&mut Process) -> R) -> R {
-    let runtime = CURRENT.with(|c| c.borrow().clone());
-    let runtime = runtime.expect("emulated call from a thread outside any process");
-    let mut process = runtime.lock();
-    f(&mut process)
+    // Borrowed, not cloned: this runs on every emulated call, and a clone
+    // costs an atomic count per shared part of the runtime.
+    CURRENT.with(|c| {
+        let current = c.borrow();
+        let runtime = current
+            .as_ref()
+            .expect("emulated call from a thread outside any process");
+        let mut process = runtime.lock();
+        f(&mut process)
+    })
 }
 
 /// # Safety
