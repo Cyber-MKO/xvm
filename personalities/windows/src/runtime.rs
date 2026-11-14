@@ -47,6 +47,22 @@ impl fmt::Display for StartError {
 
 impl std::error::Error for StartError {}
 
+thread_local! {
+    /// How many loader-lock holds this thread has open.
+    static LOADER_DEPTH: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+}
+
+/// A hold on the loader lock; the outermost one owns the mutex.
+pub struct LoaderHold<'a> {
+    _guard: Option<MutexGuard<'a, ()>>,
+}
+
+impl Drop for LoaderHold<'_> {
+    fn drop(&mut self) {
+        LOADER_DEPTH.with(|d| d.set(d.get() - 1));
+    }
+}
+
 /// A shared handle to one process.
 #[derive(Clone)]
 pub struct Runtime {
@@ -55,7 +71,8 @@ pub struct Runtime {
     sync: Arc<SyncHub>,
     file_locks: Arc<crate::filelock::FileLocks>,
     /// Windows' loader lock: one `LoadLibrary` at a time, held while it
-    /// prepares images without the process lock.
+    /// prepares images without the process lock. Reentrant, as on Windows:
+    /// a `DllMain` may load another DLL.
     loader: Arc<Mutex<()>>,
 }
 
@@ -138,8 +155,16 @@ impl Runtime {
 
     /// The process's byte-range file locks.
     /// Serialises library loads (`LoadLibrary`), as Windows' loader lock.
-    pub fn loader(&self) -> MutexGuard<'_, ()> {
-        self.loader.lock().unwrap_or_else(|e| e.into_inner())
+    /// A thread that already holds it (a `DllMain` loading another DLL)
+    /// enters again; the lock is released when its outermost hold ends.
+    pub fn loader(&self) -> LoaderHold<'_> {
+        let guard = if LOADER_DEPTH.with(|d| d.get()) == 0 {
+            Some(self.loader.lock().unwrap_or_else(|e| e.into_inner()))
+        } else {
+            None
+        };
+        LOADER_DEPTH.with(|d| d.set(d.get() + 1));
+        LoaderHold { _guard: guard }
     }
 
     pub fn file_locks(&self) -> &crate::filelock::FileLocks {
@@ -427,6 +452,28 @@ unsafe fn notify(step: &InitStep, reason: u32) -> i32 {
             f(step.base, reason, 0)
         }
         None => 1,
+    }
+}
+
+#[cfg(test)]
+mod loader_tests {
+    use super::*;
+
+    #[test]
+    fn the_loader_lock_is_reentrant_and_exclusive() {
+        let runtime = Runtime::new(Process::new(Vec::new()));
+        let outer = runtime.loader();
+        let inner = runtime.loader();
+        drop(inner);
+        let other = runtime.clone();
+        let t = std::thread::spawn(move || {
+            let _hold = other.loader();
+            7
+        });
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        assert!(!t.is_finished(), "another thread waits for the outer hold");
+        drop(outer);
+        assert_eq!(t.join().unwrap(), 7);
     }
 }
 
